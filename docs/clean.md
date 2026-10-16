@@ -16,7 +16,7 @@ It needs the snapshot taken by [`reldor retrieve`](./commit.md) (or `reldor snap
 
 ## When to reach for it
 
-When you are about to commit: say "I'm going to commit, clean what is not mine". Then commit with the team's flow plugin, another tool or [`reldor commit`](./commit.md).
+When you are about to commit: say "I'm going to commit, clean what is not mine". Then commit with your team's workflow tool, another tool or [`reldor commit`](./commit.md).
 
 ## It's working if
 

@@ -36,7 +36,7 @@
 ## 0.8.0
 
 - Git actions are **off by default** (`git.actions: off`): Reldor checks and advises; branches, commits, merges and
-  PRs stay with the team's own tool (e.g. the team's flow plugin). `reldor init` asks. `reldor commit --stage` leaves only your
+  PRs stay with the team's own tool (e.g. the team's workflow plugin). `reldor init` asks. `reldor commit --stage` leaves only your
   lines in the stage without committing. `promote` and `rollback` show the steps as reference.
 - `reldor collisions`: other open branches (last 30 days) that change the same files as yours, with the risk:
   same lines (high), same file (medium), metadata the smart merge joins (low). Shows author, date and environments.

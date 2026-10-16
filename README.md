@@ -206,7 +206,7 @@ All skills are **model-invoked**: the AI reaches for them when the conversation 
 - Reads **metadata only**, never records.
 - Tokens and credentials stay **out of the repository**.
 - Every action is written to a **local history** (`reldor log`).
-- **Git actions are off by default**: Reldor checks and advises, while creating branches, committing, merging and opening PRs stays with your own flow (for example the team's flow plugin). `reldor init` asks; turn them on only if you have no such tool.
+- **Git actions are off by default**: Reldor checks and advises, while creating branches, committing, merging and opening PRs stays with your own flow (for example, your team's workflow plugin). `reldor init` asks; turn them on only if you have no such tool.
 - Deploying to production is **blocked by default**. Actions on task boards are **off by default**.
 - Nothing about a client lives in Reldor: teams, prefixes and orgs stay in a profile inside the client's own repository.
 
@@ -227,4 +227,6 @@ Read [AGENTS.md](./AGENTS.md) first. Run `npm test` before every commit.
 
 ## License
 
-Private project. All rights reserved by the author.
+**Public for viewing, not open source.** © 2026 Marlon Rodler. All rights reserved.
+
+You may read the code and the documentation. Using, copying, modifying or distributing Reldor, in whole or in part, requires the author's written permission. See [LICENSE](./LICENSE).

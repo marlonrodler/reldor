@@ -16,7 +16,7 @@ Precisa da foto tirada pelo [`reldor retrieve`](./commit.pt-BR.md) (ou do `reldo
 
 ## Quando usar
 
-Na hora de commitar: diga "vou commitar, limpa o que não é meu". Depois commite pelo plugin de fluxo do time, por outra ferramenta ou pelo [`reldor commit`](./commit.pt-BR.md).
+Na hora de commitar: diga "vou commitar, limpa o que não é meu". Depois commite pela ferramenta de fluxo do time, por outra ferramenta ou pelo [`reldor commit`](./commit.pt-BR.md).
 
 ## Está funcionando se
 

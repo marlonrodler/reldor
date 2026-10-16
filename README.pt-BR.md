@@ -227,4 +227,6 @@ Leia o [AGENTS.md](./AGENTS.md) primeiro. Rode `npm test` antes de cada commit.
 
 ## Licença
 
-Projeto privado. Todos os direitos reservados ao autor.
+**Público para consulta, não é código aberto.** © 2026 Marlon Rodler. Todos os direitos reservados.
+
+Você pode ler o código e a documentação. Usar, copiar, modificar ou distribuir o Reldor, no todo ou em parte, depende de autorização por escrito do autor. Veja a [LICENSE](./LICENSE).

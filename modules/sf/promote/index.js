@@ -11,7 +11,7 @@ const { stripComments } = require('../quality/tokens');
 const git = (root, args) => gitApi.git(root, args);
 const lines = (r) => (r.ok && r.stdout ? r.stdout.split('\n').filter(Boolean) : []);
 
-/** Finds an environment by name or branch ("uat" also matches "release/uat"). */
+/** Finds an environment by name or branch ("uat" also matches "rc/uat/develop"). */
 function findEnvironment(environments, wanted) {
   const w = String(wanted || '').toLowerCase();
   const exact = environments.findIndex((e) => e.name.toLowerCase() === w || String(e.branch).toLowerCase() === w);
