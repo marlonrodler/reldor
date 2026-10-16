@@ -8,7 +8,7 @@ A IA já escreve código Salesforce rápido. O que ela não faz é enxergar a or
 
 O Reldor resolve isso com uma regra: **scripts fazem o trabalho pesado e confiável; a IA só explica e conduz.** Ele monta um índice do projeto, segue a ordem de execução real e conversa com você pela IA que você já usa (Kiro ou Claude Code). Você não decora comandos: diz o que quer.
 
-> **Status:** Fase 1 em andamento. `index`, `explain`, `usages`, `test-radar` e `check` já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
+> **Status:** Fase 1 em andamento. `index`, `explain`, `usages`, `test-radar`, `check` e `refine` já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
 
 ## Instalação (5 minutos)
 
@@ -71,6 +71,7 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 - [`explain`](./docs/explain.pt-BR.md): o que acontece quando um registro é salvo, na ordem de execução real, seguindo a cadeia do fflib pela sua classe `Application`.
 - [`usages`](./docs/usages.pt-BR.md): todos os lugares onde um campo, classe, método, flow ou objeto é usado, com o grau de certeza.
+- [`refine`](./docs/refine.pt-BR.md): antes mesmo de a task ser escrita, o que ela toca e o que perguntar.
 
 ### #2: Testes quebram de surpresa
 
@@ -110,7 +111,7 @@ Você quase não digita: a IA roda por você.
 | [`reldor explain`](./docs/explain.pt-BR.md) | Engenharia reversa: automações na ordem de execução | ✅ |
 | [`reldor usages`](./docs/usages.pt-BR.md) | Onde algo é usado, antes de alterar ou apagar | ✅ |
 | `reldor log` | Tudo o que o Reldor fez, do mais recente ao mais antigo | ✅ |
-| `reldor refine` | Transforma a ideia da task em impacto, perguntas em aberto e critérios de aceite | 🚧 |
+| [`reldor refine`](./docs/refine.pt-BR.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho | ✅ |
 | [`reldor test-radar`](./docs/test-radar.pt-BR.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |
 | [`reldor check`](./docs/check.pt-BR.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
 | `reldor commit` · `xml` · `promote` · `rollback` | Commit limpo, organizador de XML, ensaio de promoção, plano de rollback | 🚧 |
@@ -123,6 +124,7 @@ Todas as skills são **acionadas pela IA**: ela usa quando a conversa pede.
 - **[spec-review](./modules/sf/advisors/spec-review/SKILL.md)**: Aponta o que falta numa spec antes de ela rodar.
 - **[automation-design](./modules/sf/advisors/automation-design/SKILL.md)**: Recomenda onde uma regra de negócio deve morar.
 - **[lwc-ux](./modules/sf/advisors/lwc-ux/SKILL.md)**: Propõe telas LWC modernas e acessíveis antes de codar.
+- **[task-refine](./modules/sf/advisors/task-refine/SKILL.md)**: Transforma a ideia numa task escrita com o impacto real: o que muda, perguntas em aberto, critérios de aceite e cenários de teste.
 
 ## Segurança
 

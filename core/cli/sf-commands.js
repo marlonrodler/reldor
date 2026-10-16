@@ -8,6 +8,7 @@ const { explainObject, renderExplain, EVENTS } = require('../../modules/sf/expla
 const { findUsages, renderUsages } = require('../../modules/sf/checks/usages');
 const { checkQueries } = require('../../modules/sf/checks/queries');
 const { buildRadar } = require('../../modules/sf/test-radar');
+const { refineBrief, renderBrief } = require('../../modules/sf/refine');
 const { changedFiles } = require('../../modules/sf/test-radar/changes');
 const { runTests } = require('../../modules/sf/org/sf');
 const { resolveOrg } = require('../../modules/sf/org/guard');
@@ -202,6 +203,22 @@ async function testRadarCommand(root, flags) {
   return run.ok && run.success ? 0 : 2;
 }
 
+function refineCommand(root, flags, args) {
+  if (!requireSfProject(root)) return 1;
+  const text = args.join(' ');
+  const list = (v) => (typeof v === 'string' ? v.split(',').map((x) => x.trim()).filter(Boolean) : []);
+  if (!text && !flags.objects && !flags.fields) {
+    process.stderr.write('⚠️ Descreva a ideia da task. Ex.: reldor refine "bloquear o fechamento da oportunidade sem proposta aprovada"\n');
+    return 1;
+  }
+  const { model } = freshModel(root, flags);
+  const brief = refineBrief(model, { text, objects: list(flags.objects), fields: list(flags.fields) });
+  logAction(root, 'refine', { summary: `${brief.objects.map((o) => o.name).join(', ') || 'nenhum objeto'} · ${brief.signal.size}` });
+  if (flags.json) printJson(brief);
+  else print(renderBrief(brief));
+  return 0;
+}
+
 function checkCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
   const { model } = freshModel(root, flags);
@@ -212,4 +229,4 @@ function checkCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, loadConfig };
+module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, loadConfig };

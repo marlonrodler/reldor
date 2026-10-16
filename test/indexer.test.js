@@ -112,3 +112,17 @@ test('usages also finds layouts, permission sets and class access', () => {
   assert.ok(where('Account.CPF__c').includes('Permission set:Gestao_Contas'));
   assert.ok(where('ContaController').includes('Permission set:Gestao_Contas'));
 });
+
+test('refine finds objects and fields in free text and raises the right questions', () => {
+  const { refineBrief } = require('../modules/sf/refine');
+  const { model } = buildIndex(copyFixture(), { full: true });
+  const b = refineBrief(model, { text: 'Bloquear a conta Private sem CPF' });
+  assert.deepEqual(b.detected.objects, ['Account']);
+  assert.ok(b.detected.fields.includes('Account.CPF__c'), 'field by API name without __c');
+  assert.ok(b.detected.fields.includes('Account.Segmento__c'), 'field by picklist value');
+  assert.ok(b.attention.some((a) => a.includes('AccountTrigger')));
+  assert.ok(b.questions.some((q) => q.includes('Bypass__c')));
+  assert.ok(b.questions.some((q) => q.includes('volume')));
+  const novo = refineBrief(model, { fields: ['Account.Limite__c'] });
+  assert.ok(novo.questions.some((q) => q.includes('Account.Limite__c não existe')));
+});

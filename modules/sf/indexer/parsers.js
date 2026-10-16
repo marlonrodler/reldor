@@ -49,6 +49,7 @@ function parseField(meta, { object, name }) {
   return {
     object,
     name: f.fullName || name,
+    label: f.label || null,
     type: f.type || null,
     required: bool(f.required),
     unique: bool(f.unique),

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- `reldor refine`: the facts behind a task idea. Finds the objects and fields in free text (API names, labels,
+  picklist values, common Portuguese and English words), and returns automations, screens, roll-up cascade, bypass,
+  tests, attention points, open questions and a size signal.
+- New advisor `task-refine`: writes the task (what changes, impact, open questions, acceptance criteria, test
+  scenarios, size) from those facts.
+
 ## 0.2.0
 
 - `reldor test-radar`: tests that can break with your changes, with reason and priority (objects, classes, permissions,

@@ -5,7 +5,7 @@ const { findProjectRoot } = require('../config');
 const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { logCommand } = require('./log');
-const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand } = require('./sf-commands');
+const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand } = require('./sf-commands');
 const pkg = require('../../package.json');
 
 const COMMANDS = {
@@ -14,6 +14,7 @@ const COMMANDS = {
   log: { run: logCommand, help: 'Mostra o histórico de ações do Reldor (--json)' },
   index: { run: indexCommand, help: 'Monta ou atualiza o índice do projeto (--full, --json)' },
   explain: { run: explainCommand, help: 'O que acontece quando um registro é salvo: reldor explain <Objeto> [--event insert|update|delete]' },
+  refine: { run: refineCommand, help: 'Fatos para escrever uma task: reldor refine "<ideia>" [--objects A,B] [--fields A.Campo__c]' },
   'test-radar': { run: testRadarCommand, help: 'Testes afetados pelas suas mudanças (--base, --files, --run --org <alias>, --json)' },
   check: { run: checkCommand, help: 'Checagem de queries: campo lido fora da SOQL/Selector (reldor check [Classe...])' },
   usages: { run: usagesCommand, help: 'Onde algo é usado: reldor usages <Classe | Classe.metodo | Objeto.Campo__c | Objeto>' },

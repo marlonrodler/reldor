@@ -5,7 +5,7 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | A pessoa diz algo como | Rode | Depois |
 |---|---|---|
 | "quero usar o Reldor" | `reldor status` | Explique a etapa e sugira o próximo passo |
-| "quero criar uma task para…" | `reldor refine` | Mostre impacto, perguntas em aberto e critérios |
+| "quero criar uma task para…" / "refina essa task" | `reldor refine "<ideia>" --json` | Siga o conselheiro reldor-task-refine |
 | "o que acontece quando…" | `reldor explain <Objeto> --event <insert\|update\|delete> --json` | Mostre a cadeia na ordem; marque o que é condicional |
 | "como testo…" | `reldor explain <Objeto> --event <evento> --json` | Monte o roteiro: ação → o que dispara → o que validar |
 | "documenta o fluxo de…" | `reldor explain` para cada evento | Escreva o documento a partir do resultado |

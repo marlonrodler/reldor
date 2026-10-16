@@ -8,7 +8,7 @@ AI already writes Salesforce code fast. What it does not do is see the whole org
 
 Reldor fixes this with one rule: **scripts do the heavy, reliable work; the AI only explains and guides.** It builds an index of your project, follows the real order of execution, and talks to you through the AI you already use (Kiro or Claude Code). You don't memorize commands: you say what you want.
 
-> **Status:** Phase 1 in progress. `index`, `explain`, `usages`, `test-radar` and `check` work today. See the [roadmap](./docs/roadmap.md).
+> **Status:** Phase 1 in progress. `index`, `explain`, `usages`, `test-radar`, `check` and `refine` work today. See the [roadmap](./docs/roadmap.md).
 
 ## Installation (5-minute setup)
 
@@ -71,6 +71,7 @@ It detects the project, asks only what it cannot detect (environment branches, r
 
 - [`explain`](./docs/explain.md): what happens when a record is saved, in the real order of execution, following the fflib chain through your `Application` class.
 - [`usages`](./docs/usages.md): every place a field, class, method, flow or object is used, with how sure it is.
+- [`refine`](./docs/refine.md): before the task is even written, what it touches and what to ask.
 
 ### #2: Tests break by surprise
 
@@ -110,7 +111,7 @@ You rarely type these: your AI runs them for you.
 | [`reldor explain`](./docs/explain.md) | Reverse engineering: automations in the order of execution | ✅ |
 | [`reldor usages`](./docs/usages.md) | Where something is used, before you change or delete it | ✅ |
 | `reldor log` | Everything Reldor did, newest first | ✅ |
-| `reldor refine` | Turns a task idea into impact, open questions and acceptance criteria | 🚧 |
+| [`reldor refine`](./docs/refine.md) | The facts behind a task idea: impact, attention points, open questions, size | ✅ |
 | [`reldor test-radar`](./docs/test-radar.md) | Tests that can break with your changes, and runs them without saving | ✅ |
 | [`reldor check`](./docs/check.md) | Fields read outside the query (SOQL or selector) | ✅ |
 | `reldor commit` · `xml` · `promote` · `rollback` | Clean commit, XML organizer, promotion rehearsal, rollback plan | 🚧 |
@@ -123,6 +124,7 @@ All skills are **model-invoked**: the AI reaches for them when the conversation 
 - **[spec-review](./modules/sf/advisors/spec-review/SKILL.md)**: Points out what is missing in a spec before it runs.
 - **[automation-design](./modules/sf/advisors/automation-design/SKILL.md)**: Recommends where a business rule should live.
 - **[lwc-ux](./modules/sf/advisors/lwc-ux/SKILL.md)**: Proposes modern, accessible LWC screens before coding.
+- **[task-refine](./modules/sf/advisors/task-refine/SKILL.md)**: Turns a task idea into a task written with the real impact: what changes, open questions, acceptance criteria and test scenarios.
 
 ## Safety
 
