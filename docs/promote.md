@@ -26,7 +26,7 @@ Without an environment name, it picks the first environment your branch has not 
 - a real conflict happens only when both sides changed **the same item** differently, and only that item gets conflict markers;
 - the result comes out sorted, as Salesforce retrieves it.
 
-It also turns on `git rerere`: Git remembers how you resolved a conflict and repeats it in the next environment. Useful because adjustments only go in the development branch, so the same conflict shows up again in UAT and in master.
+It also turns on `git rerere`: Git remembers how you resolved a conflict and repeats it in the next environment. Useful because the conflict is resolved in each environment's merge branch, so it shows up again in UAT and in master.
 
 Nothing goes to the shared repository: the settings live in `.git/info/attributes` and `.git/config`. `reldor merge uninstall` removes them.
 
@@ -46,6 +46,9 @@ With Git 2.38 or newer it simulates the merge in memory. Older Git works too, us
 
 **It says "other people's commits", but we are a pair.**
 Then everything is fine. The check compares the commit author with your `user.email`.
+
+**Should I fix the conflict in my branch before?**
+No. Conflicts are resolved in the merge branch, as usual: fixing them in your development branch would pull in other people's work. The rehearsal only tells you in advance, so it is not a surprise.
 
 **Does it replace the pipeline?**
 No. It runs the same kind of checks earlier, on your machine, so the pipeline does not fail.

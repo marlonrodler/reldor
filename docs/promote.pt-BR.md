@@ -26,7 +26,7 @@ O `reldor merge install` liga, neste repositório e só na sua máquina, um driv
 - só existe conflito de verdade quando os dois lados mudaram **o mesmo item** de jeitos diferentes, e só esse item recebe as marcações de conflito;
 - o resultado sai ordenado, como o Salesforce faz no retrieve.
 
-Ele também liga o `git rerere`: o Git lembra como você resolveu um conflito e repete a resolução no próximo ambiente. Isso ajuda porque ajustes só entram na branch de desenvolvimento, então o mesmo conflito volta na UAT e na master.
+Ele também liga o `git rerere`: o Git lembra como você resolveu um conflito e repete a resolução no próximo ambiente. Isso ajuda porque o conflito é resolvido na branch de merge de cada ambiente, então o mesmo conflito volta na UAT e na master.
 
 Nada vai para o repositório compartilhado: as configurações ficam em `.git/info/attributes` e `.git/config`. O `reldor merge uninstall` remove tudo.
 
@@ -46,6 +46,9 @@ Com Git 2.38 ou mais novo, ele simula o merge em memória. Git mais antigo tamb�
 
 **Aparece "commits de outras pessoas", mas trabalhamos em par.**
 Então está tudo certo. A checagem compara o autor do commit com o seu `user.email`.
+
+**Devo resolver o conflito na minha branch antes?**
+Não. Conflito se resolve na branch de merge, como sempre: resolver na sua branch de desenvolvimento puxaria o trabalho de outras pessoas. O ensaio só avisa antes, para não ser surpresa.
 
 **Substitui a esteira?**
 Não. Ele faz o mesmo tipo de checagem antes, na sua máquina, para a esteira não falhar.

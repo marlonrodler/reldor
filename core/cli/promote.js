@@ -51,10 +51,10 @@ function renderPromote(r, actions = false) {
   }
   if (xmlBad.length || lineBad.length) {
     problems += 1;
-    out.push('', `🟡 ${xmlBad.length + lineBad.length} conflito(s) que precisam de uma pessoa:`);
+    out.push('', `🟡 ${xmlBad.length + lineBad.length} conflito(s) que você vai resolver na branch de merge (não na sua branch):`);
     for (const c of xmlBad) out.push(`   ${c.file}: ${c.items.map((i) => `${i.section} ${i.key}`).join(', ')} (os dois lados mudaram o mesmo item)`);
     for (const c of lineBad) out.push(`   ${c.file}`);
-    out.push(r.rerere ? '   ➜ O rerere está ligado: resolva uma vez e o Git repete a resolução nos próximos ambientes.' : '   ➜ Ligue o rerere (reldor merge install) para não resolver o mesmo conflito em cada ambiente.');
+    out.push(r.rerere ? '   ➜ É só para não ser surpresa. O rerere está ligado: o Git lembra a sua resolução nos próximos ambientes.' : '   ➜ É só para não ser surpresa. Ligue o rerere (reldor merge install) para o Git lembrar a sua resolução nos próximos ambientes.');
   }
   if (r.missing.length) {
     problems += 1;
@@ -62,7 +62,7 @@ function renderPromote(r, actions = false) {
     for (const m of r.missing.slice(0, 15)) {
       out.push(`   ${m.kind} ${m.item}, usado em ${m.files.map((f) => f.split('/').pop()).join(', ')}${m.presentIn.length ? ` (existe em: ${m.presentIn.join(', ')})` : ''}`);
     }
-    out.push('   ➜ Inclua o metadado na sua branch, ou espere a feature que criou o item chegar neste ambiente.');
+    out.push('   ➜ Se o item é da sua feature, falta commitar na sua branch. Se é de outra pessoa, a feature dela precisa chegar antes neste ambiente: combinem a ordem.');
   }
   out.push('');
   if (!actions) {
@@ -72,7 +72,7 @@ function renderPromote(r, actions = false) {
     else out.push('Quando estiver tudo certo, o próximo passo é:');
     out.push(`   git checkout -b merge/${String(r.source).replace(/[^\w.-]+/g, '-')}-${r.env} ${r.targetRef}`, `   git merge ${r.source}`, `   e abra a PR para ${r.branch}.`);
   }
-  out.push('', 'ℹ️  Ajustes vão sempre na sua branch de desenvolvimento, nunca na branch de merge.');
+  out.push('', 'ℹ️  Conflito de merge se resolve na branch de merge. Correção de código vai na sua branch de desenvolvimento.');
   return out;
 }
 

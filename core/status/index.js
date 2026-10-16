@@ -34,7 +34,7 @@ function nextStep(s) {
   if (env.configured && s.environments.featureCommits) {
     const next = env.items.find((i) => i.state === 'missing');
     const blocking = (s.alerts || []).filter((a) => a.level === 'alta');
-    if (next && blocking.length) return { id: 'fix', target: next.name, text: `Antes de levar para ${next.name}, resolva os avisos acima.` };
+    if (next && blocking.length) return { id: 'fix', target: next.name, text: `Antes de levar para ${next.name}, veja os avisos 🔴 acima: eles fazem a esteira falhar.` };
     if (next) return { id: 'promote', target: next.name, text: `Levar a feature para ${next.name}${(s.alerts || []).length ? ' (veja os avisos acima)' : ': o ensaio não achou problemas'}.` };
     if (env.items.every((i) => i.state === 'present' || i.state === 'current')) {
       return { id: 'done', text: 'A feature já está em todos os ambientes.' };
