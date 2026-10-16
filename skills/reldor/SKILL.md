@@ -11,7 +11,7 @@ Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você de
 1. Rode `reldor status` primeiro para saber a etapa atual.
 2. Leia `guide.md` para escolher o próximo passo.
 3. Use os resultados dos comandos como fonte da verdade. **Não invente** automações, campos ou referências.
-4. Responda em português, curto, com o resumo primeiro e os detalhes depois.
+4. Responda no idioma em que a pessoa está conversando (ou no `language` da configuração, se definido), de forma didática e curta: resumo primeiro, detalhes depois.
 5. Peça confirmação antes de: retrieve, deploy, commit, merge e rollback.
 
 ## Primeira vez no projeto

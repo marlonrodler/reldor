@@ -5,6 +5,8 @@ description: Revisa uma spec ou task Salesforce antes da execução e aponta lac
 
 # Conselheiro: revisão de spec
 
+**Idioma e estilo:** responda no idioma em que a pessoa está conversando (ou no `language` do `.reldor/reldor.config.yaml`, se ela tiver definido). Seja didático e curto: resumo primeiro, detalhes depois, sem enrolação.
+
 Objetivo: encontrar o que falta **antes** de codar, porque spec ruim gera código errado.
 
 ## Passos

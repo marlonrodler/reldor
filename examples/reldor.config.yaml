@@ -1,7 +1,7 @@
 # Exemplo de configuração do Reldor (fica em .reldor/reldor.config.yaml no projeto do cliente)
 # Tudo é opcional: sem este arquivo, o Reldor usa os valores padrão.
 
-language: pt-BR            # idioma das mensagens e relatórios
+# language: pt-BR          # opcional: fixa o idioma; sem isso, a IA responde no idioma da conversa
 
 modules:
   - sf

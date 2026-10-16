@@ -123,7 +123,7 @@ async function initCommand(root, flags) {
     }
 
     const config = {
-      language: DEFAULTS.language,
+      ...(flags.language ? { language: flags.language } : {}),
       modules: modules.length ? modules.map((m) => m.mod.name) : DEFAULTS.modules,
       environments,
       reference_org: referenceOrg,

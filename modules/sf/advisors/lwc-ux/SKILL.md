@@ -5,6 +5,8 @@ description: Propõe telas LWC modernas, acessíveis e performáticas antes de c
 
 # Conselheiro: LWC moderno
 
+**Idioma e estilo:** responda no idioma em que a pessoa está conversando (ou no `language` do `.reldor/reldor.config.yaml`, se ela tiver definido). Seja didático e curto: resumo primeiro, detalhes depois, sem enrolação.
+
 Objetivo: instigar uma tela melhor **antes** de codar.
 
 ## Design system

@@ -5,6 +5,8 @@ description: Recomenda onde uma regra de negócio Salesforce deve morar (flow, t
 
 # Conselheiro: desenho de automação
 
+**Idioma e estilo:** responda no idioma em que a pessoa está conversando (ou no `language` do `.reldor/reldor.config.yaml`, se ela tiver definido). Seja didático e curto: resumo primeiro, detalhes depois, sem enrolação.
+
 Objetivo: escolher o lugar certo para a lógica, com base no que **já existe** no objeto.
 
 ## Passos
