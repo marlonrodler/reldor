@@ -6,7 +6,7 @@ const { paths } = require('../../../core/config');
 const { readProject } = require('..');
 const { classify, parseFile } = require('./parsers');
 
-const INDEX_VERSION = 1;
+const INDEX_VERSION = 6;
 const SKIP_DIRS = new Set(['node_modules', '.git', '.sfdx', '.sf', '.reldor', '__tests__', 'jsconfig.json']);
 
 function walk(dir, files = []) {
@@ -63,7 +63,7 @@ function emptyObject(name) {
 
 /** Turns per-file results into a model organized by object. */
 function aggregate(fileResults) {
-  const model = { objects: {}, classes: {}, triggers: {}, flows: {}, lwc: {}, application: { services: {}, selectors: {}, domains: {} }, errors: [] };
+  const model = { objects: {}, classes: {}, triggers: {}, flows: {}, lwc: {}, customMetadata: {}, ui: [], permissions: [], application: { services: {}, selectors: {}, domains: {} }, errors: [] };
   const obj = (name) => {
     if (!name) return null;
     if (!model.objects[name]) model.objects[name] = emptyObject(name);
@@ -106,6 +106,17 @@ function aggregate(fileResults) {
         break;
       case 'flow':
         model.flows[d.name] = { ...d, file };
+        break;
+      case 'layout':
+      case 'listView':
+      case 'compactLayout':
+        model.ui.push({ kind: r.type, ...d });
+        break;
+      case 'permission':
+        model.permissions.push(d);
+        break;
+      case 'customMetadataRecord':
+        (model.customMetadata[d.object] = model.customMetadata[d.object] || []).push(d);
         break;
       case 'lwcJs':
         model.lwc[d.name] = { ...(model.lwc[d.name] || {}), apex: d.apex, schema: d.schema };

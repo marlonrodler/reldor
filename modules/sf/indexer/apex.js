@@ -85,7 +85,7 @@ function parseDml(code) {
 function detectKind(name, code) {
   const kinds = [];
   if (/@isTest/i.test(code)) kinds.push('test');
-  if (/extends\s+fflib_SObjectDomain/i.test(code)) kinds.push('domain');
+  if (/extends\s+fflib_SObject(Domain|s)\b/i.test(code)) kinds.push('domain');
   if (/extends\s+fflib_SObjectSelector/i.test(code)) kinds.push('selector');
   if (/Database\.Batchable/i.test(code)) kinds.push('batch');
   if (/implements[^{]*\bQueueable\b/i.test(code)) kinds.push('queueable');
@@ -95,8 +95,54 @@ function detectKind(name, code) {
   if (/fflib_Application/.test(code) && /Factory/.test(code)) kinds.push('application');
   if (/^I\w+Service$/.test(name) || /\binterface\s+\w+/i.test(code.slice(0, 400))) kinds.push('interface');
   if (/Service(Impl)?$/i.test(name) && !kinds.includes('interface')) kinds.push('service');
-  if (/TriggerHandler$/i.test(name) || /extends\s+TriggerHandler/i.test(code)) kinds.push('trigger-handler');
+  if (/TriggerHandler$/i.test(name) || /extends\s+\w*TriggerHandler\b/i.test(code) || /extends\s+fflib_SObjectDomain\b/i.test(code)) kinds.push('trigger-handler');
   return kinds;
+}
+
+/** Trigger-phase methods of common frameworks (fflib domains and TriggerHandler-style classes). */
+const PHASE_METHOD_RE = /^(on(ApplyDefaults|Validate|Before(Insert|Update|Delete)|After(Insert|Update|Delete|Undelete))|(before|after)(Insert|Update|Delete|Undelete))$/;
+
+/** Number of parameters, ignoring commas inside generics (Map<Id, SObject>). */
+function arity(params) {
+  let p = params.trim();
+  if (!p) return 0;
+  while (/<[^<>]*>/.test(p)) p = p.replace(/<[^<>]*>/g, '');
+  return p.split(',').length;
+}
+
+/**
+ * For each trigger-phase method, the identifiers used in its body and in the private helpers it calls
+ * (followed inside the class). Key: "name/arity".
+ */
+function handlerRefs(code) {
+  const methods = {};
+  const re = /\b(?:(?:public|private|protected|global|static|override|virtual)\s+)+[\w<>,.\s]+?\s+(\w+)\s*\(([^)]*)\)\s*\{/g;
+  let m;
+  while ((m = re.exec(code))) {
+    const body = blockAfter(code, m.index);
+    const entry = methods[m[1]] || { keys: [], ids: new Set(), calls: new Set() };
+    entry.keys.push(`${m[1]}/${arity(m[2])}`);
+    for (const id of body.match(/\b[A-Z]\w+\b/g) || []) entry.ids.add(id);
+    for (const x of body.matchAll(/\b(\w+)\.class\b/g)) entry.ids.add(x[1]);
+    for (const x of body.matchAll(/(?:^|[^.\w])(\w+)\s*\(/g)) entry.calls.add(x[1]);
+    methods[m[1]] = entry;
+  }
+  const out = {};
+  for (const [name, entry] of Object.entries(methods)) {
+    if (!PHASE_METHOD_RE.test(name)) continue;
+    const ids = new Set(entry.ids);
+    const seen = new Set([name]);
+    const queue = [...entry.calls];
+    while (queue.length) {
+      const call = queue.shift();
+      if (seen.has(call) || !methods[call]) continue;
+      seen.add(call);
+      for (const id of methods[call].ids) ids.add(id);
+      queue.push(...methods[call].calls);
+    }
+    for (const key of entry.keys) out[key] = [...ids];
+  }
+  return out;
 }
 
 /** Parses the fflib Application class: interface -> implementation and object -> selector/domain. */
@@ -133,7 +179,7 @@ function parseApexClass(name, source) {
     classRefs: unique([...code.matchAll(/\b(\w+)\.class\b/g)].map((m) => m[1])),
     calls: unique([...code.matchAll(/\b([A-Z]\w*)\.(\w+)\s*\(/g)].map((m) => `${m[1]}.${m[2]}`)),
     invoked: unique([...code.matchAll(/\.(\w+)\s*\(/g)].map((m) => m[1])),
-    methods: unique([...code.matchAll(/\b(?:public|private|protected|global)\s+(?:static\s+|override\s+|virtual\s+)*[\w<>,.\s]+?\s+(\w+)\s*\([^)]*\)\s*\{/g)].map((m) => m[1])),
+    methods: unique([...code.matchAll(/\b(?:(?:public|private|protected|global|static|override|virtual)\s+)+[\w<>,.\s]+?\s+(\w+)\s*\([^)]*\)\s*\{/g)].map((m) => m[1])),
     soql: parseSoql(code),
     dml: parseDml(code),
     fieldRefs: unique([...code.matchAll(/\b(?:(\w+)\.)?(\w+__(?:c|r))\b/g)].map((m) => (m[1] ? `${m[1]}.${m[2]}` : m[2]))),
@@ -141,6 +187,10 @@ function parseApexClass(name, source) {
     async: /@future/i.test(code) || /System\.enqueueJob|Database\.executeBatch|System\.schedule/i.test(code),
     strings: unique(strings.filter((s) => /^[A-Za-z_]\w{2,}$/.test(s))).slice(0, 50),
   };
+  const ext = code.match(/\bclass\s+\w+\s+extends\s+(\w+)/i);
+  info.extendsName = ext ? ext[1] : null;
+  const phases = handlerRefs(code);
+  if (Object.keys(phases).length) info.handlerRefs = phases;
   if (kinds.includes('selector')) {
     const obj = code.match(/getSObjectType\s*\(\s*\)\s*\{[^}]*?return\s+(\w+)\.SObjectType/i);
     info.selectorObject = obj ? obj[1] : null;
@@ -160,9 +210,9 @@ function parseTrigger(name, source) {
     name: head ? head[1] : name,
     object: head ? head[2] : null,
     events,
-    identifiers: unique((code.match(/\b[A-Z]\w+\b/g) || [])),
+    identifiers: unique((code.match(/\b[A-Z]\w+\b/g) || []).filter((id) => !head || (id !== head[1] && id !== head[2]))),
     classRefs: unique([...code.matchAll(/\b(\w+)\.class\b/g)].map((m) => m[1])),
   };
 }
 
-module.exports = { stripApex, parseApexClass, parseTrigger, parseSoql, parseDml, parseApplication, blockAfter };
+module.exports = { handlerRefs, PHASE_METHOD_RE, stripApex, parseApexClass, parseTrigger, parseSoql, parseDml, parseApplication, blockAfter };

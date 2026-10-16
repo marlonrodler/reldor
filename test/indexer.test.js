@@ -69,13 +69,13 @@ test('explain follows the order of execution and the fflib chain', () => {
     'Assíncrono (depois do commit)',
   ]);
   const before = r.steps[1].items[0];
-  assert.deepEqual(before.chain.map((c) => c.name), ['Accounts', 'AccountsServiceImpl']);
+  assert.deepEqual(before.chain.map((c) => c.name), ['Accounts', 'AccountsServiceImpl', 'ScoreJob']);
   const after = r.steps[3].items[0];
   assert.equal(after.idle, true, 'domain has no onAfterUpdate');
   assert.equal(r.steps[6].items[0].name, 'ScoreJob');
   assert.deepEqual(r.bypass, ['Bypass__c']);
   assert.deepEqual(r.inactiveFlows, ['Rascunho']);
-  assert.deepEqual(r.tests, ['AccountsTest']);
+  assert.deepEqual(r.tests.direct, ['AccountsTest']);
 
   const child = explainObject(model, 'Proposta__c', 'insert');
   assert.equal(child.steps[0].title, 'Efeito em cascata');
@@ -85,10 +85,30 @@ test('usages finds fields, classes, methods and text-only references', () => {
   const { model } = buildIndex(copyFixture(), { full: true });
   const where = (q) => findUsages(model, q).map((h) => `${h.where}:${h.name}:${h.certainty}`);
 
-  assert.deepEqual(where('CPF__c'), ['Validation rule:Account.CPF_Obrigatorio:certo', 'Selector:AccountsSelector:certo', 'Apex:AccountsTest:certo']);
+  assert.deepEqual(where('CPF__c').slice(0, 3), ['Validation rule:Account.CPF_Obrigatorio:certo', 'Selector:AccountsSelector:certo', 'Apex:AccountsTest:certo']);
   assert.ok(where('Account.Score__c').includes('Flow:Conta_Depois_Salvar:certo'));
   assert.ok(where('Account.Score__c').includes('LWC:contaScore:certo'));
   assert.ok(where('AccountsServiceImpl').includes('Apex:ContaController:possível'));
   assert.ok(where('AccountsServiceImpl.calcularScore').includes('Apex:Accounts:provável'));
   assert.deepEqual(where('Proposta__c'), ['Apex:ScoreJob:certo', 'Roll-up:Account.Total_Propostas__c:certo']);
+});
+
+test('trigger handlers follow only the methods of the phase, including private helpers', () => {
+  const { handlerRefs } = require('../modules/sf/indexer/apex');
+  const refs = handlerRefs(`public class H extends TriggerHandler {
+    override public void afterInsert() { ajudar(); }
+    private void ajudar() { Servico.rodar(); }
+    public override void onValidate(Map<Id, SObject> existing) { Validador.ok(); }
+    public void outro() { Nada.x(); } }`);
+  assert.ok(refs['afterInsert/0'].includes('Servico'));
+  assert.ok(!refs['afterInsert/0'].includes('Nada'));
+  assert.ok(refs['onValidate/1'].includes('Validador'), 'generic parameters count as one');
+});
+
+test('usages also finds layouts, permission sets and class access', () => {
+  const { model } = buildIndex(copyFixture(), { full: true });
+  const where = (q) => findUsages(model, q).map((h) => `${h.where}:${h.name}`);
+  assert.ok(where('Account.CPF__c').includes('Layout:Account-Conta Layout'));
+  assert.ok(where('Account.CPF__c').includes('Permission set:Gestao_Contas'));
+  assert.ok(where('ContaController').includes('Permission set:Gestao_Contas'));
 });

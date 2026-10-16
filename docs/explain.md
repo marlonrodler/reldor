@@ -29,6 +29,9 @@ No. It reads the repository. Managed packages and anything created directly in t
 **Why is the order "simplified"?**
 Salesforce's full order has more steps (assignment rules, escalation, entitlement, sharing). `explain` shows the ones that come from your code and metadata.
 
+**Which trigger frameworks does it understand?**
+fflib domains (`onBeforeUpdate`, `onValidate`, `onApplyDefaults`...), TriggerHandler-style classes (`beforeUpdate`, `afterInsert`...) and metadata-driven triggers, where handlers are listed in custom metadata records. For each phase it follows only the methods that run in that phase, including the private helpers they call.
+
 **Can it write a test script?**
 Yes. Ask the AI for one: it turns each step into action → what fires → what to check.
 

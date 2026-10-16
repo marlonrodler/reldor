@@ -26,36 +26,15 @@ function flowItem(model, name, event) {
   };
 }
 
-/**
- * fflib domains only run the handler they override (onBeforeUpdate, onAfterInsert...).
- * Drops domains (and what hangs below them) that have no logic for this phase.
- */
-function pruneDomainChain(model, chain, timing, event) {
-  const handler = `on${timing[0].toUpperCase()}${timing.slice(1)}${event[0].toUpperCase()}${event.slice(1)}`;
-  const dropped = new Set();
-  return chain.filter((c) => {
-    if (dropped.has(c.via)) {
-      dropped.add(c.name);
-      return false;
-    }
-    const cls = model.classes[c.name];
-    if (c.level === 1 && cls && cls.kinds.includes('domain') && !(cls.methods || []).includes(handler)) {
-      dropped.add(c.name);
-      return false;
-    }
-    return true;
-  });
-}
-
 function triggerItems(model, object, timing, event) {
   const o = model.objects[object];
   return o.triggers
     .map((name) => model.triggers[name])
     .filter((t) => t && t.events.includes(`${timing} ${event}`))
     .map((t) => {
-      const full = chainFrom(model, t, t.name, 2);
-      const chain = pruneDomainChain(model, full, timing, event);
-      return { kind: 'trigger', name: t.name, chain, idle: full.length > 0 && chain.length === 0 };
+      const chain = chainFrom(model, t, `trigger:${t.name}`, 3, { timing, event }, object);
+      const handlers = chainFrom(model, t, `trigger:${t.name}`, 1, null, object);
+      return { kind: 'trigger', name: t.name, chain, idle: handlers.length > 0 && chain.length === 0 };
     });
 }
 
@@ -116,13 +95,15 @@ function explainObject(model, object, event = 'update') {
   ];
   add('Assíncrono (depois do commit)', asyncItems, 'Roda em outra transação: erros aqui não desfazem o salvamento.');
 
+  const dynamicSources = [...new Set([...before, ...after].flatMap((t) => t.chain.filter((c) => c.dynamic).map((c) => c.via.split(' ')[0])))];
   const inactiveFlows = [...o.flows.before, ...o.flows.after, ...o.flows.process].filter((n) => model.flows[n] && !model.flows[n].active);
   return {
     object,
     event,
     steps,
-    bypass: bypassSwitches(model, chainClasses),
-    tests: relatedTests(model, object, chainClasses),
+    bypass: bypassSwitches(model, chainClasses).filter((b) => !dynamicSources.includes(b)),
+    dynamicSources,
+    tests: relatedTests(model, object, [...chainClasses, ...before.map((t) => t.name)]),
     alsoWrittenBy: o.writtenBy.filter((c) => !chainClasses.includes(c)),
     lwcs: o.lwcs,
     recordTypes: o.recordTypes.filter((r) => r.active).map((r) => r.name),
@@ -146,7 +127,7 @@ function renderExplain(r) {
       if (item.kind === 'validationRule' && item.fields.length) line += ` (usa ${item.fields.join(', ')})`;
       out.push(line);
       if (item.kind === 'trigger') {
-        for (const c of item.chain) out.push(`   ${'  '.repeat(c.level)}↳ ${c.name}${c.kinds.length ? ` [${c.kinds.join(', ')}]` : ''}`);
+        for (const c of item.chain) out.push(`   ${'  '.repeat(c.level)}↳ ${c.name}${c.kinds.length ? ` [${c.kinds.join(', ')}]` : ''}${c.dynamic ? ` (dinâmico, via ${c.via})` : ''}`);
       }
     }
     if (step.note) out.push(`   ⚠️ ${step.note}`);
@@ -156,7 +137,9 @@ function renderExplain(r) {
   if (r.recordTypes.length) out.push(`🏷️  Record types ativos: ${r.recordTypes.join(', ')}`);
   if (r.alsoWrittenBy.length) out.push(`✍️  Também gravam ${r.object}: ${r.alsoWrittenBy.join(', ')}`);
   if (r.lwcs.length) out.push(`🖥️  Telas (LWC) que usam ${r.object}: ${r.lwcs.join(', ')}`);
-  if (r.tests.length) out.push(`🧪 Testes relacionados: ${r.tests.join(', ')}`);
+  if (r.dynamicSources.length) out.push(`🧩 Handlers carregados por custom metadata: ${r.dynamicSources.join(', ')} (conferir os registros na org).`);
+  if (r.tests.direct.length) out.push(`🧪 Testes que usam esta cadeia: ${r.tests.direct.join(', ')}`);
+  if (r.tests.byObject.length) out.push(`🧪 Mais ${r.tests.byObject.length} teste(s) criam ou alteram ${r.object} e podem ser afetados.`);
   if (r.inactiveFlows.length) out.push(`💤 Flows inativos ignorados: ${r.inactiveFlows.join(', ')}`);
   out.push('', 'ℹ️  Ordem de execução simplificada, montada a partir do código do projeto. Pacotes gerenciados e');
   out.push('   automações criadas direto na org (fora do repositório) não aparecem aqui.');

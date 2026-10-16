@@ -29,6 +29,9 @@ Não. Ele lê o repositório. Pacotes gerenciados e o que foi criado direto na o
 **Por que a ordem é "simplificada"?**
 A ordem completa do Salesforce tem mais etapas (assignment rules, escalation, entitlement, compartilhamento). O `explain` mostra as que vêm do seu código e metadados.
 
+**Quais frameworks de trigger ele entende?**
+Domains do fflib (`onBeforeUpdate`, `onValidate`, `onApplyDefaults`...), classes no estilo TriggerHandler (`beforeUpdate`, `afterInsert`...) e triggers dirigidas por metadata, em que os handlers ficam em registros de custom metadata. Em cada fase, ele segue só os métodos que rodam nela, incluindo os métodos privados que eles chamam.
+
 **Ele monta roteiro de teste?**
 Sim. Peça à IA: ela transforma cada passo em ação → o que dispara → o que validar.
 

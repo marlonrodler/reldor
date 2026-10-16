@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1
+
+Validated against public Salesforce projects (fflib sample code, apex-recipes, dreamhouse, ebikes, coral cloud).
+
+- `explain` follows only the methods of each phase (fflib and TriggerHandler-style), including private helpers.
+- `explain` follows metadata-driven triggers: handler classes listed in custom metadata records.
+- Chain depth 3; framework base classes are left out; a trigger named like a class no longer hides it.
+- Related tests split into "use this chain" and "create or change the object".
+- `usages` finds fields and classes in layouts, list views, compact layouts, permission sets, profiles, custom metadata
+  records and flow record assignments.
+
 ## 0.1.0
 
 - `reldor index`: incremental index of objects, fields, validation rules, record types, triggers, Apex, flows,

@@ -24,8 +24,8 @@ To see what runs when a record is saved, use [explain](./explain.md) instead.
 **Why "likely" instead of "certain" for methods?**
 Calls through a variable (`service.calcularScore()`) don't say the class name. Reldor links them through the variable's interface and the `Application` factory, which is strong evidence, not proof.
 
-**Does it cover reports, layouts and permissions?**
-Not yet. Permissions arrive with the XML organizer; reports and layouts later.
+**Does it cover layouts and permissions?**
+Yes: page layouts, list views, compact layouts, and field or class access in permission sets and profiles. Custom metadata records that name a class count too. Reports and Lightning pages are not covered yet.
 
 ## Where it fits
 

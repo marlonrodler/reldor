@@ -39,6 +39,12 @@ function findUsages(model, query) {
       for (const a of l.apex || []) if (a === q || (!method && a.startsWith(`${cls}.`))) add('LWC', name, `importa ${a}`);
     }
     if (iface && !method) add('Application', 'Application', `fábrica: ${iface} → ${cls}`);
+    if (!method) for (const p of model.permissions) if (p.classes.includes(cls)) add(p.kind, p.name, 'dá acesso à classe');
+    if (!method) {
+      for (const [type, records] of Object.entries(model.customMetadata)) {
+        for (const r of records) if (Object.values(r.values).map(String).includes(cls)) add('Custom metadata', `${type}.${r.name}`, 'registro aponta para a classe');
+      }
+    }
   }
 
   if (isField) {
@@ -77,6 +83,14 @@ function findUsages(model, query) {
     for (const [name, l] of Object.entries(model.lwc)) {
       for (const s of l.schema || []) if (object ? exact(s) : sameField(s)) add('LWC', name, `importa ${s}`);
     }
+    for (const f of Object.values(model.flows)) {
+      for (const [target, fields] of Object.entries(f.fieldsByObject || {})) {
+        if ((!object || target === object) && fields.some(sameField)) add('Flow', f.name, `grava o campo ao criar/atualizar ${target}`);
+      }
+    }
+    const UI = { layout: 'Layout', listView: 'List view', compactLayout: 'Compact layout' };
+    for (const u of model.ui) if ((!object || u.object === object) && u.fields.some(sameField)) add(UI[u.kind], u.name, 'exibe o campo');
+    for (const p of model.permissions) if (p.fields.some((f) => (object ? exact(f) : sameField(f)))) add(p.kind, p.name, 'permissão de campo (FLS)');
   }
 
   if (isFlow) {
