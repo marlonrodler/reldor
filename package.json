@@ -1,0 +1,13 @@
+{
+  "name": "reldor",
+  "version": "0.0.1",
+  "description": "Reldor — o guardião do desenvolvimento Salesforce",
+  "private": true,
+  "bin": {
+    "reldor": "core/cli/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}

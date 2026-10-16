@@ -1,0 +1,56 @@
+# Exemplo de configuração do Reldor (fica em .reldor/reldor.config.yaml no projeto do cliente)
+# Tudo é opcional: sem este arquivo, o Reldor usa os valores padrão.
+
+language: pt-BR            # idioma das mensagens e relatórios
+
+modules:
+  - sf
+
+# Cadeia de ambientes, na ordem de promoção
+environments:
+  - name: develop
+    branch: develop
+    org: dev-sandbox        # alias do sf CLI
+  - name: uat
+    branch: rc/uat
+    org: uat-sandbox
+  - name: production
+    branch: master
+    org: production
+    deploy: blocked         # o Reldor nunca faz deploy aqui
+
+# Org usada como referência para o índice e o retrieve
+reference_org: uat-sandbox
+index:
+  refresh_hours: 24
+  depth: 2                  # quantos níveis de relacionamento seguir
+
+# Origem da spec (detecção automática vem primeiro)
+spec:
+  generator: null           # ex.: comando do gerador de specs da equipe
+  path: .kiro/specs
+
+# Commit limpo e Git
+git:
+  clean_commit: true
+  pre_commit_hook: true
+  smart_merge: suggest      # off | suggest | auto
+  rerere: true
+
+# Organizador de XML
+xml:
+  types: [Profile, PermissionSet, SharingRules, CustomLabels, Translations, GlobalValueSet, Layout]
+
+# Conselheiros
+advisors:
+  mode: ask                 # off | ask | auto
+  enabled: [spec-review, automation-design, lwc-ux]
+  design_system: slds       # perguntado uma vez no init
+
+# Radar de testes
+test_radar:
+  auto_run: ask             # ask | always | never
+
+# Automações e conectores (desligados por padrão)
+automations: []
+connectors: {}

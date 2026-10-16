@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.log
+# arquivos locais do Reldor em projetos de teste
+.reldor/cache/
+.reldor/work/
+.reldor/log/
