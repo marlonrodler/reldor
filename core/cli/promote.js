@@ -18,7 +18,7 @@ function nextEnvironment(root, environments) {
   return null;
 }
 
-function renderPromote(r) {
+function renderPromote(r, actions = false) {
   const out = [`\n🛡️  Ensaio de promoção: ${r.source} → ${r.env} (${r.branch})`, ''];
   if (!r.commits.length) {
     out.push(`✅ Nada para promover: tudo da sua branch já está em ${r.env}.`);
@@ -65,9 +65,13 @@ function renderPromote(r) {
     out.push('   ➜ Inclua o metadado na sua branch, ou espere a feature que criou o item chegar neste ambiente.');
   }
   out.push('');
-  if (!problems) out.push(`✅ Pronto para ${r.env}. Próximo passo, no fluxo do time:`);
-  else out.push('Quando estiver tudo certo, o próximo passo é:');
-  out.push(`   git checkout -b merge/${String(r.source).replace(/[^\w.-]+/g, '-')}-${r.env} ${r.targetRef}`, `   git merge ${r.source}`, `   e abra a PR para ${r.branch}.`);
+  if (!actions) {
+    out.push(problems ? `Quando estiver tudo certo, siga o seu fluxo (ex.: o plugin de fluxo do time) para levar a branch a ${r.env}.` : `✅ Pronto para ${r.env}. Pode seguir o seu fluxo (ex.: o plugin de fluxo do time): branch de merge, merge e PR para ${r.branch}.`);
+  } else {
+    if (!problems) out.push(`✅ Pronto para ${r.env}. Próximo passo, no fluxo do time:`);
+    else out.push('Quando estiver tudo certo, o próximo passo é:');
+    out.push(`   git checkout -b merge/${String(r.source).replace(/[^\w.-]+/g, '-')}-${r.env} ${r.targetRef}`, `   git merge ${r.source}`, `   e abra a PR para ${r.branch}.`);
+  }
   out.push('', 'ℹ️  Ajustes vão sempre na sua branch de desenvolvimento, nunca na branch de merge.');
   return out;
 }
@@ -87,7 +91,7 @@ function promoteCommand(root, flags, args) {
   const report = rehearse(root, config, { env, source: flags.branch || 'HEAD' });
   logAction(root, 'promote', { summary: `${report.source} → ${report.env}: ${report.commits.length} commit(s), ${report.conflicts.length} conflito(s), ${report.missing.length} dependência(s)` });
   if (flags.json) printJson(report);
-  else print(renderPromote(report));
+  else print(renderPromote(report, require('../config').gitActionsOn(config)));
   return 0;
 }
 

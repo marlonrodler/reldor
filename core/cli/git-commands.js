@@ -78,9 +78,27 @@ async function commitCommand(root, flags, args) {
     print([...out, '', 'Nenhuma mudança sua desde a foto. Nada para commitar.']);
     return 0;
   }
-  if (flags['dry-run']) {
-    print([...out, '', '➡️  Para incluir um arquivo da org inteiro: --include caminho/do/arquivo', '➡️  Para commitar: reldor commit -m "mensagem"']);
+  const { config } = require('../config').loadConfig(root);
+  const actions = require('../config').gitActionsOn(config);
+  if (flags['dry-run'] || (!actions && !flags.stage)) {
+    const tail = actions
+      ? ['', '➡️  Para incluir um arquivo da org inteiro: --include caminho/do/arquivo', '➡️  Para commitar: reldor commit -m "mensagem"']
+      : ['', 'ℹ️  As ações de Git estão desligadas: quem commita é a sua ferramenta (ex.: o plugin de fluxo do time).',
+        '➡️  Para deixar só as suas linhas prontas no stage, sem commitar: reldor commit --stage',
+        '   Atenção: se a sua ferramenta rodar "git add -A", ela junta tudo de novo. Avise antes de commitar.'];
+    print([...out, ...tail]);
     return 0;
+  }
+  if (flags.stage) {
+    if (!(await confirm('\n🛡️ Deixar no stage só esses arquivos e linhas (sem commitar)?', flags))) {
+      print('Cancelado. Nada foi alterado.');
+      return 0;
+    }
+    const { staged, failed } = snapshotApi.stageCleanCommit(root, snapshot, plan);
+    logAction(root, 'stage', { summary: `${staged.length} arquivo(s) seus no stage` });
+    if (flags.json) printJson({ staged, failed, fromOrg: plan.fromOrg });
+    else print(['', `✅ ${staged.length} arquivo(s) no stage, só com as suas linhas. Agora é só commitar pelo seu fluxo.`, ...(failed.length ? ['⚠️ Ficaram fora (as suas linhas encostam nas da org):', ...failed.map((f) => `   ${f}`)] : [])]);
+    return staged.length ? 0 : 1;
   }
   if (!message) {
     print([...out, '', '⚠️ Informe a mensagem: reldor commit -m "mensagem"']);

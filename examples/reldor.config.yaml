@@ -32,6 +32,8 @@ spec:
 
 # Commit limpo e Git
 git:
+  actions: off              # off: o Reldor só confere e avisa (branch, commit, merge e PR ficam com a sua ferramenta, ex.: o plugin de fluxo do time)
+                            # on: o Reldor também pode fazer o commit limpo, sempre com confirmação
   clean_commit: true
   pre_commit_hook: true
   smart_merge: suggest      # off | suggest | auto

@@ -10,7 +10,7 @@ O último ambiente (produção) sempre fica com deploy bloqueado.
 
 ## Quando usar
 
-Diga "quero usar o Reldor" num projeto novo e a IA roda por você, fazendo as três perguntas no chat. No terminal: `reldor init`, ou `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds`.
+Diga "quero usar o Reldor" num projeto novo e a IA roda por você, fazendo as perguntas no chat (ambientes, org de referência, design system e se vocês já têm uma ferramenta que cria branch, commita e abre PR: se sim, as ações de Git do Reldor ficam desligadas). No terminal: `reldor init`, ou `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds --git-actions off`.
 
 ## Está funcionando se
 

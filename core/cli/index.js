@@ -13,7 +13,7 @@ const pkg = require('../../package.json');
 
 const COMMANDS = {
   status: { run: statusCommand, help: 'Mostra a etapa atual e o próximo passo (--json, --fetch)' },
-  init: { run: initCommand, help: 'Configura o Reldor neste projeto (--yes, --envs, --org, --design-system)' },
+  init: { run: initCommand, help: 'Configura o Reldor neste projeto (--yes, --envs, --org, --design-system, --git-actions on|off)' },
   log: { run: logCommand, help: 'Mostra o histórico de ações do Reldor (--json)' },
   index: { run: indexCommand, help: 'Monta ou atualiza o índice do projeto (--full, --json)' },
   explain: { run: explainCommand, help: 'O que acontece quando um registro é salvo: reldor explain <Objeto> [--event insert|update|delete]' },

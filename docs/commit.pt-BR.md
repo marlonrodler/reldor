@@ -12,6 +12,8 @@ O `retrieve` tira a foto por você: ele confirma a org, avisa quando há trabalh
 
 O `hook install` coloca um gancho pre-commit em `.git/hooks`. Ele roda em **todo** commit, inclusive nos feitos na mão, e barra duas coisas: entradas duplicadas em profiles, permission sets e outros XMLs, e arquivos que só vieram da org.
 
+**Com as ações de Git desligadas** (o padrão, quando outra ferramenta commita por você), o `reldor commit` só mostra o plano. O `reldor commit --stage` deixa só as suas linhas no stage, sem commitar, para a sua ferramenta fazer o commit. Um `git add -A` dessa ferramenta junta tudo de novo.
+
 ## Quando usar
 
 Diga "quero commitar" e a IA roda por você: primeiro o `--dry-run` para mostrar "seus / só suas linhas / da org", depois o commit. No terminal: `reldor retrieve`, depois `reldor commit -m "mensagem"`. Instale o gancho uma vez por projeto com `reldor hook install`.

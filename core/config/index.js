@@ -16,7 +16,9 @@ const DEFAULTS = Object.freeze({
   reference_org: null,
   index: { refresh_hours: 24, depth: 2 },
   spec: { generator: null, path: '.kiro/specs' },
-  git: { clean_commit: true, pre_commit_hook: true, smart_merge: 'suggest', rerere: true },
+  // actions: off = Reldor only checks and advises; your own flow (e.g. the team's flow plugin) creates branches, commits,
+  // merges and PRs. on = Reldor may also commit, with confirmation.
+  git: { actions: 'off', clean_commit: true, pre_commit_hook: true, smart_merge: 'suggest', rerere: true },
   advisors: { mode: 'ask', enabled: ['spec-review', 'automation-design', 'lwc-ux'], design_system: null },
   test_radar: { auto_run: 'ask' },
   automations: [],
@@ -83,4 +85,9 @@ function saveConfig(root, config) {
   return p.config;
 }
 
-module.exports = { DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };
+/** True when Reldor may run Git actions itself (commit, branch, merge). */
+function gitActionsOn(config) {
+  return String(config?.git?.actions || 'off').toLowerCase() === 'on';
+}
+
+module.exports = { gitActionsOn, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };

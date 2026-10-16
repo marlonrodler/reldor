@@ -12,6 +12,8 @@ It works **line by line**. If the retrieve changed a class and you changed other
 
 `hook install` adds a pre-commit guard to `.git/hooks`. It runs on **every** commit, including the ones you make by hand, and blocks two things: duplicated entries in profiles, permission sets and other XML, and files that only came from the org.
 
+**When Git actions are off** (the default, when another tool commits for you), `reldor commit` only shows the plan. `reldor commit --stage` leaves only your lines in the stage, without committing, for your tool to commit. A `git add -A` by that tool joins everything again.
+
 ## When to reach for it
 
 Say "I want to commit" and the AI runs it for you: first `--dry-run` to show you "yours / only your lines / from the org", then the commit. In the terminal: `reldor retrieve`, then `reldor commit -m "message"`. Install the guard once per project with `reldor hook install`.

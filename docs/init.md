@@ -10,7 +10,7 @@ The last environment (production) is always marked as blocked for deploys.
 
 ## When to reach for it
 
-Say "I want to use Reldor" in a new project and the AI runs it for you, asking the three questions in the chat. In the terminal: `reldor init`, or `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds`.
+Say "I want to use Reldor" in a new project and the AI runs it for you, asking the questions in the chat (environments, reference org, design system, and whether you already have a tool that creates branches, commits and opens PRs: if yes, Reldor's Git actions stay off). In the terminal: `reldor init`, or `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds --git-actions off`.
 
 ## It's working if
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const gitApi = require('../git');
-const { loadConfig } = require('../config');
+const { loadConfig, gitActionsOn } = require('../config');
 const { findSpecs, specForBranch } = require('../spec');
 const { loadModules } = require('../modules');
 
@@ -57,7 +57,7 @@ function buildStatus(root, options = {}) {
   const status = {
     root,
     config: { exists, file },
-    git: { repo, branch, pending },
+    git: { repo, branch, pending, actions: gitActionsOn(config) ? 'on' : 'off' },
     environments: repo ? environmentStatus(root, config.environments || [], branch) : { configured: false, items: [] },
     spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },
     modules: modules.map(({ mod, facts }) => ({ name: mod.name, label: mod.label, facts })),

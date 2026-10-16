@@ -122,12 +122,20 @@ async function initCommand(root, flags) {
       designSystem = /^n/i.test(answer) ? await ask(rl, 'Qual design system a equipe usa?', 'próprio') : 'slds';
     }
 
+    let gitActions = flags['git-actions'];
+    if (!gitActions) {
+      const answer = await ask(rl, 'Vocês já usam uma ferramenta que cria branch, commita, faz merge e abre PR (ex.: o plugin de fluxo do time)? (s/n)', 's');
+      gitActions = /^n/i.test(answer) ? 'on' : 'off';
+    }
+    gitActions = /^(on|sim|s|true)$/i.test(String(gitActions)) ? 'on' : 'off';
+
     const config = {
       ...(flags.language ? { language: flags.language } : {}),
       modules: modules.length ? modules.map((m) => m.mod.name) : DEFAULTS.modules,
       environments,
       reference_org: referenceOrg,
       advisors: { ...DEFAULTS.advisors, design_system: designSystem },
+      git: { ...DEFAULTS.git, actions: gitActions },
     };
     const file = saveConfig(root, config);
     writeProfile(root, { modules, designSystem, specs });
@@ -146,7 +154,10 @@ async function initCommand(root, flags) {
     if (ignored) done.push('• Linhas no .gitignore para os arquivos locais do Reldor');
     if (environments.length) done.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}; deploy em ${environments[environments.length - 1].name} bloqueado`);
     else done.push('⚠️ Nenhum ambiente configurado. Rode de novo com --envs quando souber as branches.');
-    done.push('', '💡 Proteção nos commits feitos na mão: reldor hook install');
+    done.push(gitActions === 'on'
+      ? '• Ações de Git ligadas: o Reldor pode fazer o commit limpo, sempre pedindo confirmação'
+      : '• Ações de Git desligadas: o Reldor só confere e avisa; branch, commit, merge e PR ficam com a sua ferramenta');
+    done.push('', '💡 Proteção nos commits (inclusive os feitos pela sua ferramenta): reldor hook install');
     done.push('💡 Conflito de profile resolvido item a item no git merge: reldor merge install');
     done.push('', '➡️  Próximo passo: rode "reldor status" ou peça à sua IA: "quero usar o Reldor".');
     print(done);

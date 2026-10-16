@@ -148,6 +148,7 @@ Todas as skills são **acionadas pela IA**: ela usa quando a conversa pede.
 - Lê **apenas metadados**, nunca registros.
 - Tokens e credenciais ficam **fora do repositório**.
 - Toda ação fica num **histórico local** (`reldor log`).
+- **Ações de Git desligadas por padrão**: o Reldor confere e avisa, e criar branch, commitar, fazer merge e abrir PR ficam com o seu fluxo (por exemplo, o plugin de fluxo do time). O `reldor init` pergunta; ligue só se vocês não tiverem uma ferramenta para isso.
 - Deploy em produção **bloqueado por padrão**. Ações em quadros de tasks **desligadas por padrão**.
 - Nada de cliente mora no Reldor: times, prefixos e orgs ficam num perfil dentro do repositório do próprio cliente.
 

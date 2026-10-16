@@ -54,12 +54,22 @@ test('clean commit: only your lines go in, what the retrieve brought stays out',
   assert.deepEqual(plan.mixed, [`${CLS}/ScoreJob.cls`]);
   assert.deepEqual(plan.fromOrg.sort(), [`${CLS}/ContaController.cls`, `${CLS}/VeioDaOrg.cls`]);
 
+  // Git actions are off by default: Reldor does not commit, it can only stage your lines.
+  const head = git(dir, ['rev-parse', 'HEAD']).stdout;
+  assert.match(reldor(dir, ['commit', '-m', 'x', '--yes']).stdout, /ações de Git estão desligadas/);
+  assert.equal(reldor(dir, ['commit', '--stage', '--yes']).status, 0);
+  assert.equal(git(dir, ['rev-parse', 'HEAD']).stdout, head, 'nothing was committed');
+  assert.deepEqual(git(dir, ['diff', '--cached', '--name-only']).stdout.trim().split('\n').sort(), [`${CLS}/MinhaClasse.cls`, `${CLS}/ScoreJob.cls`]);
+  git(dir, ['reset', '-q']);
+
+  fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'git:\n  actions: on\n');
   const c = reldor(dir, ['commit', '-m', 'minha feature', '--yes']);
   assert.equal(c.status, 0, c.stdout + c.stderr);
   const committed = git(dir, ['show', `HEAD:${CLS}/ScoreJob.cls`]).stdout;
   assert.match(committed, /minha mudança/, 'your line is in');
   assert.doesNotMatch(committed, /with sharing class ScoreJob/, 'the org line is out');
-  const files = git(dir, ['show', '--name-only', '--format=', 'HEAD']).stdout.trim().split('\n').sort();
+  const files = git(dir, ['show', '--name-only', '--format=', 'HEAD']).stdout.trim().split('\n').filter((f) => !f.startsWith('.reldor/')).sort();
   assert.deepEqual(files, [`${CLS}/MinhaClasse.cls`, `${CLS}/ScoreJob.cls`]);
 
   const again = JSON.parse(reldor(dir, ['commit', '--dry-run', '--json']).stdout).plan;
