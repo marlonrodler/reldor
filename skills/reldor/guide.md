@@ -16,6 +16,7 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "dá um retrieve" | `reldor retrieve [--metadata X] --yes --org <alias>` (depois de confirmar a org) | Diga se o que veio conta como seu ou da org |
 | "fiz retrieve por fora" | `reldor snapshot` | Explique que o que está na pasta agora conta como da org |
 | "quero commitar" | `reldor xml` → `reldor commit --dry-run --json` → `reldor commit -m "..." --yes` | Mostre o que é seu, o que é misto e o que veio da org |
+| "tem algum problema de segurança?" / antes de commitar código | `reldor security --json` | Prioridade alta primeiro, com como corrigir |
 | "organiza os profiles" | `reldor xml [--all]` | Mostre duplicados removidos e conflitos para decidir |
 | "quero subir para <ambiente>" | `reldor collisions` → `reldor promote` | Mostre conflitos, dependências e ordem |
 | "rollback da PR…" | `reldor rollback` | Mostre o plano e os riscos; não execute sozinho |

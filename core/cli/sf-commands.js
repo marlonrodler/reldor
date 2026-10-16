@@ -10,6 +10,7 @@ const { checkQueries } = require('../../modules/sf/checks/queries');
 const { buildRadar } = require('../../modules/sf/test-radar');
 const { refineBrief, renderBrief } = require('../../modules/sf/refine');
 const xmlOrganizer = require('../../modules/sf/xml');
+const security = require('../../modules/sf/security');
 const { organizeXml } = require('../../modules/sf/xml/organize');
 const snapshotApi = require('../git/snapshot');
 const gitApi = require('../git');
@@ -346,6 +347,49 @@ async function retrieveCommand(root, flags) {
   return 0;
 }
 
+const SEV_ICON = { alta: '🔴', 'média': '🟡', baixa: '⚪' };
+
+function renderSecurity(r) {
+  const out = ['\n🛡️  Revisão de segurança', '', `• ${r.files} arquivo(s) analisado(s) · 🔴 ${r.counts.alta} alta · 🟡 ${r.counts['média']} média · ⚪ ${r.counts.baixa} baixa`];
+  if (!r.findings.length) out.push('', '✅ Nenhum problema de segurança encontrado nesses arquivos.');
+  for (const sev of ['alta', 'média', 'baixa']) {
+    const list = r.findings.filter((f) => f.severity === sev);
+    if (!list.length) continue;
+    out.push('', `${SEV_ICON[sev]} Prioridade ${sev}:`);
+    for (const f of list) {
+      out.push(`   • ${f.file || ''}${f.line ? `:${f.line}` : ''} — ${f.message}${f.source === 'code-analyzer' ? ` [${f.rule}]` : ''}`);
+      if (f.path) out.push(`     caminho: ${f.path.join(' → ')}`);
+      if (f.fix) out.push(`     ➜ ${f.fix}`);
+    }
+  }
+  out.push('', r.analyzer.ran ? '✅ Regras oficiais do Salesforce Code Analyzer incluídas.' : `ℹ️  ${r.analyzer.note || 'Code Analyzer não executado (--no-analyzer).'}`);
+  out.push('ℹ️  Esta revisão não substitui pentest nem a análise da equipe de segurança.');
+  return out;
+}
+
+function securityCommand(root, flags, args) {
+  if (!requireSfProject(root)) return 1;
+  const { config } = loadConfig(root);
+  const { readProject } = require('../../modules/sf');
+  let files = args;
+  if (flags.all) files = security.allScannable(root, readProject(root).packageDirectories);
+  else if (!files.length) files = changedFiles(root, config, { base: flags.base }).filter((c) => c.status !== 'deleted').map((c) => c.file).filter((f) => security.isScannable(f));
+  const { model } = freshModel(root, flags);
+  const result = security.securityReview(root, files, {
+    model,
+    sensitiveTerms: config.security?.sensitive_terms,
+    strictSharing: Boolean(config.security?.strict_sharing),
+    analyzer: !flags['no-analyzer'],
+  });
+  logAction(root, 'security', { summary: `${files.length} arquivo(s): ${result.counts.alta} alta, ${result.counts['média']} média` });
+  if (flags.json) printJson(result);
+  else print(renderSecurity(result));
+  const failOn = flags['fail-on'];
+  if (failOn === 'alta' && result.counts.alta) return 1;
+  if (failOn === 'média' && (result.counts.alta || result.counts['média'])) return 1;
+  return 0;
+}
+
 function checkCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
   const { model } = freshModel(root, flags);
@@ -356,4 +400,4 @@ function checkCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, loadConfig };
+module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, loadConfig };

@@ -5,7 +5,7 @@ const { findProjectRoot } = require('../config');
 const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { logCommand } = require('./log');
-const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand } = require('./sf-commands');
+const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand } = require('./sf-commands');
 const { snapshotCommand, commitCommand, hookCommand } = require('./git-commands');
 const pkg = require('../../package.json');
 
@@ -23,6 +23,7 @@ const COMMANDS = {
   hook: { run: hookCommand, help: 'Instala o gancho pre-commit do Reldor (install | uninstall)' },
   precommit: { run: precommitCommand, help: 'Checagem usada pelo gancho pre-commit' },
   xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check, [arquivos])' },
+  security: { run: securityCommand, help: 'Revisão de segurança das mudanças (--all, --no-analyzer, --fail-on alta|média)' },
   check: { run: checkCommand, help: 'Checagem de queries: campo lido fora da SOQL/Selector (reldor check [Classe...])' },
   usages: { run: usagesCommand, help: 'Onde algo é usado: reldor usages <Classe | Classe.metodo | Objeto.Campo__c | Objeto>' },
 };

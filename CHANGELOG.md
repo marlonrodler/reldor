@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0
+
+- `reldor security`: security review of the changed files (or `--all`): SOQL injection (values from outside the
+  method concatenated into dynamic queries), CRUD/FLS on exposed methods, sharing on entry points, sensitive data in
+  `System.debug`, secrets and fixed or plain-http endpoints, weak hashes, fixed record IDs, LWC and Visualforce XSS,
+  flows in system mode without sharing, guest profiles with too much access.
+- Path findings: an exposed method that reaches, through the call chain, a `without sharing` class that reads or
+  writes data.
+- Runs the Salesforce Code Analyzer security rules too, when installed. `// reldor-ignore: <rule>` silences a finding.
+- Calibrated on public Salesforce projects to cut false positives.
+
 ## 0.4.0
 
 - `reldor retrieve`: confirms the org, warns about uncommitted work, and takes a snapshot after a broad retrieve

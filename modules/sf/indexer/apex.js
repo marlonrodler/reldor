@@ -221,6 +221,9 @@ function parseApexClass(name, source) {
     async: /@future/i.test(code) || /System\.enqueueJob|Database\.executeBatch|System\.schedule/i.test(code),
     strings: unique(strings.filter((s) => /^[A-Za-z_]\w{2,}$/.test(s))).slice(0, 50),
   };
+  const sharingDecl = /\b((?:with|without|inherited)\s+sharing)\s+class\b/i.exec(code.slice(0, code.search(/\{/) + 1 || 400));
+  info.sharing = sharingDecl ? sharingDecl[1].toLowerCase().replace(/\s+/, ' ') : 'none';
+  info.exposed = /@AuraEnabled|@RestResource|\bwebservice\b|@InvocableMethod|@RemoteAction/i.test(code);
   const ext = code.match(/\bclass\s+\w+\s+extends\s+(\w+)/i);
   info.extendsName = ext ? ext[1] : null;
   const phases = handlerRefs(code);

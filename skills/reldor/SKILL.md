@@ -25,7 +25,7 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`.
+`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`.
 Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
 
@@ -41,6 +41,13 @@ diga que ainda está em construção e ajude do jeito tradicional, sem inventar 
 - Se houver campo fora da query, avise antes de tudo: é erro em produção.
 - Para rodar, **pergunte a org** e só então use `reldor test-radar --run --yes --org <alias>`. Nunca em produção.
 - Explique que o `--run` é uma validação sem salvar: nada muda na org.
+
+## Segurança
+- Antes de commitar mudanças em Apex, LWC, Visualforce, flows ou profiles, rode `reldor security --json`.
+- Mostre primeiro os itens de prioridade alta, com arquivo:linha e como corrigir. Ofereça corrigir.
+- Para "caminho-sem-sharing", mostre o caminho inteiro (da tela até a classe).
+- Diga que não substitui pentest nem a equipe de segurança. Nunca esconda um achado para parecer mais simples.
+- Um achado aceito de propósito se cala com o comentário `// reldor-ignore: <regra>` na linha ou acima dela.
 
 ## Retrieve e commit
 - Retrieve sempre pelo `reldor retrieve`: ele confirma a org, avisa se há trabalho não commitado e tira a foto.

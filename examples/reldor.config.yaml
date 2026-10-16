@@ -47,6 +47,11 @@ advisors:
   enabled: [spec-review, automation-design, lwc-ux]
   design_system: slds       # perguntado uma vez no init
 
+# Revisão de segurança
+security:
+  sensitive_terms: [cpf, cnpj, rg, senha, password, token, saldo, cartao, agencia]
+  strict_sharing: false     # true: aponta toda classe sem declaração de sharing
+
 # Radar de testes
 test_radar:
   auto_run: ask             # ask | always | never

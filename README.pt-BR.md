@@ -8,7 +8,7 @@ A IA já escreve código Salesforce rápido. O que ela não faz é enxergar a or
 
 O Reldor resolve isso com uma regra: **scripts fazem o trabalho pesado e confiável; a IA só explica e conduz.** Ele monta um índice do projeto, segue a ordem de execução real e conversa com você pela IA que você já usa (Kiro ou Claude Code). Você não decora comandos: diz o que quer.
 
-> **Status:** Fase 1 concluída; Fase 2 em andamento: commit limpo, organizador de XML e gancho pre-commit já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
+> **Status:** Fase 1 concluída; Fase 2 em andamento: revisão de segurança, commit limpo, organizador de XML e gancho pre-commit já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
 
 ## Instalação (5 minutos)
 
@@ -85,7 +85,13 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 **A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) e um gancho pre-commit (já disponíveis); depois, merge que entende Salesforce e ensaio de promoção 🚧.
 
-### #4: Telas e automações no improviso
+### #4: Brechas de segurança que ninguém viu
+
+**O problema.** Um método de tela que lê dados sem checar permissão, uma query montada concatenando o que o usuário digitou, um `System.debug` com CPF, uma classe que ignora o compartilhamento a três chamadas da tela. Num banco, qualquer uma dessas vira incidente.
+
+**A solução.** O [`security`](./docs/security.pt-BR.md) revisa as suas mudanças antes do commit: regras do próprio Reldor e, quando instalado, o Salesforce Code Analyzer oficial. Ele também segue o **caminho**: da tela ou da API até uma classe `without sharing` que mexe em dados, algo que um scanner arquivo por arquivo não enxerga.
+
+### #5: Telas e automações no improviso
 
 **O problema.** A IA já sai codando: mais uma trigger num objeto que já tem uma, `@future` onde cabe Queueable, tela feita com HTML na mão.
 
@@ -114,6 +120,7 @@ Você quase não digita: a IA roda por você.
 | [`reldor refine`](./docs/refine.pt-BR.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho | ✅ |
 | [`reldor test-radar`](./docs/test-radar.pt-BR.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |
 | [`reldor check`](./docs/check.pt-BR.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
+| [`reldor security`](./docs/security.pt-BR.md) | Revisão de segurança das mudanças: SOQL injection, CRUD/FLS, sharing, logs sensíveis, segredos, XSS, flows, acesso de convidado | ✅ |
 | [`reldor retrieve`](./docs/commit.pt-BR.md) | Retrieve com confirmação da org; tira a foto para o commit limpo | ✅ |
 | [`reldor commit`](./docs/commit.pt-BR.md) | Commit limpo: só as suas linhas, até em arquivos que o retrieve também mudou | ✅ |
 | [`reldor xml`](./docs/xml.pt-BR.md) | Ordena e remove duplicados em profiles, permission sets, labels, sharing rules, package.xml | ✅ |
@@ -144,7 +151,7 @@ Um **núcleo** genérico e um **módulo** por tecnologia. Salesforce é o primei
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, org, advisors (+ planejados: merge, promote, rollback)
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, org, advisors (+ planejados: merge, promote, rollback)
 skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```
