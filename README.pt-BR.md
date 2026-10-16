@@ -83,7 +83,7 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 **O problema.** Duas pessoas adicionam classes diferentes no mesmo profile e o Git oferece "tudo ou nada". Um retrieve mistura a org com o seu trabalho. Uma promoção falha porque um campo só existe em develop.
 
-**A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) um gancho pre-commit, um [merge inteligente](./docs/promote.pt-BR.md#merge-inteligente) que junta profiles e permission sets item a item dentro do `git merge`, e um [ensaio de promoção](./docs/promote.pt-BR.md) que acha conflitos, commits fora de ordem e campos que só existem na develop antes da pull request. Um [radar de colisão](./docs/collisions.pt-BR.md) avisa quando outra branch aberta mexe nos seus arquivos, e um [plano de rollback](./docs/rollback.pt-BR.md) desfaz uma PR com o revert, o `destructiveChanges.xml` e os riscos.
+**A solução.** O [`clean`](./docs/clean.pt-BR.md) deixa na pasta só o seu trabalho antes de qualquer ferramenta commitar. Um [merge assistido](./docs/merge.pt-BR.md) faz o `git merge` na branch de merge e resolve os conflitos mantendo o destino e aplicando só a sua mudança, e depois confere se **entrou só o seu**. Um [ensaio de promoção](./docs/promote.pt-BR.md) acha commits fora de ordem e campos que só existem na develop antes da pull request. E mais um [organizador de XML](./docs/xml.pt-BR.md), um gancho pre-commit e um [plano de rollback](./docs/rollback.pt-BR.md) com o revert, o `destructiveChanges.xml` e os riscos.
 
 ### #4: Brechas de segurança e código copiado que ninguém viu
 
@@ -124,13 +124,13 @@ Você quase não digita: a IA roda por você.
 | [`reldor check`](./docs/check.pt-BR.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
 | [`reldor security`](./docs/security.pt-BR.md) | Revisão de segurança das mudanças: SOQL injection, CRUD/FLS, sharing, logs sensíveis, segredos, XSS, flows, acesso de convidado | ✅ |
 | [`reldor retrieve`](./docs/commit.pt-BR.md) | Retrieve com confirmação da org; tira a foto para o commit limpo | ✅ |
+| [`reldor clean`](./docs/clean.pt-BR.md) | Antes do commit: deixa na pasta só o seu trabalho; o que veio da org vai para um stash | ✅ |
 | [`reldor commit`](./docs/commit.pt-BR.md) | Commit limpo: só as suas linhas, até em arquivos que o retrieve também mudou | ✅ |
 | [`reldor quality`](./docs/quality.pt-BR.md) | Código que a sua mudança repete (blocos, queries, métodos, textos) mais PMD e CPD | ✅ |
 | [`reldor xml`](./docs/xml.pt-BR.md) | Ordena e remove duplicados em profiles, permission sets, labels, sharing rules, package.xml | ✅ |
 | [`reldor hook install`](./docs/commit.pt-BR.md) | Gancho pre-commit, inclusive para commits feitos na mão | ✅ |
-| [`reldor promote`](./docs/promote.pt-BR.md) | Ensaio de promoção: commits, ordem, commits de outras pessoas, conflitos, dependências faltando | ✅ |
-| [`reldor merge install`](./docs/promote.pt-BR.md#merge-inteligente) | Merge inteligente de profiles, permission sets, labels... dentro do `git merge`, mais o `rerere` | ✅ |
-| [`reldor collisions`](./docs/collisions.pt-BR.md) | Outras branches abertas mexendo nos mesmos arquivos que a sua, com o risco | ✅ |
+| [`reldor promote`](./docs/promote.pt-BR.md) | Ensaio de promoção: ordem dos commits, commits de outras pessoas, dependências faltando | ✅ |
+| [`reldor merge`](./docs/merge.pt-BR.md) | Merge assistido na branch de merge: resolve os conflitos e confere se entrou só o seu | ✅ |
 | [`reldor rollback`](./docs/rollback.pt-BR.md) | Plano de rollback de uma PR: revert, `destructiveChanges.xml`, riscos | ✅ |
 
 ### Skills

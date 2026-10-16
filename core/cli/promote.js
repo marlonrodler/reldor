@@ -41,20 +41,8 @@ function renderPromote(r, actions = false) {
     for (const c of r.foreign.commits.slice(0, 8)) out.push(`   ${c.hash} ${c.subject} (${c.author})`);
     out.push('   ➜ Se veio de um merge ou pull de outro ambiente na sua branch, recrie a branch a partir da master só com os seus commits (git cherry-pick). Se é alguém do seu par, tudo certo.');
   }
-  const xmlOk = r.conflicts.filter((c) => c.kind === 'metadado' && c.resolvable);
-  const xmlBad = r.conflicts.filter((c) => c.kind === 'metadado' && !c.resolvable);
-  const lineBad = r.conflicts.filter((c) => c.kind === 'linha');
-  if (xmlOk.length) {
-    out.push('', `🟢 ${xmlOk.length} conflito(s) do Git em metadados que o Reldor resolve item a item:`);
-    for (const c of xmlOk) out.push(`   ${c.file}`);
-    if (!r.driver) out.push('   ➜ Ligue o merge inteligente uma vez (reldor merge install) e o `git merge` já resolve sozinho.');
-  }
-  if (xmlBad.length || lineBad.length) {
-    problems += 1;
-    out.push('', `🟡 ${xmlBad.length + lineBad.length} conflito(s) que você vai resolver na branch de merge (não na sua branch):`);
-    for (const c of xmlBad) out.push(`   ${c.file}: ${c.items.map((i) => `${i.section} ${i.key}`).join(', ')} (os dois lados mudaram o mesmo item)`);
-    for (const c of lineBad) out.push(`   ${c.file}`);
-    out.push(r.rerere ? '   ➜ É só para não ser surpresa. O rerere está ligado: o Git lembra a sua resolução nos próximos ambientes.' : '   ➜ É só para não ser surpresa. Ligue o rerere (reldor merge install) para o Git lembrar a sua resolução nos próximos ambientes.');
+  if (r.conflicts.length) {
+    out.push('', `ℹ️  ${r.conflicts.length} arquivo(s) vão dar conflito no git merge. Na branch de merge, o "reldor merge ${r.source}" resolve mantendo o destino e aplicando a sua mudança; os casos difíceis ficam para você revisar.`);
   }
   if (r.missing.length) {
     problems += 1;
@@ -70,7 +58,7 @@ function renderPromote(r, actions = false) {
   } else {
     if (!problems) out.push(`✅ Pronto para ${r.env}. Próximo passo, no fluxo do time:`);
     else out.push('Quando estiver tudo certo, o próximo passo é:');
-    out.push(`   git checkout -b merge/${String(r.source).replace(/[^\w.-]+/g, '-')}-${r.env} ${r.targetRef}`, `   git merge ${r.source}`, `   e abra a PR para ${r.branch}.`);
+    out.push(`   git checkout -b merge/${String(r.source).replace(/[^\w.-]+/g, '-')}-${r.env} ${r.targetRef}`, `   reldor merge ${r.source}   (merge assistido: resolve os conflitos e confere se entrou só o seu)`, `   e abra a PR para ${r.branch}.`);
   }
   out.push('', 'ℹ️  Conflito de merge se resolve na branch de merge. Correção de código vai na sua branch de desenvolvimento.');
   return out;

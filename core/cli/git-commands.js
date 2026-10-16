@@ -179,6 +179,108 @@ function hookCommand(root, flags, args) {
 }
 
 
+
+/**
+ * reldor clean: before any tool commits, leave in the folder only what is yours.
+ * What came from the org goes into a stash ("reldor clean"), so `git add -A` by any tool takes only your work.
+ */
+async function cleanCommand(root, flags) {
+  if (!gitApi.isRepo(root)) {
+    process.stderr.write('⚠️ Esta pasta não é um repositório Git.\n');
+    return 1;
+  }
+  if (flags.undo) {
+    const list = run('git', ['stash', 'list', '--format=%gd%x09%s'], { cwd: root }).stdout.split('\n').filter(Boolean);
+    const mine = list.find((l) => l.includes('reldor clean'));
+    if (!mine) {
+      print('⚠️ Não achei nenhuma limpeza do Reldor para desfazer.');
+      return 1;
+    }
+    const ref = mine.split('\t')[0];
+    const g = (args) => run('git', args, { cwd: root });
+    const W = g(['rev-parse', ref]).stdout;
+    const hasUntracked = g(['rev-parse', '-q', '--verify', `${W}^3`]).ok;
+    const back = [];
+    const skipped = [];
+    // Tracked files: put the org version back only where you did not change the file after the cleaning.
+    for (const f of g(['diff', '--name-only', `${W}^1`, W]).stdout.split('\n').filter(Boolean)) {
+      const full = path.join(root, f);
+      const now = fs.existsSync(full) ? g(['hash-object', '--', f]).stdout : null;
+      const kept = g(['rev-parse', '-q', '--verify', `${W}^2:${f}`]).stdout || g(['rev-parse', '-q', '--verify', `${W}^1:${f}`]).stdout;
+      if (now === kept) {
+        g(['checkout', W, '--', f]);
+        back.push(f);
+      } else {
+        skipped.push(f);
+      }
+    }
+    // Files that only existed in the org part.
+    if (hasUntracked) {
+      for (const f of g(['ls-tree', '-r', '--name-only', `${W}^3`]).stdout.split('\n').filter(Boolean)) {
+        if (fs.existsSync(path.join(root, f))) skipped.push(f);
+        else {
+          g(['checkout', `${W}^3`, '--', f]);
+          back.push(f);
+        }
+      }
+    }
+    if (back.length) g(['reset', '-q', '--', ...back]);
+    if (!skipped.length) g(['stash', 'drop', ref]);
+    print([`🛡️  ${back.length} arquivo(s) da org voltaram para a pasta.`, ...(skipped.length ? [`⚠️ Estes você mudou depois da limpeza e ficaram como estão (o backup continua em ${ref}):`, ...skipped.map((f) => `   ${f}`)] : [])]);
+    return 0;
+  }
+  const snapshot = snapshotApi.loadSnapshot(root);
+  if (!snapshot) {
+    print([
+      '\n🛡️  Limpar antes do commit',
+      '',
+      'Não há foto de retrieve, então tudo que mudou na pasta é seu: não há nada para limpar.',
+      'Dica: faça o retrieve pelo Reldor (reldor retrieve) ou rode "reldor snapshot" logo depois de um retrieve.',
+    ]);
+    return 0;
+  }
+  const include = typeof flags.include === 'string' ? flags.include.split(',').map((x) => x.trim()).filter(Boolean) : [];
+  const plan = snapshotApi.planCleanCommit(root, snapshot, include);
+  const out = ['\n🛡️  Limpar antes do commit', ''];
+  out.push(...list('Seus arquivos (ficam)', plan.mine, '✅'));
+  out.push(...list('A org também mudou: ficam só as suas linhas', plan.mixed, '✂️ '));
+  out.push(...list('Incluídos inteiros, a seu pedido', plan.whole, '📥'));
+  out.push(...list('Vieram só da org (saem da pasta)', plan.fromOrg, '⬜'));
+  if (!plan.mixed.length && !plan.fromOrg.length) {
+    snapshotApi.clearSnapshot(root);
+    print([...out, '', '✅ Nada da org para tirar: a pasta já só tem o seu.']);
+    return 0;
+  }
+  if (flags['dry-run']) {
+    if (flags.json) printJson({ plan });
+    else print([...out, '', '➡️  Para limpar: reldor clean']);
+    return 0;
+  }
+  if (!flags.json) print(out);
+  if (!(await confirm('\n🛡️ Tirar da pasta o que veio da org (fica guardado num stash, dá para desfazer)?', flags))) {
+    print('Cancelado. Nada foi alterado.');
+    return 0;
+  }
+  const { staged, failed } = snapshotApi.stageCleanCommit(root, snapshot, plan);
+  if (failed.length) {
+    run('git', ['reset', '-q'], { cwd: root });
+    print(['❌ Nestes arquivos as suas linhas encostam nas da org, e não dá para separar com segurança. Nada foi alterado:', ...failed.map((f) => `   ${f}`), '   Use --include <arquivo> para manter o arquivo inteiro, ou separe à mão.']);
+    return 1;
+  }
+  const stash = run('git', ['stash', 'push', '--keep-index', '--include-untracked', '-m', 'reldor clean: o que veio da org'], { cwd: root });
+  if (!stash.ok) {
+    print(['❌ Não consegui guardar o que veio da org:', stash.stderr || stash.stdout]);
+    return 1;
+  }
+  run('git', ['reset', '-q'], { cwd: root }); // back to normal: your work is in the folder, nothing staged
+  snapshotApi.clearSnapshot(root);
+  logAction(root, 'clean', { summary: `${staged.length} arquivo(s) seus ficaram; ${plan.fromOrg.length + plan.mixed.length} limpo(s)` });
+  const done = ['', `✅ Pronto: a pasta tem só o seu (${staged.length} arquivo(s)). Pode commitar pelo seu fluxo (ex.: o plugin de fluxo do time).`, 'ℹ️  O que veio da org ficou guardado num stash. Para trazer de volta: reldor clean --undo'];
+  if (flags.json) printJson({ staged, stashed: [...plan.fromOrg, ...plan.mixed] });
+  else print(done);
+  return 0;
+}
+
 const MERGE_MARK = '# reldor-merge';
 const MERGE_PATTERNS = ['*.profile-meta.xml', '*.permissionset-meta.xml', '*.mutingpermissionset-meta.xml', '*.labels-meta.xml', '*.translation-meta.xml', '*.sharingRules-meta.xml', '*.globalValueSet-meta.xml', '*.standardValueSet-meta.xml', '*.objectTranslation-meta.xml', 'package.xml'];
 
@@ -212,7 +314,98 @@ function mergeDriverCommand(root, flags, args) {
 }
 
 /** reldor merge install|uninstall|status: registers the merge driver (local only) and rerere. */
+const ISSUE_TEXT = {
+  conflito: 'ainda tem marcação de conflito (<<<<<<<)',
+  'nao-e-seu': 'linhas entraram e não são da sua branch',
+  'removido-sem-ser-seu': 'linhas do destino sumiram sem a sua branch ter removido (se foi um conflito que você decidiu pela sua versão, está certo)',
+  'faltou-o-seu': 'linhas da sua branch não entraram',
+  'nao-removido': 'linhas que você removeu continuam lá',
+  'commits-de-outros': 'commits de outras pessoas estão indo junto (vieram para a sua branch)',
+};
+
+function renderVerify(v) {
+  const out = ['', v.ok ? `✅ Entrou só o seu: ${v.files} arquivo(s) conferido(s) linha a linha.` : '⚠️  Conferência "entrou só o seu?":'];
+  for (const i of v.issues) {
+    out.push(`   • ${i.file}: ${ISSUE_TEXT[i.kind]}`);
+    for (const l of i.lines.slice(0, 5)) out.push(`       ${l.length > 110 ? `${l.slice(0, 110)}…` : l}`);
+    if (i.lines.length > 5) out.push(`       … e mais ${i.lines.length - 5}`);
+  }
+  return out;
+}
+
+/** reldor merge <branch> | --check | --continue | --abort: assisted merge into the current (merge) branch. */
+async function assistedMergeCommand(root, flags, args) {
+  const assisted = require('../../modules/sf/merge/assisted');
+  const { config } = require('../config').loadConfig(root);
+  if (flags.abort) {
+    print(assisted.abortMerge(root) ? '🛡️  Merge desfeito. A branch voltou ao que era.' : '⚠️ Não havia merge para desfazer.');
+    return 0;
+  }
+  if (flags.check) {
+    const v = assisted.verifyMerge(root);
+    if (flags.json) printJson(v);
+    else print(['\n🛡️  Conferência do merge', ...renderVerify(v)]);
+    return v.ok ? 0 : 1;
+  }
+  if (flags.continue) {
+    const v = assisted.verifyMerge(root);
+    if (!flags.json) print(['\n🛡️  Conferência do merge', ...renderVerify(v)]);
+    if (!v.ok && !flags.force) {
+      print(['', 'Não commitei. Revise os pontos acima; se estiver certo assim, rode de novo com --force.']);
+      return 1;
+    }
+    if (!(await confirm('\n🛡️ Fazer o commit de merge agora?', flags))) {
+      print('Ok, não commitei. O merge continua em andamento.');
+      return 0;
+    }
+    const r = assisted.continueMerge(root);
+    if (!r.committed) {
+      print(['⚠️ Ainda há marcação de conflito em:', ...r.withMarkers.map((f) => `   ${f}`)]);
+      return 1;
+    }
+    logAction(root, 'merge-commit', { summary: r.commit });
+    if (flags.json) printJson({ ...r, verify: v });
+    else print(`✅ Commit de merge feito (${r.commit}). Agora é abrir a PR pelo seu fluxo.`);
+    return 0;
+  }
+  const branch = args[0];
+  if (!(await confirm(`\n🛡️ Fazer o merge de ${branch} nesta branch (${gitApi.currentBranch(root)}), sem commitar?`, flags))) {
+    print('Cancelado. Nada foi alterado.');
+    return 0;
+  }
+  const r = assisted.startMerge(root, branch, { environments: config.environments || [] });
+  logAction(root, 'merge', { summary: `${branch} → ${r.target}: ${r.resolved.length} resolvido(s), ${r.hard.length} para revisar` });
+  const v = r.upToDate ? null : assisted.verifyMerge(root);
+  if (flags.json) {
+    printJson({ ...r, verify: v });
+    return 0;
+  }
+  if (r.upToDate) {
+    print(`✅ Nada para juntar: ${r.target} já tem tudo de ${branch}.`);
+    return 0;
+  }
+  const out = [`\n🛡️  Merge assistido: ${branch} → ${r.target} (ainda sem commit)`, ''];
+  out.push(`• ${r.auto.length} arquivo(s) o Git juntou sem conflito.`);
+  if (r.resolved.length) {
+    out.push(`• ${r.resolved.length} conflito(s) resolvido(s) pelo Reldor (mantém o destino e aplica a sua mudança):`);
+    for (const x of r.resolved) out.push(`   ✅ ${x.file} (${x.how})`);
+  }
+  if (r.hard.length) {
+    out.push(`• ${r.hard.length} arquivo(s) para revisar (você e outra pessoa mudaram as mesmas linhas):`);
+    for (const h of r.hard) {
+      if (h.whole) out.push(`   ✋ ${h.file}: ${h.why}`);
+      else out.push(`   ✋ ${h.file}: ${h.conflicts.map((c) => (c.item ? c.item : `linha ${c.line}`)).join(', ')}`);
+    }
+  }
+  out.push(...renderVerify(v));
+  out.push('', r.hard.length ? '➡️  Resolva os ✋ (a IA pode fazer isso), depois: reldor merge --continue' : '➡️  Revise e, se estiver certo: reldor merge --continue (faz o commit de merge)');
+  out.push('   Para desistir: reldor merge --abort');
+  print(out);
+  return 0;
+}
+
 function mergeCommand(root, flags, args) {
+  if (flags.check || flags.continue || flags.abort || (args[0] && !['install', 'uninstall', 'status'].includes(args[0]))) return assistedMergeCommand(root, flags, args);
   const action = args[0] || 'status';
   const gitDir = path.resolve(root, run('git', ['rev-parse', '--git-dir'], { cwd: root }).stdout || '.git');
   const attrFile = path.join(gitDir, 'info', 'attributes');
@@ -259,4 +452,4 @@ function mergeCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { snapshotCommand, commitCommand, hookCommand, mergeCommand, mergeDriverCommand, HOOK, MERGE_PATTERNS };
+module.exports = { snapshotCommand, commitCommand, cleanCommand, hookCommand, mergeCommand, mergeDriverCommand, HOOK, MERGE_PATTERNS };

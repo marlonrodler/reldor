@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0
+
+- `reldor merge <branch>`: assisted merge into the merge branch. `git merge --no-ff --no-commit`, then every
+  conflict is resolved with the rule "keep the target, apply only our change": changes next to each other both go
+  in, insertions at the same spot keep both, removals leave the target, metadata XML is joined item by item. Only
+  the same lines changed on both sides are left for review (or for the AI).
+- "Did only yours go in?": `reldor merge --check` compares, line by line, what changed in the merge branch with what
+  your branch changed, and points out lines that are not yours, target lines that disappeared, missing lines,
+  leftover markers and other people's commits. `--continue` commits the merge after the check; `--abort` undoes it.
+- `reldor clean`: before any tool commits, leaves only your work in the folder; what came from the org goes to a
+  stash (`--undo` brings it back).
+- Removed from the warnings: conflicts (the assisted merge resolves them) and the collision radar (now hidden).
+
 ## 0.9.0
 
 - `reldor status` warns by itself: when the branch is not in the next environment yet, it runs a quick promotion

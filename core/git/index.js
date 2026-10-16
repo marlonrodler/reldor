@@ -2,8 +2,8 @@
 
 const { run } = require('../util/exec');
 
-function git(root, args) {
-  return run('git', args, { cwd: root });
+function git(root, args, options = {}) {
+  return run('git', args, { cwd: root, ...options });
 }
 
 function isRepo(root) {

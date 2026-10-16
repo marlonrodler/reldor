@@ -83,7 +83,7 @@ It detects the project, asks only what it cannot detect (environment branches, r
 
 **The problem.** Two people add different classes to the same profile and Git offers "all or nothing". A retrieve mixes the org into your work. A promotion fails because a field only exists in develop.
 
-**The fix.** [Clean commits](./docs/commit.md) that take only your lines, an [XML organizer](./docs/xml.md) a pre-commit guard, a [smart merge](./docs/promote.md#smart-merge) that joins profiles and permission sets item by item inside `git merge`, and a [promotion rehearsal](./docs/promote.md) that finds conflicts, out-of-order commits and fields that only exist in develop before the pull request. A [collision radar](./docs/collisions.md) warns when another open branch changes your files, and a [rollback plan](./docs/rollback.md) undoes a PR with the revert, the `destructiveChanges.xml` and the risks.
+**The fix.** [`clean`](./docs/clean.md) leaves only your work in the folder before any tool commits. An [assisted merge](./docs/merge.md) does the `git merge` into the merge branch and resolves the conflicts by keeping the target and applying only your change, then checks that **only yours went in**. A [promotion rehearsal](./docs/promote.md) finds out-of-order commits and fields that only exist in develop before the pull request. Plus an [XML organizer](./docs/xml.md), a pre-commit guard and a [rollback plan](./docs/rollback.md) with the revert, the `destructiveChanges.xml` and the risks.
 
 ### #4: Security holes and copied code nobody saw
 
@@ -124,13 +124,13 @@ You rarely type these: your AI runs them for you.
 | [`reldor check`](./docs/check.md) | Fields read outside the query (SOQL or selector) | ✅ |
 | [`reldor security`](./docs/security.md) | Security review of your changes: SOQL injection, CRUD/FLS, sharing, sensitive logs, secrets, XSS, flows, guest access | ✅ |
 | [`reldor retrieve`](./docs/commit.md) | Retrieve with org confirmation; takes the snapshot for the clean commit | ✅ |
+| [`reldor clean`](./docs/clean.md) | Before committing: leaves only your work in the folder; the org part goes to a stash | ✅ |
 | [`reldor commit`](./docs/commit.md) | Clean commit: only your lines, even in files the retrieve also changed | ✅ |
 | [`reldor quality`](./docs/quality.md) | Code your change repeats (copied blocks, queries, methods, texts) plus PMD and CPD | ✅ |
 | [`reldor xml`](./docs/xml.md) | Sorts and removes duplicates in profiles, permission sets, labels, sharing rules, package.xml | ✅ |
 | [`reldor hook install`](./docs/commit.md) | Pre-commit guard, also for commits made by hand | ✅ |
-| [`reldor promote`](./docs/promote.md) | Promotion rehearsal: commits, order, other people's commits, conflicts, missing dependencies | ✅ |
-| [`reldor merge install`](./docs/promote.md#smart-merge) | Smart merge of profiles, permission sets, labels... inside `git merge`, plus `rerere` | ✅ |
-| [`reldor collisions`](./docs/collisions.md) | Other open branches changing the same files as yours, with the risk | ✅ |
+| [`reldor promote`](./docs/promote.md) | Promotion rehearsal: commit order, other people's commits, missing dependencies | ✅ |
+| [`reldor merge`](./docs/merge.md) | Assisted merge into the merge branch: resolves conflicts, checks that only yours went in | ✅ |
 | [`reldor rollback`](./docs/rollback.md) | Rollback plan for a PR: revert, `destructiveChanges.xml`, risks | ✅ |
 
 ### Skills
