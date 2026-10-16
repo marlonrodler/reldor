@@ -8,7 +8,7 @@ A IA já escreve código Salesforce rápido. O que ela não faz é enxergar a or
 
 O Reldor resolve isso com uma regra: **scripts fazem o trabalho pesado e confiável; a IA só explica e conduz.** Ele monta um índice do projeto, segue a ordem de execução real e conversa com você pela IA que você já usa (Kiro ou Claude Code). Você não decora comandos: diz o que quer.
 
-> **Status:** Fase 1 em andamento. `index`, `explain`, `usages`, `test-radar`, `check` e `refine` já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
+> **Status:** Fase 1 concluída; Fase 2 em andamento: commit limpo, organizador de XML e gancho pre-commit já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
 
 ## Instalação (5 minutos)
 
@@ -83,7 +83,7 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 **O problema.** Duas pessoas adicionam classes diferentes no mesmo profile e o Git oferece "tudo ou nada". Um retrieve mistura a org com o seu trabalho. Uma promoção falha porque um campo só existe em develop.
 
-**A solução.** Commit limpo, organizador de XML, merge que entende Salesforce e ensaio de promoção 🚧 (Fase 2).
+**A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) e um gancho pre-commit (já disponíveis); depois, merge que entende Salesforce e ensaio de promoção 🚧.
 
 ### #4: Telas e automações no improviso
 
@@ -114,7 +114,11 @@ Você quase não digita: a IA roda por você.
 | [`reldor refine`](./docs/refine.pt-BR.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho | ✅ |
 | [`reldor test-radar`](./docs/test-radar.pt-BR.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |
 | [`reldor check`](./docs/check.pt-BR.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
-| `reldor commit` · `xml` · `promote` · `rollback` | Commit limpo, organizador de XML, ensaio de promoção, plano de rollback | 🚧 |
+| [`reldor retrieve`](./docs/commit.pt-BR.md) | Retrieve com confirmação da org; tira a foto para o commit limpo | ✅ |
+| [`reldor commit`](./docs/commit.pt-BR.md) | Commit limpo: só as suas linhas, até em arquivos que o retrieve também mudou | ✅ |
+| [`reldor xml`](./docs/xml.pt-BR.md) | Ordena e remove duplicados em profiles, permission sets, labels, sharing rules, package.xml | ✅ |
+| [`reldor hook install`](./docs/commit.pt-BR.md) | Gancho pre-commit, inclusive para commits feitos na mão | ✅ |
+| `reldor promote` · `rollback` | Ensaio de promoção e merge inteligente, plano de rollback | 🚧 |
 
 ### Skills
 
@@ -140,7 +144,7 @@ Um **núcleo** genérico e um **módulo** por tecnologia. Salesforce é o primei
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, org, advisors (+ planejados: xml, merge, promote, rollback)
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, org, advisors (+ planejados: merge, promote, rollback)
 skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```

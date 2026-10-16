@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+
+- `reldor retrieve`: confirms the org, warns about uncommitted work, and takes a snapshot after a broad retrieve
+  (a retrieve of specific metadata counts as yours).
+- `reldor commit`: clean commit. Takes only what changed after the snapshot, line by line, also in files the retrieve
+  changed; files only the org changed stay out; `--include` takes a whole org file; `--dry-run` shows the plan.
+- `reldor snapshot`: the snapshot for retrieves made outside Reldor.
+- `reldor xml`: sorts and removes duplicates in profiles, permission sets, labels, translations, sharing rules,
+  value sets, object translations and package.xml, touching only what it must; reports conflicting duplicates.
+- `reldor hook install`: pre-commit guard for every commit, including by hand: blocks duplicated XML and files that
+  only came from the org. Keeps an existing hook.
+- Validated on public Salesforce projects.
+
 ## 0.3.0
 
 - `reldor refine`: the facts behind a task idea. Finds the objects and fields in free text (API names, labels,

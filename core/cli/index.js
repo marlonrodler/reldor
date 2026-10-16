@@ -5,7 +5,8 @@ const { findProjectRoot } = require('../config');
 const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { logCommand } = require('./log');
-const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand } = require('./sf-commands');
+const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand } = require('./sf-commands');
+const { snapshotCommand, commitCommand, hookCommand } = require('./git-commands');
 const pkg = require('../../package.json');
 
 const COMMANDS = {
@@ -16,6 +17,12 @@ const COMMANDS = {
   explain: { run: explainCommand, help: 'O que acontece quando um registro é salvo: reldor explain <Objeto> [--event insert|update|delete]' },
   refine: { run: refineCommand, help: 'Fatos para escrever uma task: reldor refine "<ideia>" [--objects A,B] [--fields A.Campo__c]' },
   'test-radar': { run: testRadarCommand, help: 'Testes afetados pelas suas mudanças (--base, --files, --run --org <alias>, --json)' },
+  retrieve: { run: retrieveCommand, help: 'Retrieve com confirmação da org e foto para o commit limpo (--metadata, --manifest, --org)' },
+  snapshot: { run: snapshotCommand, help: 'Tira a foto depois de um retrieve feito fora do Reldor (--clear para apagar)' },
+  commit: { run: commitCommand, help: 'Commit limpo: só o que é seu, linha a linha (-m, --include, --dry-run)' },
+  hook: { run: hookCommand, help: 'Instala o gancho pre-commit do Reldor (install | uninstall)' },
+  precommit: { run: precommitCommand, help: 'Checagem usada pelo gancho pre-commit' },
+  xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check, [arquivos])' },
   check: { run: checkCommand, help: 'Checagem de queries: campo lido fora da SOQL/Selector (reldor check [Classe...])' },
   usages: { run: usagesCommand, help: 'Onde algo é usado: reldor usages <Classe | Classe.metodo | Objeto.Campo__c | Objeto>' },
 };
@@ -29,6 +36,10 @@ function parseArgs(argv) {
   const args = [];
   for (let i = 0; i < rest.length; i += 1) {
     const token = rest[i];
+    if (/^-[a-z]$/i.test(token)) {
+      flags[token.slice(1)] = rest[i + 1] !== undefined && !rest[i + 1].startsWith('-') ? rest[++i] : true;
+      continue;
+    }
     if (!token.startsWith('--')) {
       args.push(token);
       continue;

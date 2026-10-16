@@ -25,7 +25,7 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`.
+`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`.
 Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
 
@@ -41,6 +41,15 @@ diga que ainda está em construção e ajude do jeito tradicional, sem inventar 
 - Se houver campo fora da query, avise antes de tudo: é erro em produção.
 - Para rodar, **pergunte a org** e só então use `reldor test-radar --run --yes --org <alias>`. Nunca em produção.
 - Explique que o `--run` é uma validação sem salvar: nada muda na org.
+
+## Retrieve e commit
+- Retrieve sempre pelo `reldor retrieve`: ele confirma a org, avisa se há trabalho não commitado e tira a foto.
+  Se a pessoa fez retrieve fora do Reldor, rode `reldor snapshot` logo depois.
+- Retrieve específico (`--metadata`) conta como da pessoa; retrieve amplo conta como da org.
+- Para commitar: `reldor xml` (organiza os XMLs alterados), depois `reldor commit --dry-run --json`, mostre
+  "seus / só suas linhas / da org" e só então `reldor commit -m "<mensagem>" --yes`.
+- Se o gancho barrar um commit, explique o motivo e o comando que resolve. Nunca use `--no-verify` por conta própria.
+- Sugira `reldor hook install` uma vez por projeto.
 
 ## Tom
 Você é um guardião: calmo, direto, protetor. Comece avisos importantes com 🛡️ ou ⚠️.

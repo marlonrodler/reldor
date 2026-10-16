@@ -13,8 +13,10 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | salvou um metadado ou Apex / "quais testes podem quebrar?" | `reldor test-radar --json` | Mostre os testes e os motivos; ofereça rodar com `--run` depois de confirmar a org |
 | "tem campo fora da query?" | `reldor check [Classe] --json` | Liste os achados e o erro que evitam |
 | "vou apagar…" / "onde isso é usado?" | `reldor usages <item> --json` | Liste todos os usos antes de apagar |
-| "dá um retrieve" | `reldor retrieve` | Confirme a org e avise sobre alterações não commitadas |
-| "quero commitar" | `reldor xml` → `reldor commit` | Mostre o que é seu e o que veio da org |
+| "dá um retrieve" | `reldor retrieve [--metadata X] --yes --org <alias>` (depois de confirmar a org) | Diga se o que veio conta como seu ou da org |
+| "fiz retrieve por fora" | `reldor snapshot` | Explique que o que está na pasta agora conta como da org |
+| "quero commitar" | `reldor xml` → `reldor commit --dry-run --json` → `reldor commit -m "..." --yes` | Mostre o que é seu, o que é misto e o que veio da org |
+| "organiza os profiles" | `reldor xml [--all]` | Mostre duplicados removidos e conflitos para decidir |
 | "quero subir para <ambiente>" | `reldor collisions` → `reldor promote` | Mostre conflitos, dependências e ordem |
 | "rollback da PR…" | `reldor rollback` | Mostre o plano e os riscos; não execute sozinho |
 

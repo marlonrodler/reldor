@@ -146,6 +146,7 @@ async function initCommand(root, flags) {
     if (ignored) done.push('• Linhas no .gitignore para os arquivos locais do Reldor');
     if (environments.length) done.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}; deploy em ${environments[environments.length - 1].name} bloqueado`);
     else done.push('⚠️ Nenhum ambiente configurado. Rode de novo com --envs quando souber as branches.');
+    done.push('', '💡 Proteção nos commits feitos na mão: reldor hook install');
     done.push('', '➡️  Próximo passo: rode "reldor status" ou peça à sua IA: "quero usar o Reldor".');
     print(done);
     return 0;

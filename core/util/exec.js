@@ -14,6 +14,8 @@ function run(command, args = [], options = {}) {
     encoding: 'utf8',
     shell: IS_WINDOWS,
     timeout: options.timeout || 60000,
+    env: options.env ? { ...process.env, ...options.env } : process.env,
+    input: options.input,
     windowsHide: true,
   });
 
@@ -23,7 +25,7 @@ function run(command, args = [], options = {}) {
   return {
     ok: result.status === 0,
     code: result.status,
-    stdout: (result.stdout || '').replace(/\s+$/, ''),
+    stdout: options.raw ? result.stdout || '' : (result.stdout || '').replace(/\s+$/, ''),
     stderr: (result.stderr || '').trim(),
   };
 }

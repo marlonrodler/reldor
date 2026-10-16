@@ -4,7 +4,16 @@
 const fs = require('node:fs');
 const args = process.argv.slice(2);
 if (process.env.RELDOR_SF_LOG) fs.writeFileSync(process.env.RELDOR_SF_LOG, JSON.stringify(args));
-if (args[0] === 'project' && args.includes('--dry-run')) {
+if (args[0] === 'project' && args[1] === 'retrieve') {
+  // Simulates a retrieve: RELDOR_FAKE_RETRIEVE = JSON { "path": "content" } written into the project.
+  const writes = JSON.parse(process.env.RELDOR_FAKE_RETRIEVE || '{}');
+  const path = require('node:path');
+  for (const [file, content] of Object.entries(writes)) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  process.stdout.write(JSON.stringify({ status: 0, result: { files: Object.keys(writes).map((f) => ({ filePath: f })) } }));
+} else if (args[0] === 'project' && args.includes('--dry-run')) {
   process.stdout.write(JSON.stringify({
     status: 1,
     result: {

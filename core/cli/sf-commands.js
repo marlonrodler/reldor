@@ -9,6 +9,11 @@ const { findUsages, renderUsages } = require('../../modules/sf/checks/usages');
 const { checkQueries } = require('../../modules/sf/checks/queries');
 const { buildRadar } = require('../../modules/sf/test-radar');
 const { refineBrief, renderBrief } = require('../../modules/sf/refine');
+const xmlOrganizer = require('../../modules/sf/xml');
+const { organizeXml } = require('../../modules/sf/xml/organize');
+const snapshotApi = require('../git/snapshot');
+const gitApi = require('../git');
+const { runSf } = require('../../modules/sf/org/sf');
 const { changedFiles } = require('../../modules/sf/test-radar/changes');
 const { runTests } = require('../../modules/sf/org/sf');
 const { resolveOrg } = require('../../modules/sf/org/guard');
@@ -219,6 +224,128 @@ function refineCommand(root, flags, args) {
   return 0;
 }
 
+function renderXml(results, check) {
+  const out = ['\n🛡️  Organizador de XML', ''];
+  if (!results.length) return [...out, 'Nenhum XML organizável entre os arquivos escolhidos.'];
+  const touched = results.filter((r) => r.changed);
+  for (const r of results) {
+    if (r.error) out.push(`❌ ${r.file}: ${r.error}`);
+    else if (r.changed) out.push(`${check ? '⚠️' : '✅'} ${r.file}: ${[r.duplicates && `${r.duplicates} duplicado(s) ${check ? 'a remover' : 'removido(s)'}`, r.sorted && (check ? 'fora de ordem' : 'ordenado')].filter(Boolean).join(', ')}`);
+    for (const c of r.conflicts) out.push(`   ⚠️ conflito em ${c.section} "${c.key}": duas entradas com valores diferentes. Decida qual fica.`);
+  }
+  if (!touched.length && !results.some((r) => r.conflicts.length)) out.push(`✅ ${results.length} arquivo(s) já estão organizados.`);
+  if (check && touched.length) out.push('', '➡️  Para organizar: reldor xml');
+  return out;
+}
+
+function xmlCommand(root, flags, args) {
+  if (!requireSfProject(root)) return 1;
+  const { config } = loadConfig(root);
+  const { readProject } = require('../../modules/sf');
+  let files = args;
+  if (flags.all) files = xmlOrganizer.allOrganizable(root, readProject(root).packageDirectories);
+  else if (!files.length) files = changedFiles(root, config, { base: flags.base }).filter((c) => c.status !== 'deleted').map((c) => c.file).filter((f) => xmlOrganizer.isOrganizable(f));
+  const results = xmlOrganizer.organizeFiles(root, files, { check: Boolean(flags.check) });
+  const changed = results.filter((r) => r.changed).length;
+  const conflicts = results.reduce((n, r) => n + r.conflicts.length, 0);
+  if (!flags.check) logAction(root, 'xml', { summary: `${changed} arquivo(s) organizado(s), ${conflicts} conflito(s)` });
+  if (flags.json) printJson({ results });
+  else print(renderXml(results, Boolean(flags.check)));
+  return flags.check && (changed || conflicts) ? 1 : 0;
+}
+
+/** Pre-commit guard: blocks unorganized XML and files that only came from the org. */
+function precommitCommand(root) {
+  const git = (args) => gitApi.git(root, args);
+  const staged = (git(['diff', '--cached', '--name-only', '--diff-filter=ACM']).stdout || '').split('\n').filter(Boolean);
+  const problems = [];
+  for (const file of staged.filter((f) => xmlOrganizer.isOrganizable(f))) {
+    const content = gitApi.git(root, ['show', `:${file}`]);
+    if (!content.ok) continue;
+    try {
+      const r = organizeXml(content.stdout + '\n');
+      if (r.report.duplicates) problems.push(`${file}: ${r.report.duplicates} entrada(s) duplicada(s). Rode "reldor xml ${file}" e "git add ${file}".`);
+      for (const c of r.report.conflicts) problems.push(`${file}: duas entradas diferentes para ${c.section} "${c.key}". Decida qual fica.`);
+    } catch {
+      /* not our business if the XML is unusual */
+    }
+  }
+  const snapshot = process.env.RELDOR_CLEAN_COMMIT ? null : snapshotApi.loadSnapshot(root);
+  if (snapshot) {
+    const head = git(['rev-parse', '--verify', '--quiet', 'HEAD']).stdout;
+    const fromOrg = new Set(head ? (git(['diff', '--name-only', '--no-renames', head, snapshot.tree]).stdout || '').split('\n').filter(Boolean) : []);
+    for (const file of staged.filter((f) => fromOrg.has(f))) {
+      const mine = git(['rev-parse', `:${file}`]).stdout;
+      const org = git(['rev-parse', `${snapshot.tree}:${file}`]).stdout;
+      if (mine && mine === org) problems.push(`${file}: veio da org no último retrieve e você não mudou nada nele.`);
+    }
+  }
+  if (!problems.length) return 0;
+  process.stderr.write([
+    '',
+    '🛡️  Reldor barrou o commit:',
+    ...problems.map((p) => `   • ${p}`),
+    '',
+    'Para commitar só o que é seu: reldor commit -m "mensagem"',
+    'Se for intencional: git commit --no-verify',
+    '',
+  ].join('\n'));
+  return 1;
+}
+
+async function retrieveCommand(root, flags) {
+  if (!requireSfProject(root)) return 1;
+  const { config } = loadConfig(root);
+  const sfModule = require('../../modules/sf');
+  const target = resolveOrg(config, flags, flags.org || config.reference_org ? null : sfModule.detect(root).defaultOrg);
+  if (target.error) {
+    process.stderr.write(`⚠️ ${target.error}\n`);
+    return 1;
+  }
+  const pending = gitApi.pendingChanges(root);
+  const pendingCount = Object.values(pending).reduce((n, l) => n + l.length, 0);
+  const specific = Boolean(flags.metadata);
+  const out = [
+    '\n🛡️  Retrieve',
+    '',
+    `• Org: ${target.org}${target.environment ? ` (${target.environment})` : ''}${target.production ? ' · PRODUÇÃO (só leitura)' : ''}`,
+    `• O quê: ${flags.metadata || flags.manifest || flags['source-dir'] || 'o projeto inteiro (pastas do sfdx-project.json)'}`,
+    specific ? '• Retrieve específico: o que vier conta como SEU no commit.' : '• Depois do retrieve, o Reldor tira uma foto: o que vier da org fica fora do seu commit.',
+  ];
+  if (pendingCount) out.push('', `⚠️ Você tem ${pendingCount} arquivo(s) não commitado(s). O retrieve pode sobrescrever essas mudanças.`);
+  print(out);
+  const rl = flags.yes || !process.stdin.isTTY ? null : readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    if (rl && !/^s/i.test((await rl.question(`\n🛡️ Fazer o retrieve da org ${target.org}? (s/n): `)).trim())) {
+      print('Cancelado. Nada foi alterado.');
+      return 0;
+    }
+  } finally {
+    if (rl) rl.close();
+  }
+  const args = ['project', 'retrieve', 'start', '--json', '--target-org', target.org];
+  const many = (flag, name) => (typeof flags[flag] === 'string' ? flags[flag].split(',').map((x) => x.trim()).filter(Boolean).flatMap((v) => [name, v]) : []);
+  args.push(...many('metadata', '--metadata'), ...many('source-dir', '--source-dir'));
+  if (typeof flags.manifest === 'string') args.push('--manifest', flags.manifest);
+  const res = runSf(args, { cwd: root, timeout: 30 * 60000 });
+  const { parseJson } = require('../../modules/sf/org/sf');
+  const json = parseJson(res.stdout);
+  if (!json || json.status !== 0) {
+    print(`❌ O retrieve falhou: ${(json && json.message) || res.stderr || 'sem resposta do sf CLI'}`);
+    return 1;
+  }
+  const files = (json.result && json.result.files) || [];
+  let snap = null;
+  if (!specific || flags['as-org']) snap = snapshotApi.takeSnapshot(root, `retrieve ${target.org}`);
+  logAction(root, 'retrieve', { summary: `${target.org}: ${files.length} arquivo(s)${snap ? ', foto tirada' : ''}` });
+  print([
+    '',
+    `✅ Retrieve concluído: ${files.length} arquivo(s).`,
+    snap ? '📸 Foto tirada. Quando for commitar: reldor commit -m "mensagem"' : 'ℹ️  Sem foto: o que veio conta como seu.',
+  ]);
+  return 0;
+}
+
 function checkCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
   const { model } = freshModel(root, flags);
@@ -229,4 +356,4 @@ function checkCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, loadConfig };
+module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, loadConfig };
