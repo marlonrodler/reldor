@@ -8,7 +8,7 @@ AI already writes Salesforce code fast. What it does not do is see the whole org
 
 Reldor fixes this with one rule: **scripts do the heavy, reliable work; the AI only explains and guides.** It builds an index of your project, follows the real order of execution, and talks to you through the AI you already use (Kiro or Claude Code). You don't memorize commands: you say what you want.
 
-> **Status:** Phase 1 is done; Phase 2 in progress: security review, clean commit, XML organizer and pre-commit guard work today. See the [roadmap](./docs/roadmap.md).
+> **Status:** Phase 1 is done; Phase 2 in progress: security and quality review, clean commit, XML organizer and pre-commit guard work today. See the [roadmap](./docs/roadmap.md).
 
 ## Installation (5-minute setup)
 
@@ -85,11 +85,13 @@ It detects the project, asks only what it cannot detect (environment branches, r
 
 **The fix.** [Clean commits](./docs/commit.md) that take only your lines, an [XML organizer](./docs/xml.md) and a pre-commit guard (available now), then a Salesforce-aware merge driver and a promotion rehearsal 🚧.
 
-### #4: Security holes nobody saw
+### #4: Security holes and copied code nobody saw
 
 **The problem.** A screen method that reads data without checking permissions, a query built by concatenating what the user typed, a `System.debug` with a CPF, a class that ignores sharing three calls away from the screen. In a bank, any of these is an incident.
 
 **The fix.** [`security`](./docs/security.md) reviews your changes before the commit: Reldor's own rules plus the official Salesforce Code Analyzer when installed. It also follows the **path**: from a screen or API down to a `without sharing` class that touches data, something a file-by-file scanner does not see.
+
+[`quality`](./docs/quality.md) catches the copy before it spreads: a block pasted from another class, a query that already lives in a Selector, a method that already exists. Only the repetition your change creates, plus PMD and CPD from the Code Analyzer.
 
 ### #5: Screens and automations on autopilot
 
@@ -123,6 +125,7 @@ You rarely type these: your AI runs them for you.
 | [`reldor security`](./docs/security.md) | Security review of your changes: SOQL injection, CRUD/FLS, sharing, sensitive logs, secrets, XSS, flows, guest access | ✅ |
 | [`reldor retrieve`](./docs/commit.md) | Retrieve with org confirmation; takes the snapshot for the clean commit | ✅ |
 | [`reldor commit`](./docs/commit.md) | Clean commit: only your lines, even in files the retrieve also changed | ✅ |
+| [`reldor quality`](./docs/quality.md) | Code your change repeats (copied blocks, queries, methods, texts) plus PMD and CPD | ✅ |
 | [`reldor xml`](./docs/xml.md) | Sorts and removes duplicates in profiles, permission sets, labels, sharing rules, package.xml | ✅ |
 | [`reldor hook install`](./docs/commit.md) | Pre-commit guard, also for commits made by hand | ✅ |
 | `reldor promote` · `rollback` | Promotion rehearsal and smart merge, rollback plan | 🚧 |
@@ -151,7 +154,7 @@ A generic **core** plus one **module** per technology. Salesforce is the first m
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, org, advisors (+ planned: merge, promote, rollback)
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, org, advisors (+ planned: merge, promote, rollback)
 skills/      the AI's instructions, shared by Kiro and Claude Code
 adapters/    thin per-IDE manifests
 ```

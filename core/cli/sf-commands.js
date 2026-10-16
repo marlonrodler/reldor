@@ -11,11 +11,12 @@ const { buildRadar } = require('../../modules/sf/test-radar');
 const { refineBrief, renderBrief } = require('../../modules/sf/refine');
 const xmlOrganizer = require('../../modules/sf/xml');
 const security = require('../../modules/sf/security');
+const quality = require('../../modules/sf/quality');
 const { organizeXml } = require('../../modules/sf/xml/organize');
 const snapshotApi = require('../git/snapshot');
 const gitApi = require('../git');
 const { runSf } = require('../../modules/sf/org/sf');
-const { changedFiles } = require('../../modules/sf/test-radar/changes');
+const { changedFiles, defaultBase } = require('../../modules/sf/test-radar/changes');
 const { runTests } = require('../../modules/sf/org/sf');
 const { resolveOrg } = require('../../modules/sf/org/guard');
 const path = require('node:path');
@@ -390,6 +391,58 @@ function securityCommand(root, flags, args) {
   return 0;
 }
 
+const KIND_LABEL = {
+  'bloco-copiado': 'Bloco copiado',
+  'soql-repetida': 'Query repetida',
+  'soql-fora-do-selector': 'Query fora do Selector',
+  'metodo-ja-existe': 'Método que já existe',
+  'metodo-parecido': 'Método parecido',
+  'texto-repetido': 'Texto repetido',
+  'code-analyzer': 'Code Analyzer',
+};
+
+function renderQuality(r) {
+  const out = ['\n🛡️  Revisão de qualidade', '', `• ${r.files} classe(s) analisada(s) · 🔴 ${r.counts.alta} alta · 🟡 ${r.counts['média']} média · ⚪ ${r.counts.baixa} baixa`];
+  if (!r.findings.length) out.push('', '✅ Nenhuma repetição nova nem problema de qualidade nesses arquivos.');
+  for (const sev of ['alta', 'média', 'baixa']) {
+    const list = r.findings.filter((f) => f.severity === sev);
+    if (!list.length) continue;
+    out.push('', `${SEV_ICON[sev]} Prioridade ${sev}:`);
+    for (const f of list) {
+      const label = f.kind === 'code-analyzer' ? `[${f.rule}]` : `${KIND_LABEL[f.kind] || f.kind}:`;
+      out.push(`   • ${f.file || ''}${f.line ? `:${f.line}` : ''} — ${label} ${f.message}`);
+      if (f.fix) out.push(`     ➜ ${f.fix}`);
+    }
+  }
+  out.push('', r.analyzer.ran ? '✅ Regras Recommended do PMD e o CPD (Code Analyzer) incluídos.' : `ℹ️  ${r.analyzer.note || 'Code Analyzer não executado (--no-analyzer).'}`);
+  return out;
+}
+
+function qualityCommand(root, flags, args) {
+  if (!requireSfProject(root)) return 1;
+  const { config } = loadConfig(root);
+  const { readProject } = require('../../modules/sf');
+  const packageDirectories = readProject(root).packageDirectories;
+  let files = args.map((f) => f.split(path.sep).join('/'));
+  if (!flags.all && !files.length) files = changedFiles(root, config, { base: flags.base }).filter((c) => c.status !== 'deleted').map((c) => c.file);
+  const { model } = freshModel(root, flags);
+  const result = quality.qualityReview(root, files, {
+    model,
+    packageDirectories,
+    base: flags.base || defaultBase(root, config),
+    all: Boolean(flags.all),
+    analyzer: !flags['no-analyzer'],
+    options: config.quality || {},
+  });
+  logAction(root, 'quality', { summary: `${result.files} classe(s): ${result.findings.length} apontamento(s)` });
+  if (flags.json) printJson(result);
+  else print(renderQuality(result));
+  const failOn = flags['fail-on'];
+  if (failOn === 'alta' && result.counts.alta) return 1;
+  if (failOn === 'média' && (result.counts.alta || result.counts['média'])) return 1;
+  return 0;
+}
+
 function checkCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
   const { model } = freshModel(root, flags);
@@ -400,4 +453,4 @@ function checkCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, loadConfig };
+module.exports = { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, qualityCommand, loadConfig };

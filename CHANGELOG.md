@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+
+- `reldor quality`: reports the repetition a change creates, and only that: blocks copied from elsewhere in the
+  project (CPD-style, literals ignored), SOQL that already exists in another class, queries outside the fflib
+  Selector, methods that already exist (same signature and similar body) or are 80% similar, and texts repeated in
+  three or more classes (Custom Label candidates). `--all` reviews the whole project.
+- Runs the Code Analyzer `Recommended` (PMD) and `cpd` rules too, when installed. `--fail-on` for scripts.
+- Classes that share a contract (two Selectors, the same interface or base class) are not reported as copies.
+- Calibrated on public Salesforce projects (fflib samples, apex-recipes, ebikes, dreamhouse, coral-cloud).
+
 ## 0.5.0
 
 - `reldor security`: security review of the changed files (or `--all`): SOQL injection (values from outside the

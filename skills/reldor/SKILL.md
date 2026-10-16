@@ -25,7 +25,7 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`.
+`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`.
 Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
 
@@ -48,6 +48,12 @@ diga que ainda está em construção e ajude do jeito tradicional, sem inventar 
 - Para "caminho-sem-sharing", mostre o caminho inteiro (da tela até a classe).
 - Diga que não substitui pentest nem a equipe de segurança. Nunca esconda um achado para parecer mais simples.
 - Um achado aceito de propósito se cala com o comentário `// reldor-ignore: <regra>` na linha ou acima dela.
+
+## Qualidade e código repetido
+- Antes de commitar Apex, rode também `reldor quality --json`. Ele só aponta a repetição que a mudança cria.
+- Para cada bloco copiado, query repetida ou método que já existe, mostre onde está o original e ofereça reaproveitar (chamar o Service ou o Selector existente) em vez de manter a cópia.
+- Texto repetido em várias classes: sugira um Custom Label.
+- Se o Code Analyzer não estiver instalado, diga que as regras do PMD ficaram de fora e como instalar (`sf plugins install code-analyzer`).
 
 ## Retrieve e commit
 - Retrieve sempre pelo `reldor retrieve`: ele confirma a org, avisa se há trabalho não commitado e tira a foto.

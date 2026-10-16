@@ -52,6 +52,12 @@ security:
   sensitive_terms: [cpf, cnpj, rg, senha, password, token, saldo, cartao, agencia]
   strict_sharing: false     # true: aponta toda classe sem declaração de sharing
 
+# Qualidade (reldor quality)
+quality:
+  min_tokens: 60            # tamanho mínimo de um bloco copiado
+  min_lines: 6
+  min_literal_files: 3      # texto em N classes vira sugestão de Custom Label
+
 # Radar de testes
 test_radar:
   auto_run: ask             # ask | always | never

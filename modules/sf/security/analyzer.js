@@ -1,6 +1,6 @@
 'use strict';
 
-/** Salesforce Code Analyzer (sf code-analyzer), security rules only, on the given files. */
+/** Salesforce Code Analyzer (sf code-analyzer) on the given files, with the given rule selectors. */
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -12,11 +12,11 @@ function available(root) {
   return runSf(['code-analyzer', 'run', '--help'], { cwd: root, timeout: 60000 }).ok;
 }
 
-function runAnalyzer(root, files) {
+function runAnalyzer(root, files, selectors = ['Security']) {
   if (!files.length) return { ran: false, findings: [] };
   if (!available(root)) return { ran: false, findings: [], note: 'Salesforce Code Analyzer não instalado. Para somar as regras oficiais: sf plugins install code-analyzer' };
   const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-ca-')), 'results.json');
-  const args = ['code-analyzer', 'run', '--rule-selector', 'Security', '--workspace', '.', ...files.flatMap((f) => ['--target', f]), '--output-file', out];
+  const args = ['code-analyzer', 'run', ...selectors.flatMap((s) => ['--rule-selector', s]), '--workspace', '.', ...files.flatMap((f) => ['--target', f]), '--output-file', out];
   const res = runSf(args, { cwd: root, timeout: 20 * 60000 });
   let json = null;
   try {
@@ -33,6 +33,7 @@ function runAnalyzer(root, files) {
       line: loc.startLine || null,
       message: v.message,
       fix: (v.resources || [])[0] || null,
+      tags: v.tags || [],
       source: 'code-analyzer',
     };
   });
