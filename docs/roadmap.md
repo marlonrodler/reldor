@@ -1,17 +1,19 @@
+<p align="center"><strong>English</strong> · <a href="./roadmap.pt-BR.md">Português</a></p>
+
 # Roadmap
 
-Cada fase só começa quando a anterior passa no critério.
+Each phase starts only when the previous one meets its exit criterion.
 
-| Fase | Entrega | Passa quando |
-|---|---|---|
-| **0 · Fundação** | `init`, `status`, skill + guia, cascas Kiro e Claude, histórico | A IA explica sua situação atual sem erro |
-| **1 · Conhecimento e conselheiros (MVP 1)** | Índice da org, engenharia reversa, refinador de task, radar de testes, conselheiros (revisão de spec, desenho de automação, LWC moderno) | A cadeia de 3 processos reais é validada por um dev sênior |
-| **2 · Desenvolvimento e Git (MVP 2)** | Contexto para a IA, checagem de queries, exclusão segura, plano de rollback, org confirmada, commit limpo, organizador de XML, merge inteligente, `rerere`, radar de colisão, ensaio de promoção | 2 semanas sem nenhum merge ou commit errado |
-| **3 · Piloto e medição** | Uso real com um desenvolvedor, com autorização do cliente | Ganho medido e o dev quer continuar |
-| **4 · Ampliação e expansão** | Massa de teste, rollback executado, análise de erro, checklist de deploy, Quick Deploy, drift, documentação automática, conectores, índice compartilhado, outros clientes | — |
+| Phase | Delivers | Done when | |
+|---|---|---|---|
+| **0 · Foundation** | `init`, `status`, `log`, skills and the Kiro and Claude Code plugins | The AI describes your current situation without mistakes | ✅ |
+| **1 · Knowledge and advisors (MVP 1)** | Index ✅, reverse engineering (`explain`) ✅, where it is used (`usages`) ✅, advisors ✅, test radar 🚧, task refinement 🚧 | A senior dev validates the chain of 3 real processes | 🚧 |
+| **2 · Development and Git (MVP 2)** | AI context, query checks, rollback plan, org confirmation, clean commit, XML organizer, smart merge, `rerere`, collision radar, promotion rehearsal | 2 weeks without a wrong merge or commit | |
+| **3 · Pilot and measurement** | Real use by one developer, with the client's permission | Gains measured and the developer wants to keep it | |
+| **4 · Broaden and expand** | Test data factory, executed rollback, error analysis, deploy checklist, Quick Deploy, drift, automatic docs, connectors, shared index, other clients | | |
 
-## Ganho rápido (já)
-Ligue o `git rerere` para reaplicar conflitos repetidos entre ambientes:
+## Quick win (today)
+Turn on `git rerere` to replay repeated conflicts across environments:
 
 ```bash
 git config --global rerere.enabled true

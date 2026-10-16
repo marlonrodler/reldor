@@ -1,0 +1,15 @@
+{
+  "name": "reldor",
+  "version": "0.1.0",
+  "description": "Reldor, the guardian of Salesforce development: reads the org before the AI writes code, advises on screens and automations, and protects Git promotions.",
+  "author": { "name": "Marlon Rodler" },
+  "repository": "https://github.com/marlonrodler/reldor",
+  "license": "UNLICENSED",
+  "keywords": ["salesforce", "apex", "lwc", "flow", "fflib", "git"],
+  "skills": [
+    "./skills/reldor",
+    "./modules/sf/advisors/spec-review",
+    "./modules/sf/advisors/automation-design",
+    "./modules/sf/advisors/lwc-ux"
+  ]
+}

@@ -5,7 +5,7 @@
  * Builds the IDE plugins from one source:
  *   skills/*                 -> every plugin
  *   modules/<mod>/advisors/* -> every plugin
- *   adapters/<ide>/plugin.json + version from package.json
+ *   .claude-plugin/plugin.json (Claude Code) or adapters/kiro/plugin.json + version from package.json
  * Output: dist/<ide>/reldor/
  */
 const fs = require('node:fs');
@@ -16,8 +16,8 @@ const DIST = path.join(ROOT, 'dist');
 const pkg = require(path.join(ROOT, 'package.json'));
 
 const TARGETS = {
-  claude: { manifestDir: '.claude-plugin' },
-  kiro: { manifestDir: '.' },
+  claude: { manifestDir: '.claude-plugin', source: path.join(ROOT, '.claude-plugin', 'plugin.json') },
+  kiro: { manifestDir: '.', source: path.join(ROOT, 'adapters', 'kiro', 'plugin.json') },
 };
 
 function skillSources() {
@@ -36,12 +36,13 @@ function skillSources() {
 }
 
 function build(target) {
-  const { manifestDir } = TARGETS[target];
+  const { manifestDir, source } = TARGETS[target];
   const out = path.join(DIST, target, 'reldor');
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(path.join(out, manifestDir), { recursive: true });
 
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'adapters', target, 'plugin.json'), 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(source, 'utf8'));
+  delete manifest.skills; // the built plugin copies every skill into skills/
   manifest.version = pkg.version;
   fs.writeFileSync(path.join(out, manifestDir, 'plugin.json'), JSON.stringify(manifest, null, 2) + '\n');
 

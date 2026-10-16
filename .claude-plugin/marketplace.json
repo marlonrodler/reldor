@@ -1,0 +1,14 @@
+{
+  "name": "reldor",
+  "owner": { "name": "Marlon Rodler" },
+  "description": "Reldor, the guardian of Salesforce development, as an installable Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "reldor",
+      "source": "./",
+      "description": "Reads the org before the AI writes code, advises on screens and automations, and protects Git promotions.",
+      "category": "development",
+      "keywords": ["salesforce", "apex", "lwc", "fflib"]
+    }
+  ]
+}

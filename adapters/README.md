@@ -1,19 +1,9 @@
-# Cascas por IDE
+# Adapters
 
-As skills são escritas uma vez (`skills/` e `modules/*/advisors/`). Aqui ficam só os manifestos de cada IDE.
+Skills are written once (`skills/` and `modules/*/advisors/`). Each IDE only needs its manifest.
 
-```bash
-npm run build:adapters
-```
+- **Claude Code** installs straight from this repository: `.claude-plugin/plugin.json` lists the skills and
+  `.claude-plugin/marketplace.json` makes the repo its own marketplace.
+- **Kiro** uses `adapters/kiro/plugin.json`. Run `npm run build:adapters` and install `dist/kiro/reldor` as a local plugin.
 
-Gera:
-- `dist/claude/reldor/` — plugin do Claude Code (`.claude-plugin/plugin.json` + `skills/`)
-- `dist/kiro/reldor/` — plugin do Kiro (`plugin.json` + `skills/`)
-
-## Instalar localmente
-
-**Claude Code:** adicione a pasta `dist/claude/reldor` como plugin local (veja a documentação de plugins do Claude Code).
-
-**Kiro:** instale a pasta `dist/kiro/reldor` como plugin local pelo painel de Powers.
-
-O núcleo `reldor` precisa estar no PATH (`npm install -g .` na raiz deste repositório).
+`npm run build:adapters` also writes `dist/claude/reldor`, a self-contained copy for offline installs.

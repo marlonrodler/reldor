@@ -1,94 +1,97 @@
-# Arquitetura
+<p align="center"><strong>English</strong> · <a href="./architecture.pt-BR.md">Português</a></p>
 
-## A ideia em uma frase
-O **núcleo** não sabe nada de Salesforce. Ele pede aos **módulos**: "detecte", "indexe", "explique", "verifique".
-O módulo `sf` é o primeiro a responder. Um módulo futuro (mobile, web) responde aos mesmos pedidos, sem mudar o núcleo.
+# Architecture
 
-## Três camadas
+## The idea in one sentence
+The **core** knows nothing about Salesforce. It asks **modules** to "detect", "index", "explain" and "check".
+The `sf` module answers first. A future module (mobile, web) answers the same requests without changing the core.
 
-| Camada | O que é | Gasta tokens? |
+## Three layers
+
+| Layer | What it is | Spends tokens? |
 |---|---|---|
-| **Núcleo `reldor`** (Node.js) | Scripts: índice, Git, org, XML, testes | Não |
-| **Skills** (`SKILL.md`) | Ensinam a IA a conduzir e explicar | Sim, pouco |
-| **Cascas** (Kiro, Claude Code) | Manifesto + hooks de cada IDE | Não |
+| **`reldor` core** (Node.js) | Scripts: index, Git, org, XML, tests | No |
+| **Skills** (`SKILL.md`) | Teach the AI to guide and explain | Yes, a little |
+| **Adapters** (Kiro, Claude Code) | Each IDE's manifest and hooks | No |
 
-As skills são escritas uma vez e servem nas duas IDEs. As cascas são finas porque os formatos das IDEs mudam.
+Skills are written once and work in both IDEs. Adapters stay thin because IDE formats change.
 
-## Um índice, vários usos
+## One index, many uses
 
-O índice é um **sumário** da org (nomes e ligações, nunca código nem registros):
+The index is a **summary** of the org (names and links, never code bodies or records):
 
-- por objeto: campos, validation rules, flows (tipo e critério de entrada), triggers, record types, roll-ups,
-  bypass (custom settings e custom metadata), pacotes gerenciados;
-- quem faz DML em qual objeto e quais campos cada classe usa;
-- cadeia fflib, resolvida a partir da classe `Application`;
-- referências cruzadas (quem usa cada método, campo, classe e flow).
+- per object: fields, validation rules, flows (type and entry criteria), triggers, record types, roll-ups,
+  bypass switches (custom settings and custom metadata);
+- which class writes to which object and which fields each class uses;
+- the fflib chain, resolved from the `Application` class;
+- cross references (who uses each method, field, class and flow).
 
-Ele alimenta: refinador, engenharia reversa, contexto da IA, radar de testes, checagem de queries,
-exclusão segura, ensaio de promoção e rollback.
+It feeds: task refinement, reverse engineering, AI context, test radar, query checks, safe delete,
+promotion rehearsal and rollback.
 
-Atualização: após cada retrieve e a cada 24h (configurável), só o que mudou.
+Refresh: on every command, the index reads again only the files that changed (size or date). `reldor index --full`
+rebuilds everything. It lives in `.reldor/cache/` (outside Git).
 
-## Onde a IA entra
-Só para **interpretar** (ler a task ou a spec) e **explicar** (escrever o resultado em português).
-A cadeia de automações, as referências e os conflitos são calculados por script, por isso são confiáveis e repetíveis.
+## Where the AI comes in
+Only to **interpret** (read the task or the spec) and to **explain** (write the result in the conversation's language).
+The automation chain, the references and the conflicts are computed by scripts, so they are reliable and repeatable.
 
-## Origem da spec
-1. **Detecta** uma spec existente (Kiro ou outro gerador de specs).
-2. **Configurada:** roda o gerador que a equipe informou.
-3. Se não houver nada, **pede a task ou a descrição**. Nunca inventa.
+## Where the spec comes from
+1. **Detected:** an existing spec (Kiro or another spec generator).
+2. **Configured:** runs the generator the team set up.
+3. Otherwise it **asks for the task or a description**. It never makes one up.
 
-## Git e promoção
-- **Commit limpo:** foto (snapshot) a cada retrieve; no commit, entra só a diferença "foto → agora".
-- **Merge inteligente:** merge driver por item (permissão, campo, label), instalado em `.git/info/attributes`,
-  sem alterar o repositório e sem criar commits.
-- **Ensaio de promoção:** simula o merge numa pasta separada; checa dependências e a ordem dos commits.
-- A cadeia de ambientes vem da configuração (ex.: develop → uat → producao), sem nada fixo no código.
+## Git and promotion
+- **Clean commit:** a snapshot on every retrieve; the commit takes only the "snapshot → now" difference.
+- **Smart merge:** a per-item merge driver (permission, field, label), installed in `.git/info/attributes`,
+  without changing the repository and without creating commits.
+- **Promotion rehearsal:** simulates the merge in a separate folder; checks dependencies and commit order.
+- The environment chain comes from the config (e.g. develop → uat → production), nothing hard-coded.
 
-## Pastas do repositório
+## Repository layout
 
 ```
 core/
-├─ cli/           entrada dos comandos
-├─ config/        lê config + perfil, valores padrão
-├─ status/        descobre a etapa atual (usado pela IA)
-├─ spec/          origem da spec
-├─ index/         formato, cache, atualização incremental
-├─ git/           snapshot, commit limpo, pre-commit, ordem dos commits
-├─ report/        modelos de saída (tom de guardião, idioma configurável)
-├─ log/           histórico de ações
-├─ automations/   (reservado) QUANDO / SE / FAÇA
-└─ connectors/    (reservado) Monday, Azure DevOps, Jira
+├─ cli/           command entry points
+├─ config/        reads config + profile, defaults
+├─ status/        finds the current step (used by the AI)
+├─ spec/          where the spec comes from
+├─ modules/       loads modules (contract: detect, statusLines, profileLines)
+├─ util/          runs commands (Windows-friendly)
+├─ git/           snapshot, clean commit, pre-commit, commit order
+├─ report/        output helpers (guardian tone)
+├─ log/           action history
+├─ automations/   (reserved) WHEN / IF / DO
+└─ connectors/    (reserved) Monday, Azure DevOps, Jira
 modules/sf/
-├─ org/           confirmar org, retrieve, deploy, bloqueio de produção
-├─ indexer/       force-app → índice
-├─ explain/       engenharia reversa e roteiros de teste
-├─ refine/        refinador de task
-├─ test-radar/    testes afetados por uma mudança
-├─ checks/        queries, limites, exclusão segura
-├─ xml/           organizador de XML (regras por tipo)
-├─ merge/         merge driver por item
-├─ promote/       ensaio de promoção, mapa de ambientes
-├─ rollback/      plano de rollback
-├─ frameworks/    fflib, trigger handler genérico
-└─ advisors/      conselheiros (skills): spec-review, automation-design, lwc-ux
+├─ org/           confirm org, retrieve, deploy, production lock
+├─ indexer/       force-app → index (parsers, incremental cache, fflib chain)
+├─ explain/       reverse engineering and test scripts
+├─ refine/        task refinement
+├─ test-radar/    tests affected by a change
+├─ checks/        queries, limits, safe delete (usages)
+├─ xml/           XML organizer (rules per type)
+├─ merge/         per-item merge driver
+├─ promote/       promotion rehearsal, environment map
+├─ rollback/      rollback plan
+├─ frameworks/    fflib, generic trigger handler
+└─ advisors/      advisors (skills): spec-review, automation-design, lwc-ux
 ```
 
-## Conselheiros
-Cada conselheiro é **uma skill**, sem código no núcleo. Novos conselheiros (integração, segurança) entram como
-novas pastas em `advisors/`.
+## Advisors
+Each advisor is **one skill**, with no code in the core. New advisors (integration, security) are new folders in
+`advisors/`.
 
-O "quer que eu veja isso antes?" usa uma regra de steering sempre ativa e hooks do Kiro e do Claude, que disparam
-quando uma spec é criada ou uma execução começa. Ele só pergunta quando encontra algo relevante, e tem os modos
-`off`, `ask` e `auto`.
+"Want me to check this first?" uses an always-on steering rule plus Kiro and Claude hooks that fire when a spec is
+created or a run starts. It only asks when it finds something relevant, with `off`, `ask` and `auto` modes.
 
-## Projeto do cliente
+## The client's project
 
 ```
 .reldor/
-├─ reldor.config.yaml   ✅ Git
-├─ profile.md           ✅ Git
-├─ cache/               ❌ fora
-├─ work/<task>/         ❌ fora
-└─ log/                 ❌ fora
+├─ reldor.config.yaml   ✅ in Git
+├─ profile.md           ✅ in Git
+├─ cache/               ❌ ignored
+├─ work/<task>/         ❌ ignored
+└─ log/                 ❌ ignored
 ```

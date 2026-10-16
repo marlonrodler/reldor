@@ -1,172 +1,151 @@
-# 🛡️ Reldor — o guardião do desenvolvimento
+<p align="center"><strong>English</strong> · <a href="./README.pt-BR.md">Português</a></p>
 
-O Reldor ajuda times Salesforce a **escrever a task, desenvolver, testar e promover** com mais velocidade e menos erro.
-Ele conhece a org por um índice montado por scripts e conversa pela IA que você já usa (Kiro ou Claude Code).
+# 🛡️ Reldor: the guardian of Salesforce development
 
-> **Status:** Fase 0 pronta (`init`, `status`, `log`, skills e plugins do Kiro e do Claude Code).
-> Fase 1 em andamento: `index`, `explain` (engenharia reversa) e `usages` (onde é usado) já funcionam.
-> As demais funcionalidades abaixo estão planejadas; veja [docs/roadmap.md](docs/roadmap.md).
+The guardian that reads your org before your AI writes a line of code.
 
----
+AI already writes Salesforce code fast. What it does not do is see the whole org: the flow that runs before your trigger, the validation rule that will break other teams' tests, the roll-up that saves the parent record too. And Git does not understand Salesforce metadata, so profiles conflict for no reason and commits carry whatever the last retrieve brought down.
 
-## Por que existe
+Reldor fixes this with one rule: **scripts do the heavy, reliable work; the AI only explains and guides.** It builds an index of your project, follows the real order of execution, and talks to you through the AI you already use (Kiro or Claude Code). You don't memorize commands: you say what you want.
 
-A IA lê o projeto e escreve código rápido, mas **nem sempre enxerga o contexto completo**: onde cada campo, método
-ou automação é usado e o que uma mudança dispara. E o Git **não entende metadados Salesforce**, o que gera conflitos
-falsos, commits sujos e promoções frágeis entre ambientes.
+> **Status:** Phase 1 in progress. `index`, `explain` and `usages` work today. See the [roadmap](./docs/roadmap.md).
 
-O Reldor resolve isso com uma regra simples: **scripts fazem o trabalho pesado e confiável; a IA só explica e conduz.**
+## Installation (5-minute setup)
 
----
+### 1. Get Reldor
 
-## O que ele faz
-
-### Antes da task
-| Funcionalidade | O que faz |
-|---|---|
-| Refinador de task | Da ideia em texto livre: o que mudar, o que impacta, perguntas em aberto, critérios de aceite, tamanho |
-| Engenharia reversa | "O que acontece quando uma Oportunidade é fechada?" com a cadeia real, na ordem de execução |
-| Documentação de fluxo e roteiro de teste | Passo a passo de um processo, por record type, com o que validar |
-| Onboarding | Explica um objeto ou área para quem acabou de chegar |
-
-### Conselheiros, antes de executar
-| Conselheiro | O que faz |
-|---|---|
-| Revisão de spec | Aponta lacunas (volume, registros existentes, critérios) e sugere o texto |
-| Desenho de automação | Flow, trigger + handler, Queueable ou Batch, olhando o que já existe no objeto |
-| LWC moderno | 2 ou 3 caminhos de tela com SLDS, estados, acessibilidade, cache, reuso e POC visual |
-| "Quer que eu veja antes?" | Oferece essas revisões quando uma execução vai começar, sem bloquear |
-
-### Durante o desenvolvimento
-| Funcionalidade | O que faz |
-|---|---|
-| Contexto automático | Entrega à IA tudo que a mudança toca, com nota de risco |
-| Radar de testes | Mudou VR, campo, RT, permissão, flow ou trigger? Aponta e roda os testes afetados |
-| Checagem de queries | Campo usado e não consultado, campo apagado ainda referenciado, SOQL/DML em laço |
-| Exclusão segura | Mostra todos os lugares que usam um método, classe, campo ou flow antes de apagar |
-| Commit limpo | Só as suas linhas entram; o que veio da org fica de fora |
-| Organizador de XML | Ordena e remove duplicados em profiles, permission sets, sharing rules, labels e outros |
-| Org confirmada | Confirma a org antes de todo retrieve e deploy; produção bloqueada por padrão |
-
-### Na promoção entre ambientes
-| Funcionalidade | O que faz |
-|---|---|
-| Radar de colisão | Avisa que outra branch aberta mexe no mesmo arquivo |
-| Ensaio de promoção | Conflitos, dependências faltando e commits fora de ordem, antes do PR |
-| Merge inteligente | Resolve profiles e permission sets item a item, dentro do `git merge` |
-| Rollback guiado | Plano completo para desfazer uma PR: revert, `destructiveChanges.xml`, riscos |
-| Mapa de ambientes | Em quais ambientes cada feature já está |
-
-A lista completa, com fases, está em [docs/roadmap.md](docs/roadmap.md).
-
----
-
-## Como usar: sem decorar comandos
-
-Você conversa com a IA. A skill do Reldor descobre em que etapa você está e conduz o próximo passo.
-
-```
-Você:   quero subir pra UAT
-Reldor: 🛡️ Sua feature já está em develop. Fiz o ensaio para UAT:
-        • 1 conflito em profile — resolvo item a item
-        • o campo Account.Segmento__c não existe em UAT
-        Quer ver o detalhe?
-```
-
-Outros exemplos:
-- "o que acontece quando uma Oportunidade é fechada?"
-- "quero criar uma task para bloquear o fechamento sem proposta aprovada"
-- "vou apagar o método calcularScore"
-- "preciso fazer rollback da PR 123"
-
-Os comandos existem (`reldor status`, `reldor explain`…), mas **quem usa é a IA**. A lista está em
-[docs/commands.md](docs/commands.md).
-
----
-
-## Instalação
-
-Requisitos: **Node.js 18+** (já vem com o Salesforce CLI), **Salesforce CLI `sf` v2** e **Git**.
+You need **Node.js 18+** (it ships with the Salesforce CLI), the **Salesforce CLI (`sf`)** and **Git**.
 
 ```bash
-# 1. instalar o núcleo (na pasta deste repositório)
+git clone https://github.com/marlonrodler/reldor.git
+cd reldor
 npm install
-npm install -g .
-
-# 2. gerar os plugins das IDEs
-npm run build:adapters           # cria dist/claude/reldor e dist/kiro/reldor
-
-# 3. dentro do projeto Salesforce
-reldor init                      # detecta o projeto e pergunta só o que falta
-reldor status                    # mostra a etapa atual e o próximo passo
+npm install -g .        # puts the `reldor` command on your PATH
 ```
 
-Depois, instale o plugin da sua IDE a partir de `dist/` (detalhes em [adapters/README.md](adapters/README.md)).
+### 2. Add it to your AI
 
-Para desenvolver o Reldor: `npm test`.
+<details>
+<summary><strong>Claude Code</strong></summary>
 
----
-
-## Configuração
-
-O Reldor funciona com valores padrão. O que é específico de cada empresa fica **no repositório do cliente**,
-nunca no Reldor:
-
-```
-.reldor/
-├─ reldor.config.yaml   ✅ versionado · ambientes, org de referência, módulos
-├─ profile.md           ✅ versionado · framework, padrões, times, prefixos
-├─ cache/               ❌ fora do Git · índice
-├─ work/<task>/         ❌ fora do Git · contexto, snapshot do retrieve
-└─ log/                 ❌ fora do Git · histórico de ações
+```bash
+claude plugin marketplace add marlonrodler/reldor
+claude plugin install reldor@reldor
 ```
 
-Exemplo completo: [examples/reldor.config.yaml](examples/reldor.config.yaml).
+</details>
 
----
+<details>
+<summary><strong>Kiro</strong></summary>
 
-## Arquitetura
-
-**Núcleo genérico + módulos por tecnologia.** O núcleo não sabe nada de Salesforce; o módulo `sf` é o primeiro.
-
-```
-reldor/
-├─ core/          núcleo: cli, config, status, spec, index, git, report, log
-│                 (automations e connectors reservados)
-├─ modules/sf/    módulo Salesforce: org, indexer, explain, refine, test-radar,
-│                 checks, xml, merge, promote, rollback, frameworks, advisors
-├─ skills/        o "cérebro": instruções para a IA (iguais no Kiro e no Claude)
-├─ steering/      regras carregadas só quando fazem sentido (ex.: arquivos Apex)
-├─ adapters/      cascas finas: kiro/ e claude/
-└─ docs/
+```bash
+npm run build:adapters   # creates dist/kiro/reldor
 ```
 
-Detalhes em [docs/architecture.md](docs/architecture.md).
+Then install the `dist/kiro/reldor` folder as a local plugin from the Powers panel.
 
----
+</details>
 
-## Segurança
+<details>
+<summary><strong>Just the terminal</strong></summary>
 
-- Lê **apenas metadados**, nunca registros.
-- Tokens e credenciais **fora do repositório**.
-- Nenhum dado sai da máquina além do que a IDE já envia à IA.
-- Toda ação fica registrada no **histórico local**.
-- Ações sobre tasks (Monday, Azure DevOps, Jira) vêm **desligadas por padrão**.
-- Produção **bloqueada por padrão** para deploy.
+Every feature is a plain command. Run `reldor help` to list them.
 
----
+</details>
 
-## Documentação
+### 3. Say hello
 
-| Documento | Conteúdo |
-|---|---|
-| [docs/architecture.md](docs/architecture.md) | Núcleo, módulos, índice, fluxo |
-| [docs/commands.md](docs/commands.md) | Comandos que a IA usa |
-| [docs/roadmap.md](docs/roadmap.md) | Fases e critérios |
-| [skills/reldor/SKILL.md](skills/reldor/SKILL.md) | Como a IA conduz o Reldor |
+Open a Salesforce project and tell your AI:
 
----
+> I want to use Reldor
 
-## Licença
+It detects the project, asks only what it cannot detect (environment branches, reference org, design system) and tells you the next step.
 
-Projeto privado. Todos os direitos reservados ao autor.
+## Why Reldor exists
+
+### #1: The AI doesn't see the whole org
+
+**The problem.** The AI reads the files you point it at. It does not know that a before-save flow already sets that field, that a workflow rule fires your update triggers a second time, or that saving a child record recalculates and saves its parent. You find out in UAT.
+
+**The fix.** An index built by scripts, not guessed by the AI:
+
+- [`explain`](./docs/explain.md): what happens when a record is saved, in the real order of execution, following the fflib chain through your `Application` class.
+- [`usages`](./docs/usages.md): every place a field, class, method, flow or object is used, with how sure it is.
+
+### #2: Tests break by surprise
+
+**The problem.** A new validation rule, a required field or a permission breaks tests from other teams. Nobody notices until the pipeline fails, hours later.
+
+**The fix.** The test radar 🚧 points to and runs the affected tests before you deploy, and checks that every field your code uses is in the query. For now, `explain` already lists the related test classes.
+
+### #3: Git doesn't understand Salesforce
+
+**The problem.** Two people add different classes to the same profile and Git offers "all or nothing". A retrieve mixes the org into your work. A promotion fails because a field only exists in develop.
+
+**The fix.** Clean commits, an XML organizer, a Salesforce-aware merge driver and a promotion rehearsal 🚧 (Phase 2).
+
+### #4: Screens and automations on autopilot
+
+**The problem.** The AI jumps straight into code: one more trigger on an object that already has one, `@future` where Queueable fits, a screen built from raw HTML.
+
+**The fix.** Advisors that step in **before** the code, with one question and no blocking:
+
+- [spec-review](./docs/advisors/spec-review.md): finds the gaps in the spec.
+- [automation-design](./docs/advisors/automation-design.md): where the logic should live (flow, trigger, Queueable, Batch), given what already exists.
+- [lwc-ux](./docs/advisors/lwc-ux.md): two or three modern screen options with SLDS, plus a throwaway POC.
+
+## Reference
+
+✅ available · 🚧 planned
+
+### Commands
+
+You rarely type these: your AI runs them for you.
+
+| Command | What it does | |
+|---|---|---|
+| [`reldor init`](./docs/init.md) | Sets Reldor up in a project, asking only what it can't detect | ✅ |
+| [`reldor status`](./docs/status.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |
+| [`reldor index`](./docs/index-command.md) | Builds the project index; reads again only what changed | ✅ |
+| [`reldor explain`](./docs/explain.md) | Reverse engineering: automations in the order of execution | ✅ |
+| [`reldor usages`](./docs/usages.md) | Where something is used, before you change or delete it | ✅ |
+| `reldor log` | Everything Reldor did, newest first | ✅ |
+| `reldor refine` | Turns a task idea into impact, open questions and acceptance criteria | 🚧 |
+| `reldor test-radar` | Tests affected by your current changes | 🚧 |
+| `reldor commit` · `xml` · `promote` · `rollback` | Clean commit, XML organizer, promotion rehearsal, rollback plan | 🚧 |
+
+### Skills
+
+All skills are **model-invoked**: the AI reaches for them when the conversation fits.
+
+- **[reldor](./skills/reldor/SKILL.md)**: The router. Finds out where you are and leads you to the next step.
+- **[spec-review](./modules/sf/advisors/spec-review/SKILL.md)**: Points out what is missing in a spec before it runs.
+- **[automation-design](./modules/sf/advisors/automation-design/SKILL.md)**: Recommends where a business rule should live.
+- **[lwc-ux](./modules/sf/advisors/lwc-ux/SKILL.md)**: Proposes modern, accessible LWC screens before coding.
+
+## Safety
+
+- Reads **metadata only**, never records.
+- Tokens and credentials stay **out of the repository**.
+- Every action is written to a **local history** (`reldor log`).
+- Deploying to production is **blocked by default**. Actions on task boards are **off by default**.
+- Nothing about a client lives in Reldor: teams, prefixes and orgs stay in a profile inside the client's own repository.
+
+## How it is built
+
+A generic **core** plus one **module** per technology. Salesforce is the first module; mobile or web can follow without touching the core. Details in [architecture](./docs/architecture.md); the words we use are in the [glossary](./GLOSSARY.md); decisions are in [docs/adr](./docs/adr).
+
+```
+core/        cli, config, status, spec, git, log, report
+modules/sf/  indexer, explain, checks, advisors (+ planned: test-radar, xml, merge, promote, rollback)
+skills/      the AI's instructions, shared by Kiro and Claude Code
+adapters/    thin per-IDE manifests
+```
+
+## Contributing
+
+Read [AGENTS.md](./AGENTS.md) first. Run `npm test` before every commit.
+
+## License
+
+Private project. All rights reserved by the author.
