@@ -227,6 +227,9 @@ Leia o [AGENTS.md](./AGENTS.md) primeiro. Rode `npm test` antes de cada commit.
 
 ## Licença
 
-**Público para consulta, não é código aberto.** © 2026 Marlon Rodler. Todos os direitos reservados.
+**Livre para usar no trabalho, não é código aberto.** © 2026 Marlon Rodler, sob a [PolyForm Internal Use License 1.0.0](./LICENSE).
 
-Você pode ler o código e a documentação. Usar, copiar, modificar ou distribuir o Reldor, no todo ou em parte, depende de autorização por escrito do autor. Veja a [LICENSE](./LICENSE).
+- ✅ Pode usar o Reldor, e adaptar, nas operações internas suas e da sua empresa.
+- ❌ Não pode distribuir o Reldor nem versões modificadas, vender, oferecer como serviço ou criar um produto concorrente.
+
+Outros usos: fale com o autor.

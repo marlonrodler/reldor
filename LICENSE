@@ -1,60 +1,80 @@
 Reldor
-Copyright (c) 2026 Marlon Rodler. Todos os direitos reservados. All rights reserved.
+Required Notice: Copyright (c) 2026 Marlon Rodler (https://github.com/marlonrodler/reldor)
 
-================================================================================
-PORTUGUÊS
-================================================================================
+--------------------------------------------------------------------------------
+RESUMO EM PORTUGUÊS (só para facilitar a leitura; o que vale é o texto oficial
+em inglês, logo abaixo)
 
-Este repositório é público apenas para consulta. Ele NÃO é software livre nem de
-código aberto.
+O Reldor é público para consulta e LIVRE PARA USAR no trabalho, mas não é código
+aberto.
 
-1. Você pode ler o código-fonte e a documentação neste repositório.
+Pode, de graça:
+  - usar o Reldor nas operações internas suas e da sua empresa (por exemplo, no
+    dia a dia de desenvolvimento de um time);
+  - fazer ajustes e adaptações para esse uso interno.
 
-2. Sem autorização prévia e por escrito do autor, é proibido:
-   a) usar o software, no todo ou em parte, para qualquer finalidade, inclusive
-      interna, comercial ou em projetos de clientes;
-   b) copiar, modificar, adaptar, traduzir ou criar obras derivadas;
-   c) distribuir, publicar, sublicenciar, vender ou disponibilizar a terceiros,
-      inclusive como serviço;
-   d) usar o código, a documentação ou as instruções para a IA (skills) para
-      criar um produto concorrente.
+Não pode:
+  - distribuir o Reldor ou versões modificadas para terceiros (copiar para outro
+    repositório público, vender, empacotar num produto);
+  - oferecer o Reldor como serviço ou usar o código para criar um produto
+    concorrente.
 
-3. Autorizações de uso são dadas pelo autor caso a caso, por escrito, e valem
-   apenas nos termos em que forem dadas.
+Outros usos: fale com o autor. O software é fornecido "no estado em que se
+encontra", sem garantias.
+--------------------------------------------------------------------------------
 
-4. O software é fornecido "no estado em que se encontra", sem garantias de
-   qualquer tipo. O autor não responde por danos decorrentes do seu uso.
+# PolyForm Internal Use License 1.0.0
 
-5. As marcas e nomes de terceiros citados (Salesforce, Git, GitHub e outros)
-   pertencem aos seus titulares.
+<https://polyformproject.org/licenses/internal-use/1.0.0>
 
-Pedidos de autorização: abra uma issue neste repositório ou fale com o autor.
+## Acceptance
 
-================================================================================
-ENGLISH
-================================================================================
+In order to get any license under these terms, you must agree to them as both strict obligations and conditions to all your licenses.
 
-This repository is public for viewing only. It is NOT free or open source
-software.
+## Copyright License
 
-1. You may read the source code and the documentation in this repository.
+The licensor grants you a copyright license for the software to do everything you might do with the software that would otherwise infringe the licensor's copyright in it for any permitted purpose.  However, you may only make changes or new works based on the software according to [Changes and New Works License](#changes-and-new-works-license), and you may not distribute the software.
 
-2. Without the author's prior written permission, you may not:
-   a) use the software, in whole or in part, for any purpose, including
-      internal, commercial or client projects;
-   b) copy, modify, adapt, translate or create derivative works;
-   c) distribute, publish, sublicense, sell or make it available to third
-      parties, including as a service;
-   d) use the code, the documentation or the AI instructions (skills) to build
-      a competing product.
+## Changes and New Works License
 
-3. Permissions to use are granted by the author case by case, in writing, and
-   apply only under the terms in which they are given.
+The licensor grants you an additional copyright license to make changes and new works based on the software for any permitted purpose.
 
-4. The software is provided "as is", without warranty of any kind. The author is
-   not liable for any damage arising from its use.
+## Patent License
 
-5. Third-party names and trademarks mentioned (Salesforce, Git, GitHub and
-   others) belong to their owners.
+The licensor grants you a patent license for the software that covers patent claims the licensor can license, or becomes able to license, that you would infringe by using the software.
 
-To ask for permission: open an issue in this repository or contact the author.
+## Fair Use
+
+You may have "fair use" rights for the software under the law. These terms do not limit them.
+
+## Internal Business Use
+
+Use of the software for the internal business operations of you and your company is use for a permitted purpose.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of your licenses to anyone else, or prevent the licensor from granting licenses to anyone else.  These terms do not imply any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or contributes to infringement of any patent, your patent license for the software granted under these terms ends immediately. If your company makes such a claim, your patent license ends immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have violated any of these terms, or done anything with the software not covered by your licenses, your licenses can nonetheless continue if you come into full compliance with these terms, and take practical steps to correct past violations, within 32 days of receiving notice.  Otherwise, all your licenses end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without any warranty or condition, and the licensor will not be liable to you for any damages arising out of these terms or the use or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these terms, and the **software** is the software the licensor makes available under these terms.
+
+**You** refers to the individual or entity agreeing to these terms.
+
+**Your company** is any legal entity, sole proprietorship, or other kind of organization that you work for, plus all organizations that have control over, are under the control of, or are under common control with that organization.  **Control** means ownership of substantially all the assets of an entity, or the power to direct its management and policies by vote, contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the software under these terms.
+
+**Use** means anything you do with the software requiring one of your licenses.
