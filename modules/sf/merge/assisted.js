@@ -11,6 +11,17 @@ const git = (root, args, o) => gitApi.git(root, args, o);
 const lines = (r) => (r.ok && r.stdout ? r.stdout.split('\n').filter(Boolean) : []);
 const MARKER = /^(<{7}|>{7}|={7})( |$)/m;
 
+/** Tags well formed? Used as a safety net after a line merge of XML or LWC HTML. */
+function wellFormed(text) {
+  try {
+    const { XMLValidator } = require('fast-xml-parser');
+    return XMLValidator.validate(text) === true;
+  } catch {
+    return true;
+  }
+}
+const isMarkup = (file) => /\.(xml|html)$/i.test(file);
+
 function show(root, spec) {
   const r = git(root, ['show', spec], { raw: true });
   return r.ok ? r.stdout : null;
@@ -59,8 +70,21 @@ function startMerge(root, branch, { environments = [] } = {}) {
       if (x.supported) out = { text: x.text, conflicts: x.conflicts.map((c) => ({ item: `${c.section} ${c.key}` })), how: 'item a item' };
     }
     if (!out) {
-      const r = merge3(root, base || '', target, ours);
-      out = { text: r.text, conflicts: r.conflicts, how: 'linha a linha' };
+      // Line merge. For XML/HTML, the result must keep the tags well formed: similar blocks can make a line diff
+      // "slide" and glue tags together. Try a second alignment; if it still breaks, leave the file for review.
+      const checkTags = isMarkup(file) && wellFormed(target) && wellFormed(ours);
+      for (const algorithm of ['histogram', 'patience', 'minimal']) {
+        const r = merge3(root, base || '', target, ours, { algorithm });
+        if (!checkTags || r.conflicts.length || wellFormed(r.text)) {
+          out = { text: r.text, conflicts: r.conflicts, how: 'linha a linha' };
+          break;
+        }
+      }
+      if (!out) {
+        git(root, ['checkout', '--merge', '--', file]);
+        report.hard.push({ file, whole: true, why: 'juntar linha a linha deixaria as tags quebradas; resolva olhando os blocos inteiros' });
+        continue;
+      }
     }
     fs.writeFileSync(path.join(root, file), out.text);
     if (!out.conflicts.length) {
@@ -162,6 +186,9 @@ function verifyMerge(root) {
         .map(([hash, author, , subject]) => `${hash} ${subject} (${author})`)
     : [];
   if (others.length) issues.push({ file: '(commits)', kind: 'commits-de-outros', lines: others });
+  // What is not yours comes first: it is the most important thing to look at before the PR.
+  const rank = { 'commits-de-outros': 0, 'nao-e-seu': 1, conflito: 2, 'removido-sem-ser-seu': 3, 'faltou-o-seu': 4, 'nao-removido': 5 };
+  issues.sort((a, b) => rank[a.kind] - rank[b.kind]);
   return { target, feature, files: all.length, ok: issues.length === 0, issues };
 }
 

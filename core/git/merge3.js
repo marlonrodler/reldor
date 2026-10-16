@@ -27,9 +27,9 @@ const splitLines = (text) => {
 };
 
 /** Edits from base to other, from `git diff -U0`: [{ s, e, lines }] in 0-based half-open base ranges. */
-function editsBetween(root, baseBlob, otherBlob) {
+function editsBetween(root, baseBlob, otherBlob, algorithm = 'histogram') {
   const out = [];
-  const diff = git(root, ['diff', '-U0', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', baseBlob, otherBlob], { raw: true });
+  const diff = git(root, ['diff', '-U0', '--no-color', '--no-ext-diff', `--diff-algorithm=${algorithm}`, baseBlob, otherBlob], { raw: true });
   let current = null;
   for (const row of (diff.stdout || '').split('\n')) {
     const h = /^@@ -(\d+)(?:,(\d+))? \+\d+(?:,\d+)? @@/.exec(row);
@@ -70,11 +70,11 @@ const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
  * merge3(root, base, target, ours) -> { text, conflicts: [{ line, base, target, ours }], resolved: n }
  * resolved counts the places where Git would have stopped but the rule decided.
  */
-function merge3(root, baseText, targetText, oursText, { targetLabel = 'destino', oursLabel = 'sua branch' } = {}) {
+function merge3(root, baseText, targetText, oursText, { targetLabel = 'destino', oursLabel = 'sua branch', algorithm = 'histogram' } = {}) {
   const base = splitLines(baseText);
   const baseBlob = blobOf(root, baseText || '');
-  const T = editsBetween(root, baseBlob, blobOf(root, targetText || '')).map((x) => ({ ...x, side: 'T' }));
-  const O = editsBetween(root, baseBlob, blobOf(root, oursText || '')).map((x) => ({ ...x, side: 'O' }));
+  const T = editsBetween(root, baseBlob, blobOf(root, targetText || ''), algorithm).map((x) => ({ ...x, side: 'T' }));
+  const O = editsBetween(root, baseBlob, blobOf(root, oursText || ''), algorithm).map((x) => ({ ...x, side: 'O' }));
   const all = [...T, ...O].sort((a, b) => a.s - b.s || a.e - b.e || (a.side === 'T' ? -1 : 1));
 
   // Clusters of edits that overlap each other.

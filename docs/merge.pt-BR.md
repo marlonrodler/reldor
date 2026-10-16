@@ -11,7 +11,8 @@ O `reldor merge <sua-branch>` faz o `git merge` da sua branch de desenvolvimento
    - mudanças vizinhas (a sua e a de outra pessoa) entram as duas;
    - você adicionou onde o destino também adicionou: fica a do destino e a sua vem depois;
    - você removeu algo: sai do destino;
-   - profiles, permission sets, labels, sharing rules e traduções são juntados item a item.
+   - profiles, permission sets, labels, sharing rules e traduções são juntados item a item. Quando o Git "gruda" as tags de dois blocos (por exemplo, o `<field>` de um campo dentro do bloco de outro), o Reldor separa: o bloco do destino fica inteiro e o seu entra inteiro, já ordenado como o Salesforce faz;
+   - em qualquer outro XML ou HTML de LWC, ele confere se as tags ficaram válidas. Se juntar linha a linha quebraria as tags, o arquivo fica para revisão em vez de sair quebrado.
 3. Deixa para revisão só o que os dois lados mudaram **nas mesmas linhas**, mostrando o que o destino tem e o que a sua branch tem. A IA pode resolver esses com a mesma regra e explicar cada um.
 4. Confere **"entrou só o seu?"**: compara, linha a linha, o que mudou na branch de merge com o que a sua branch mudou. Aponta linhas que entraram e não são suas, linhas do destino que sumiram, linhas suas que faltaram, marcações de conflito esquecidas e commits de outras pessoas indo junto.
 

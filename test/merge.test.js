@@ -144,3 +144,51 @@ test('reldor clean: leaves only your work in the folder, the org part goes to a 
   assert.equal(reldor(dir, ['clean', '--undo']).status, 0);
   assert.ok(fs.existsSync(path.join(dir, `${CLS}/VeioDaOrg.cls`)), 'the org part came back');
 });
+
+test('reldor merge: profile blocks that plain Git glues together come out whole (keep theirs, add mine)', () => {
+  const dir = repo();
+  const P = 'force-app/main/default/profiles/Admin.profile-meta.xml';
+  const fp = (f, e) => `    <fieldPermissions>\n        <editable>${e}</editable>\n        <field>${f}</field>\n        <readable>true</readable>\n    </fieldPermissions>\n`;
+  const profile = (...blocks) => `<?xml version="1.0" encoding="UTF-8"?>\n<Profile xmlns="http://soap.sforce.com/2006/04/metadata">\n    <custom>false</custom>\n${blocks.join('')}</Profile>\n`;
+  fs.mkdirSync(path.join(dir, 'force-app/main/default/profiles'), { recursive: true });
+  write(dir, P, profile(fp('Account.A__c', true), fp('Account.D__c', true)));
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', 'profile']);
+  git(dir, ['branch', '-f', 'develop']);
+  git(dir, ['checkout', '-qb', 'feature/outra']);
+  write(dir, P, profile(fp('Account.A__c', true), fp('Account.B__c', true), fp('Account.D__c', true)));
+  git(dir, ['commit', '-qam', 'outra'], 'ana');
+  git(dir, ['checkout', '-q', 'develop']);
+  git(dir, ['merge', '-q', '--no-ff', '--no-edit', 'feature/outra']);
+  git(dir, ['checkout', '-qb', 'feature/minha', 'master']);
+  git(dir, ['merge', '-q', '--ff-only', 'develop~1']);
+  write(dir, P, profile(fp('Account.A__c', true), fp('Account.C__c', false), fp('Account.D__c', false)));
+  git(dir, ['commit', '-qam', 'minha']);
+  git(dir, ['checkout', '-qb', 'merge/minha', 'develop']);
+
+  // Plain Git mixes the tags of B (theirs) and C (mine).
+  git(dir, ['merge', '--no-ff', '--no-commit', 'feature/minha']);
+  assert.match(read(dir, P), /<<<<<<<[\s\S]*Account\.B__c[\s\S]*=======[\s\S]*Account\.C__c/);
+  git(dir, ['merge', '--abort']);
+
+  const r = json(dir, ['merge', 'feature/minha', '--yes']);
+  assert.deepEqual(r.hard, []);
+  assert.equal(r.verify.ok, true, JSON.stringify(r.verify.issues));
+  const text = read(dir, P);
+  assert.equal(text, profile(fp('Account.A__c', true), fp('Account.B__c', true), fp('Account.C__c', false), fp('Account.D__c', false)));
+});
+
+test('reldor merge: says loudly when something that is not yours is coming in', () => {
+  const dir = repo();
+  git(dir, ['checkout', '-qb', 'feature/outra']);
+  edit(dir, C, 'return 2;', 'return 20;');
+  git(dir, ['commit', '-qam', 'outra, ainda não está no ambiente'], 'ana');
+  git(dir, ['checkout', '-qb', 'feature/minha', 'master']);
+  git(dir, ['merge', '-q', '--no-edit', 'feature/outra']); // pulled a colleague's branch by mistake
+  edit(dir, C, 'return 1;', 'return 11;');
+  git(dir, ['commit', '-qam', 'minha']);
+  git(dir, ['checkout', '-qb', 'merge/minha', 'develop']);
+  const out = reldor(dir, ['merge', 'feature/minha', '--yes']).stdout;
+  assert.match(out, /Está vindo coisa a mais que não é sua/);
+  assert.match(out, /outra, ainda não está no ambiente \(ana\)/);
+});

@@ -324,7 +324,8 @@ const ISSUE_TEXT = {
 };
 
 function renderVerify(v) {
-  const out = ['', v.ok ? `✅ Entrou só o seu: ${v.files} arquivo(s) conferido(s) linha a linha.` : '⚠️  Conferência "entrou só o seu?":'];
+  const foreign = v.issues.some((i) => i.kind === 'nao-e-seu' || i.kind === 'commits-de-outros');
+  const out = ['', v.ok ? `✅ Entrou só o seu: ${v.files} arquivo(s) conferido(s) linha a linha.` : foreign ? '🔴 Está vindo coisa a mais que não é sua. Confira antes de abrir a PR:' : '⚠️  Conferência "entrou só o seu?":'];
   for (const i of v.issues) {
     out.push(`   • ${i.file}: ${ISSUE_TEXT[i.kind]}`);
     for (const l of i.lines.slice(0, 5)) out.push(`       ${l.length > 110 ? `${l.slice(0, 110)}…` : l}`);

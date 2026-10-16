@@ -9,6 +9,9 @@
 - "Did only yours go in?": `reldor merge --check` compares, line by line, what changed in the merge branch with what
   your branch changed, and points out lines that are not yours, target lines that disappeared, missing lines,
   leftover markers and other people's commits. `--continue` commits the merge after the check; `--abort` undoes it.
+- XML and LWC HTML merged line by line must stay well formed; otherwise another alignment is tried and, if it still
+  breaks, the file is left for review. Profile blocks that plain Git glues together come out whole.
+- When something that is not yours is coming in (lines or other people's commits), the check says so first.
 - `reldor clean`: before any tool commits, leaves only your work in the folder; what came from the org goes to a
   stash (`--undo` brings it back).
 - Removed from the warnings: conflicts (the assisted merge resolves them) and the collision radar (now hidden).

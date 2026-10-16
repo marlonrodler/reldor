@@ -11,7 +11,8 @@
    - changes next to each other (yours and someone else's) both go in;
    - you added something where the target also added: the target's stays, yours comes after;
    - you removed something: it leaves the target;
-   - profiles, permission sets, labels, sharing rules and translations are joined item by item.
+   - profiles, permission sets, labels, sharing rules and translations are joined item by item. When Git "glues" the tags of two blocks (for example the `<field>` of one field inside the block of another), Reldor separates them: the target's block stays whole and yours comes in whole, already sorted as Salesforce does;
+   - in any other XML or LWC HTML, it checks that the tags stay well formed. If a line merge would break them, the file is left for review instead of coming out broken.
 3. Leaves for review only what both sides changed **on the same lines**, with what the target has and what your branch has. The AI can resolve these with the same rule and explain each one.
 4. Checks **"did only yours go in?"**: compares, line by line, what changed in the merge branch with what your branch changed. It points out lines that came in and are not yours, lines of the target that disappeared, yours that are missing, leftover conflict markers and commits by other people going along.
 
