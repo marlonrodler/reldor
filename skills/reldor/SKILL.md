@@ -8,7 +8,7 @@ description: Guardião do desenvolvimento Salesforce. Use quando a pessoa quiser
 Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você descobre a etapa e explica o próximo passo.
 
 ## Sempre
-1. Rode `reldor status` primeiro para saber a etapa atual.
+1. Rode `reldor status --json` primeiro para saber a etapa atual. Se `alerts` não estiver vazio, comece por eles: são problemas reais se a branch subir agora (🔴 bloqueia, 🟡 atenção). Quando a pessoa perguntar "e agora?", é isso que você responde.
 2. Leia `guide.md` para escolher o próximo passo.
 3. Use os resultados dos comandos como fonte da verdade. **Não invente** automações, campos ou referências.
 4. Responda no idioma em que a pessoa está conversando (ou no `language` da configuração, se definido), de forma didática e curta: resumo primeiro, detalhes depois.

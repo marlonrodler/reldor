@@ -33,7 +33,7 @@ const isAncestor = (root, a, b) => git(root, ['merge-base', '--is-ancestor', a, 
  * Simulates `git merge source` on top of target without touching your working tree.
  * Uses `git merge-tree --write-tree` (Git 2.38+); older Git falls back to a temporary worktree.
  */
-function simulateMerge(root, target, source) {
+function simulateMerge(root, target, source, { worktree = true } = {}) {
   // Resolve now: inside a temporary worktree, "HEAD" would mean the worktree itself.
   source = git(root, ['rev-parse', source]).stdout || source;
   target = git(root, ['rev-parse', target]).stdout || target;
@@ -43,6 +43,7 @@ function simulateMerge(root, target, source) {
     const conflicts = [...new Set(rest.filter(Boolean))];
     return { method: 'merge-tree', conflicts, files: lines(git(root, ['ls-tree', '-r', '--name-only', tree])) };
   }
+  if (!worktree) return null;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-ensaio-'));
   try {
     const add = git(root, ['worktree', 'add', '--detach', '--quiet', dir, target]);
@@ -145,7 +146,7 @@ function xmlConflict(root, file, { mergeBase, target, source }) {
  * Promotion rehearsal: what happens if `source` is merged into the branch of environment `env`.
  * Nothing in your repository changes.
  */
-function rehearse(root, config, { env, source = 'HEAD' }) {
+function rehearse(root, config, { env, source = 'HEAD', quick = false }) {
   const environments = config.environments || [];
   if (!environments.length) throw new Error('Nenhum ambiente configurado. Rode "reldor init" ou preencha environments no reldor.config.yaml.');
   const idx = findEnvironment(environments, env);
@@ -178,15 +179,26 @@ function rehearse(root, config, { env, source = 'HEAD' }) {
 
   // 3. Merge simulation and conflicts.
   const mergeBase = git(root, ['merge-base', targetRef, source]).stdout;
-  const sim = simulateMerge(root, targetRef, source);
-  report.method = sim.method;
-  for (const file of sim.conflicts) {
+  const sim = simulateMerge(root, targetRef, source, { worktree: !quick });
+  let mergedFiles;
+  if (!sim) {
+    // Quick mode on an old Git: no in-memory merge. Conflicts are left for the full rehearsal; the files after the
+    // merge are the target's plus what the branch adds, minus what it deletes (good enough for dependencies).
+    report.partial = true;
+    const added = lines(git(root, ['diff', '--name-only', '--diff-filter=AMR', mergeBase, source]));
+    const deleted = new Set(lines(git(root, ['diff', '--name-only', '--diff-filter=D', mergeBase, source])));
+    mergedFiles = [...new Set([...lines(git(root, ['ls-tree', '-r', '--name-only', targetRef])), ...added])].filter((f) => !deleted.has(f));
+  } else {
+    report.method = sim.method;
+    mergedFiles = sim.files;
+  }
+  for (const file of sim ? sim.conflicts : []) {
     const xml = isOrganizable(file) ? xmlConflict(root, file, { mergeBase, target: targetRef, source }) : null;
     report.conflicts.push({ file, kind: xml ? 'metadado' : 'linha', ...(xml || {}) });
   }
 
   // 4. Dependencies that will be missing in the target after the merge.
-  report.missing = missingDependencies(root, { source, mergeBase, mergedFiles: sim.files, refs: [...refs, { name: `sua branch (${sourceName})`, ref: source }] });
+  report.missing = missingDependencies(root, { source, mergeBase, mergedFiles, refs: [...refs, { name: `sua branch (${sourceName})`, ref: source }] });
 
   report.rerere = git(root, ['config', 'rerere.enabled']).stdout === 'true';
   report.driver = Boolean(git(root, ['config', 'merge.reldor.driver']).stdout);

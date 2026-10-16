@@ -99,13 +99,16 @@ function promoteCommand(root, flags, args) {
 const RISK_ICON = { alto: '🔴', 'médio': '🟡', baixo: '⚪' };
 
 function renderCollisions(r) {
-  const out = ['\n🛡️  Radar de colisão', '', `• ${r.files} arquivo(s) na sua branch · ${r.branches} branch(es) abertas conferidas`];
+  const out = ['\n🛡️  Radar de colisão', '', `• ${r.files} arquivo(s) na sua branch · ${r.branches} trabalho(s) em andamento conferido(s)`];
+  if (r.pullRequests === null) out.push('ℹ️  Não consegui ler as PRs abertas do GitHub (gh não instalado ou sem login): conferi só as branches que já estão em algum ambiente.');
+  if (r.ignored) out.push(`ℹ️  ${r.ignored} branch(es) sem PR e fora dos ambientes foram ignoradas (podem estar paradas). Para ver todas: --all`);
   if (!r.collisions.length) {
-    out.push('', '✅ Nenhuma outra branch aberta mexe nos seus arquivos.');
+    out.push('', '✅ Ninguém com trabalho em andamento mexe nos seus arquivos.');
     return out;
   }
   for (const c of r.collisions) {
-    out.push('', `${c.branch} (${c.author}, ${c.date})${c.reached.length ? ` · já está em: ${c.reached.join(', ')}` : ''}`);
+    const where = c.pr ? ` · PR #${c.pr.number} para ${c.pr.base}` : c.reached.length ? ` · já está em: ${c.reached.join(', ')}` : ' · branch sem PR';
+    out.push('', `${c.branch} (${c.author}${c.date ? `, ${c.date}` : ''})${where}`);
     for (const f of c.files) out.push(`   ${RISK_ICON[f.risk]} ${f.file}: ${f.why}`);
   }
   out.push('', '➜ Risco alto: combine com a outra pessoa antes; quem promover depois vai resolver o conflito.');
@@ -126,7 +129,7 @@ function collisionsCommand(root, flags) {
     print('⚠️ Não achei a branch de produção (master/main). Use --base <branch>.');
     return 1;
   }
-  const report = findCollisions(root, { base, environments: envs, days: Number(flags.days) || 30 });
+  const report = findCollisions(root, { base, environments: envs, days: Number(flags.days) || 30, all: Boolean(flags.all) });
   logAction(root, 'collisions', { summary: `${report.collisions.length} branch(es) com arquivos em comum` });
   if (flags.json) printJson(report);
   else print(renderCollisions(report));

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0
+
+- `reldor status` warns by itself: when the branch is not in the next environment yet, it runs a quick promotion
+  rehearsal and the collision radar and shows only the real problems (missing dependencies, commit order, hard
+  conflicts, colleagues changing the same lines). Cached per commit for 30 minutes; `--quick` skips it.
+- `reldor collisions` is quiet by default: only work that is moving forward counts (an open pull request, read with
+  `gh`, or a branch already in an environment). Merge branches are read through their PR. `--all` shows everything.
+- The quick rehearsal also works on Git older than 2.38 (dependencies without the in-memory merge).
+
 ## 0.8.0
 
 - Git actions are **off by default** (`git.actions: off`): Reldor checks and advises; branches, commits, merges and

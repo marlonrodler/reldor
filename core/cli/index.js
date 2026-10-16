@@ -28,7 +28,7 @@ const COMMANDS = {
   security: { run: securityCommand, help: 'Revisão de segurança das mudanças (--all, --no-analyzer, --fail-on alta|média)' },
   quality: { run: qualityCommand, help: 'Qualidade: código repetido que a mudança cria + PMD/CPD (--all, --no-analyzer, --fail-on)' },
   promote: { run: promoteCommand, help: 'Ensaio de promoção para um ambiente: ordem, conflitos, dependências (--fetch, --json)' },
-  collisions: { run: collisionsCommand, help: 'Radar de colisão: outras branches abertas que mexem nos seus arquivos (--fetch, --days)' },
+  collisions: { run: collisionsCommand, help: 'Radar de colisão: outras branches abertas que mexem nos seus arquivos (--fetch, --all, --days)' },
   rollback: { run: rollbackCommand, help: 'Plano de rollback de uma PR, commit ou branch (não altera nada)' },
   merge: { run: mergeCommand, help: 'Merge inteligente de profiles, permission sets, labels... (install | uninstall | status)' },
   'merge-driver': { run: mergeDriverCommand, help: 'Uso interno do Git (chamado pelo merge inteligente)', hidden: true },

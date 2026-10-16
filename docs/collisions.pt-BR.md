@@ -4,7 +4,12 @@
 
 ## O que faz
 
-O `collisions` olha as outras branches abertas (locais e `origin/`) com commits nos últimos 30 dias e lista as que mexem nos mesmos arquivos que a sua, com o risco:
+O `collisions` olha o trabalho dos colegas **que está andando** e lista o que mexe nos mesmos arquivos que a sua branch. Conta como "andando":
+
+- uma **PR aberta** no GitHub (lida pelo `gh`, com o seu login). Para a branch de merge, conta só o que a PR acrescenta ao ambiente;
+- uma branch que **já entrou em algum ambiente** (pré-UAT, UAT).
+
+Branches sem PR e fora dos ambientes são ignoradas, porque podem estar paradas ou abandonadas. `--all` mostra todas. Para cada item, o risco:
 
 | Risco | Quando |
 |---|---|
@@ -25,7 +30,7 @@ Ao começar uma task numa classe compartilhada, e antes de promover. Diga "mais 
 ## Perguntas comuns
 
 **Ele lê as branches do servidor?**
-Só o que o Git já tem localmente. Use `--fetch` para atualizar.
+As branches, só o que o Git já tem localmente (use `--fetch` para atualizar). As PRs vêm do GitHub pelo `gh`; sem o `gh` instalado e logado, ele confere só as branches que já estão em ambientes.
 
 ## Onde se encaixa
 

@@ -136,4 +136,55 @@ function profileLines(facts) {
   ];
 }
 
-module.exports = { name, label, matches, detect, statusLines, profileLines, readProject };
+
+/**
+ * Warnings for `reldor status`: what would go wrong if the branch went to the next environment now.
+ * Quiet by design: returns only real problems. Cached per commit, so it costs nothing the second time.
+ */
+function alerts(root, config, status) {
+  if (!status.git.repo || !status.environments.configured) return [];
+  const next = status.environments.items.find((i) => i.state === 'missing');
+  if (!next || !next.ref) return [];
+  const gitApi = require('../../core/git');
+  const head = gitApi.git(root, ['rev-parse', 'HEAD']).stdout;
+  const target = gitApi.git(root, ['rev-parse', next.ref]).stdout;
+  const cacheFile = path.join(root, '.reldor', 'cache', 'alerts.json');
+  const key = `${head}|${target}|${next.name}`;
+  try {
+    const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    if (cached.key === key && Date.now() - cached.at < 30 * 60 * 1000) return cached.alerts;
+  } catch {
+    /* no cache */
+  }
+  const { rehearse } = require('./promote');
+  const { findCollisions } = require('./promote/collisions');
+  const out = [];
+  const r = rehearse(root, config, { env: next.name, quick: true });
+  const to = `para ${next.name}`;
+  if (r.notInPrevious.length) out.push({ level: 'alta', text: `${r.notInPrevious.length} commit(s) ainda não passaram por ${r.previous}: a esteira bloqueia ${to}.` });
+  for (const m of r.missing) out.push({ level: 'alta', text: `${m.kind} ${m.item} não existe em ${next.name}${m.presentIn.length ? ` (só em ${m.presentIn.join(', ')})` : ''}, e a sua mudança usa (${m.files.map((f) => path.basename(f)).join(', ')}).` });
+  const hard = r.conflicts.filter((c) => !c.resolvable);
+  if (hard.length) out.push({ level: 'média', text: `Conflito ${to} em ${hard.map((c) => path.basename(c.file)).join(', ')}.` });
+  if (r.foreign) out.push({ level: 'média', text: `${r.foreign.commits.length} commit(s) de outras pessoas iriam junto ${to}.` });
+  const envs = config.environments || [];
+  const base = gitApi.resolveBranch(root, envs[envs.length - 1].branch);
+  if (base) {
+    const c = findCollisions(root, { base, environments: envs });
+    for (const hit of c.collisions) {
+      const high = hit.files.filter((f) => f.risk === 'alto');
+      if (!high.length) continue;
+      const where = hit.pr ? `PR #${hit.pr.number} para ${hit.pr.base}` : `já em ${hit.reached.join(', ')}`;
+      out.push({ level: 'média', text: `${hit.author} (${hit.branch}, ${where}) mudou as mesmas linhas que você em ${high.map((f) => path.basename(f.file)).join(', ')}.` });
+    }
+  }
+  try {
+    fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+    fs.writeFileSync(cacheFile, JSON.stringify({ key, at: Date.now(), alerts: out }));
+  } catch {
+    /* cache is best effort */
+  }
+  return out;
+}
+
+module.exports = {
+  alerts, name, label, matches, detect, statusLines, profileLines, readProject };

@@ -4,7 +4,12 @@
 
 ## What it does
 
-`collisions` looks at the other open branches (local and `origin/`) with commits in the last 30 days and lists the ones that change the same files as yours, with the risk:
+`collisions` looks at your colleagues' work **that is moving forward** and lists what changes the same files as your branch. Moving forward means:
+
+- an **open pull request** on GitHub (read with `gh`, with your login). For a merge branch, only what the PR adds to the environment counts;
+- a branch that **already reached an environment** (pre-UAT, UAT).
+
+Branches without a PR and outside the environments are ignored, since they may be stalled or abandoned. `--all` shows them all. For each item, the risk:
 
 | Risk | When |
 |---|---|
@@ -25,7 +30,7 @@ When you start a task on a shared class, and before promoting. Say "is anyone el
 ## Common questions
 
 **Does it read branches from the server?**
-Only what Git already has locally. Use `--fetch` to update.
+Branches: only what Git already has locally (use `--fetch` to update). Pull requests come from GitHub through `gh`; without `gh` installed and logged in, it checks only the branches already in environments.
 
 ## Where it fits
 

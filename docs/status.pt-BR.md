@@ -6,6 +6,16 @@
 
 O `status` diz onde você está e o que fazer agora: a branch atual, os arquivos ainda não commitados, os dados do projeto Salesforce, a spec ligada à branch e **em quais ambientes a sua feature já está** (por exemplo ✅ develop · ⬜ uat · ⬜ produção). No fim, sugere um próximo passo.
 
+**Avisos automáticos.** Se a sua branch ainda não está no próximo ambiente, o `status` faz sozinho o [ensaio de promoção](./promote.pt-BR.md) e o [radar de colisão](./collisions.pt-BR.md) e mostra **só os problemas**, por exemplo:
+
+```
+🛡️  Avisos (se subir agora):
+🔴 campo Perfil_Risco__c não existe em uat (só em develop), e a sua mudança usa (RiscoService.cls).
+🟡 ana (feature/x, PR #45 para develop) mudou as mesmas linhas que você em ContaController.cls.
+```
+
+Sem problemas, não aparece nada. O resultado fica guardado por 30 minutos para o mesmo commit; `--quick` pula os avisos.
+
 Ele compara os commits próprios da sua branch (os que ainda não estão em produção) com cada branch de ambiente, dando preferência à branch remota (`origin/...`).
 
 ## Quando usar

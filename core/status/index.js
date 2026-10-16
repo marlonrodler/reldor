@@ -33,7 +33,9 @@ function nextStep(s) {
   const env = s.environments;
   if (env.configured && s.environments.featureCommits) {
     const next = env.items.find((i) => i.state === 'missing');
-    if (next) return { id: 'promote', target: next.name, text: `Promover a feature para ${next.name}.` };
+    const blocking = (s.alerts || []).filter((a) => a.level === 'alta');
+    if (next && blocking.length) return { id: 'fix', target: next.name, text: `Antes de levar para ${next.name}, resolva os avisos acima.` };
+    if (next) return { id: 'promote', target: next.name, text: `Levar a feature para ${next.name}${(s.alerts || []).length ? ' (veja os avisos acima)' : ': o ensaio não achou problemas'}.` };
     if (env.items.every((i) => i.state === 'present' || i.state === 'current')) {
       return { id: 'done', text: 'A feature já está em todos os ambientes.' };
     }
@@ -62,6 +64,17 @@ function buildStatus(root, options = {}) {
     spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },
     modules: modules.map(({ mod, facts }) => ({ name: mod.name, label: mod.label, facts })),
   };
+  status.alerts = [];
+  if (options.alerts !== false && exists) {
+    for (const { mod } of modules) {
+      if (typeof mod.alerts !== 'function') continue;
+      try {
+        status.alerts.push(...mod.alerts(root, config, status));
+      } catch {
+        /* a warning must never break status */
+      }
+    }
+  }
   status.next = nextStep(status);
   return { status, modules };
 }

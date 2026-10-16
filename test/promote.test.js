@@ -125,7 +125,12 @@ test('reldor collisions: same lines, same file, and metadata the smart merge joi
   git(dir, ['checkout', '-q', 'feature/minha']);
   edit(1, 'minha');
   git(dir, ['commit', '-qam', 'minha linha 2']);
-  const r = json(dir, ['collisions']);
+  // By default, branches without a PR and outside the environments are ignored (they may be abandoned).
+  const quiet = json(dir, ['collisions']);
+  assert.deepEqual(quiet.collisions.map((c) => c.branch), ['feature/outra'], 'only the branch already in develop');
+  assert.deepEqual(quiet.collisions[0].reached, ['develop']);
+  assert.equal(quiet.ignored, 2);
+  const r = json(dir, ['collisions', '--all']);
   const risk = Object.fromEntries(r.collisions.map((c) => [c.branch, c.files.map((f) => `${f.file.split('/').pop()}:${f.risk}`).join()]));
   assert.equal(risk['feature/mesma-linha'], 'ContaController.cls:alto');
   assert.equal(risk['feature/outra-parte'], 'ContaController.cls:médio');
@@ -148,4 +153,19 @@ test('reldor rollback: what goes back, what must be deleted, and what still uses
   const xml = fs.readFileSync(path.join(dir, plan.manifests.destructive), 'utf8');
   assert.match(xml, /<members>Account\.Perfil_Risco__c<\/members>\s*<name>CustomField<\/name>/);
   assert.deepEqual(plan.environments, ['develop', 'production']);
+});
+
+test('reldor status warns, by itself, what would go wrong in the next environment', () => {
+  const dir = scenario();
+  reldor(dir, ['merge', 'install']);
+  git(dir, ['checkout', '-qb', 'merge/minha-develop', 'develop']);
+  git(dir, ['merge', '-q', '--no-edit', 'feature/minha']);
+  git(dir, ['checkout', '-q', 'develop']);
+  git(dir, ['merge', '-q', '--no-edit', 'merge/minha-develop']);
+  git(dir, ['checkout', '-q', 'feature/minha']);
+  const s = json(dir, ['status', '--no-cli']);
+  assert.ok(s.alerts.some((a) => a.level === 'alta' && a.text.includes('Perfil_Risco__c') && a.text.includes('uat')), JSON.stringify(s.alerts));
+  assert.equal(s.next.id, 'fix');
+  assert.match(reldor(dir, ['status', '--no-cli']).stdout, /Avisos \(se subir agora\)/);
+  assert.deepEqual(json(dir, ['status', '--no-cli', '--quick']).alerts, []);
 });

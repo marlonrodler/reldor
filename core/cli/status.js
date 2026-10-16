@@ -50,12 +50,17 @@ function render({ status, modules }) {
 
   if (!status.config.exists) out.push('', '⚠️ O Reldor ainda não foi configurado neste projeto.');
 
+  if (status.alerts && status.alerts.length) {
+    out.push('', '🛡️  Avisos (se subir agora):');
+    for (const a of status.alerts) out.push(`${a.level === 'alta' ? '🔴' : '🟡'} ${a.text}`);
+  }
+
   out.push('', `➡️  Próximo passo: ${status.next.text}`);
   return out;
 }
 
 function statusCommand(root, flags) {
-  const result = buildStatus(root, { fetch: Boolean(flags.fetch), skipCli: Boolean(flags['no-cli']) });
+  const result = buildStatus(root, { fetch: Boolean(flags.fetch), skipCli: Boolean(flags['no-cli']), alerts: !flags.quick });
   if (flags.json) printJson(result.status);
   else print(render(result));
   return 0;
