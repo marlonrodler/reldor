@@ -12,18 +12,54 @@ O Reldor resolve isso com uma regra: **scripts fazem o trabalho pesado e confiá
 
 ## Instalação (5 minutos)
 
-### 1. Baixe o Reldor
+### 1. O que você precisa antes
 
-Você precisa de **Node.js 18+** (já vem com o Salesforce CLI), do **Salesforce CLI (`sf`)** e do **Git**.
+O Reldor roda na sua máquina e usa três ferramentas. Confira o que você já tem num terminal (PowerShell no Windows):
 
 ```bash
+node --version   # Node.js 18 ou mais novo
+git --version    # Git
+sf --version     # Salesforce CLI (sf v2)
+```
+
+Instale o que faltar:
+
+| Ferramenta | Windows (PowerShell) | Mac | Outros jeitos |
+|---|---|---|---|
+| **Node.js** (LTS, 18+) | `winget install OpenJS.NodeJS.LTS` | `brew install node` | [nodejs.org](https://nodejs.org) |
+| **Git** | `winget install Git.Git` | `brew install git` | [git-scm.com](https://git-scm.com/downloads) |
+| **Salesforce CLI** | `npm install --global @salesforce/cli` | `npm install --global @salesforce/cli` | [instalador](https://developer.salesforce.com/tools/salesforcecli) |
+
+Feche e abra o terminal depois de instalar, para ele achar os comandos novos.
+
+> O instalador do Salesforce CLI traz o próprio Node.js, mas não deixa o `node` disponível no terminal. O Reldor precisa do Node.js instalado à parte.
+
+Opcional, mas recomendado:
+
+| Ferramenta | O que acrescenta | Como instalar |
+|---|---|---|
+| **Salesforce Code Analyzer** | PMD, CPD e as regras oficiais de segurança no `review` | `sf plugins install code-analyzer` (precisa de Java 11+) |
+| **GitHub CLI (`gh`)** | Ler as pull requests abertas | `winget install GitHub.cli` (depois `gh auth login`) |
+
+### 2. Baixe o Reldor
+
+O Reldor fica **numa pasta própria, fora dos seus projetos Salesforce**. Você instala uma vez e ele funciona em todos os projetos.
+
+- **Onde:** uma pasta de ferramentas sua, por exemplo `C:\Users\<você>\ferramentas\reldor` no Windows ou `~/ferramentas/reldor` no Mac. Evite pastas sincronizadas pelo OneDrive: a `node_modules` deixa a sincronização lenta.
+- **Não dentro** do projeto Salesforce: os arquivos dele iam se misturar com os do projeto e poderiam acabar num commit.
+
+```bash
+cd C:\Users\<você>\ferramentas    # ou ~/ferramentas
 git clone https://github.com/marlonrodler/reldor.git
 cd reldor
 npm install
-npm install -g .        # deixa o comando `reldor` disponível no terminal
+npm install -g .                    # cria o comando `reldor`, que funciona em qualquer pasta
+reldor --version                    # mostra a versão: deu certo
 ```
 
-### 2. Ligue na sua IA
+O `npm install -g .` liga o comando a esta pasta, então **não mova nem apague a pasta** depois. Para atualizar: `git pull` e `npm install` dentro dela.
+
+### 3. Ligue na sua IA
 
 <details>
 <summary><strong>Claude Code</strong></summary>
@@ -33,33 +69,37 @@ claude plugin marketplace add marlonrodler/reldor
 claude plugin install reldor@reldor
 ```
 
+O repositório é privado: o seu login do GitHub precisa ter acesso a ele.
+
 </details>
 
 <details>
 <summary><strong>Kiro</strong></summary>
 
+Na pasta do Reldor:
+
 ```bash
 npm run build:adapters   # cria dist/kiro/reldor
 ```
 
-Depois, instale a pasta `dist/kiro/reldor` como plugin local pelo painel de Powers.
+Depois instale a pasta `dist/kiro/reldor` como plugin local pelo painel Powers.
 
 </details>
 
 <details>
 <summary><strong>Só o terminal</strong></summary>
 
-Cada funcionalidade é um comando. Rode `reldor help` para ver a lista.
+Toda funcionalidade é um comando. Rode `reldor help` para ver a lista.
 
 </details>
 
-### 3. Diga oi
+### 4. Diga oi, dentro do projeto Salesforce
 
-Abra um projeto Salesforce e diga à sua IA:
+Abra **a pasta do projeto Salesforce** (a que tem o `sfdx-project.json`) na sua IDE e diga para a sua IA:
 
-> Quero usar o Reldor
+> quero usar o Reldor
 
-Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos ambientes, org de referência, design system) e diz o próximo passo.
+Ela detecta o projeto, pergunta só o que não consegue detectar (branches dos ambientes, org de referência, design system, se vocês já têm uma ferramenta que commita e abre PR) e diz o próximo passo. Isso cria uma pasta `.reldor/` **nesse projeto**, com as configurações dele. Faça uma vez por projeto.
 
 ## Por que o Reldor existe
 

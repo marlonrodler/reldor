@@ -12,18 +12,54 @@ Reldor fixes this with one rule: **scripts do the heavy, reliable work; the AI o
 
 ## Installation (5-minute setup)
 
-### 1. Get Reldor
+### 1. What you need first
 
-You need **Node.js 18+** (it ships with the Salesforce CLI), the **Salesforce CLI (`sf`)** and **Git**.
+Reldor runs on your machine and uses three tools. Check what you already have in a terminal (PowerShell on Windows):
 
 ```bash
+node --version   # Node.js 18 or newer
+git --version    # Git
+sf --version     # Salesforce CLI (sf v2)
+```
+
+Install what is missing:
+
+| Tool | Windows (PowerShell) | Mac | Other ways |
+|---|---|---|---|
+| **Node.js** (LTS, 18+) | `winget install OpenJS.NodeJS.LTS` | `brew install node` | [nodejs.org](https://nodejs.org) |
+| **Git** | `winget install Git.Git` | `brew install git` | [git-scm.com](https://git-scm.com/downloads) |
+| **Salesforce CLI** | `npm install --global @salesforce/cli` | `npm install --global @salesforce/cli` | [installer](https://developer.salesforce.com/tools/salesforcecli) |
+
+Close and open the terminal after installing, so the new commands are found.
+
+> The Salesforce CLI installer brings its own Node.js, but it does not put `node` on your PATH. Reldor needs Node.js installed on its own.
+
+Optional, but recommended:
+
+| Tool | What it adds | Install |
+|---|---|---|
+| **Salesforce Code Analyzer** | PMD, CPD and the official security rules in `review` | `sf plugins install code-analyzer` (needs Java 11+) |
+| **GitHub CLI (`gh`)** | Reading open pull requests | `winget install GitHub.cli` (then `gh auth login`) |
+
+### 2. Get Reldor
+
+Reldor lives in **its own folder, outside your Salesforce projects**. It is installed once and then works in every project.
+
+- **Where:** a tools folder of yours, for example `C:\Users\<you>\tools\reldor` on Windows or `~/tools/reldor` on Mac. Avoid folders synced by OneDrive: `node_modules` makes syncing slow.
+- **Not inside** the Salesforce project: its files would mix with the project's and could end up in a commit.
+
+```bash
+cd C:\Users\<you>\tools        # or ~/tools
 git clone https://github.com/marlonrodler/reldor.git
 cd reldor
 npm install
-npm install -g .        # puts the `reldor` command on your PATH
+npm install -g .                 # creates the `reldor` command, usable from any folder
+reldor --version                 # shows the version: it worked
 ```
 
-### 2. Add it to your AI
+`npm install -g .` links the command to this folder, so **do not move or delete the folder** afterwards. To update: `git pull` and `npm install` inside it.
+
+### 3. Add it to your AI
 
 <details>
 <summary><strong>Claude Code</strong></summary>
@@ -33,10 +69,14 @@ claude plugin marketplace add marlonrodler/reldor
 claude plugin install reldor@reldor
 ```
 
+The repository is private: your GitHub login needs access to it.
+
 </details>
 
 <details>
 <summary><strong>Kiro</strong></summary>
+
+In the Reldor folder:
 
 ```bash
 npm run build:adapters   # creates dist/kiro/reldor
@@ -53,13 +93,13 @@ Every feature is a plain command. Run `reldor help` to list them.
 
 </details>
 
-### 3. Say hello
+### 4. Say hello, inside the Salesforce project
 
-Open a Salesforce project and tell your AI:
+Open **the Salesforce project folder** (the one with `sfdx-project.json`) in your IDE and tell your AI:
 
 > I want to use Reldor
 
-It detects the project, asks only what it cannot detect (environment branches, reference org, design system) and tells you the next step.
+It detects the project, asks only what it cannot detect (environment branches, reference org, design system, whether you already have a tool that commits and opens PRs) and tells you the next step. This creates a `.reldor/` folder **in that project**, with the project's settings. Do it once per project.
 
 ## Why Reldor exists
 
