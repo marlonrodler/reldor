@@ -1,0 +1,192 @@
+'use strict';
+
+const path = require('node:path');
+const { parseXml, bool, arr } = require('./xml');
+const { parseApexClass, parseTrigger } = require('./apex');
+
+/** Field and object references inside a formula (validation rules, formula fields, flow formulas). */
+function formulaRefs(text) {
+  if (!text) return [];
+  const tokens = String(text).match(/\$?[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*/g) || [];
+  return [...new Set(tokens.filter((t) => !t.startsWith('$') && (/__(c|r)\b/.test(t) || t.includes('.'))))];
+}
+
+/** Recognizes a metadata file by its path and returns { type, key } or null. */
+function classify(file) {
+  const parts = file.split(/[\\/]/);
+  const base = parts[parts.length - 1];
+  const parent = parts[parts.length - 2];
+  const grand = parts[parts.length - 3];
+  const great = parts[parts.length - 4];
+  if (base.endsWith('.cls')) return { type: 'class', name: base.slice(0, -4) };
+  if (base.endsWith('.trigger')) return { type: 'trigger', name: base.slice(0, -8) };
+  if (base.endsWith('.flow-meta.xml')) return { type: 'flow', name: base.replace('.flow-meta.xml', '') };
+  if (base.endsWith('.workflow-meta.xml')) return { type: 'workflow', object: base.replace('.workflow-meta.xml', '') };
+  if (base.endsWith('.duplicateRule-meta.xml')) {
+    const full = base.replace('.duplicateRule-meta.xml', '');
+    return { type: 'duplicateRule', object: full.split('.')[0], name: full.split('.').slice(1).join('.') };
+  }
+  if (parent === 'fields' && base.endsWith('.field-meta.xml') && great === 'objects') return { type: 'field', object: grand, name: base.replace('.field-meta.xml', '') };
+  if (parent === 'validationRules' && great === 'objects') return { type: 'validationRule', object: grand, name: base.replace('.validationRule-meta.xml', '') };
+  if (parent === 'recordTypes' && great === 'objects') return { type: 'recordType', object: grand, name: base.replace('.recordType-meta.xml', '') };
+  if (grand === 'objects' && base === `${parent}.object-meta.xml`) return { type: 'object', object: parent };
+  if (grand === 'lwc' && (base === `${parent}.js` || base === `${parent}.html`)) return { type: base.endsWith('.js') ? 'lwcJs' : 'lwcHtml', name: parent };
+  return null;
+}
+
+function parseField(meta, { object, name }) {
+  const f = parseXml(meta).CustomField || {};
+  const values = arr(f.valueSet?.valueSetDefinition?.value).map((v) => v.fullName).filter(Boolean);
+  return {
+    object,
+    name: f.fullName || name,
+    type: f.type || null,
+    required: bool(f.required),
+    unique: bool(f.unique),
+    externalId: bool(f.externalId),
+    referenceTo: arr(f.referenceTo)[0] || null,
+    relationshipName: f.relationshipName || null,
+    formula: f.formula ? String(f.formula) : null,
+    formulaRefs: formulaRefs(f.formula),
+    summary: f.summaryForeignKey
+      ? { foreignKey: f.summaryForeignKey, field: f.summarizedField || null, operation: f.summaryOperation || null }
+      : null,
+    picklist: values.length ? values : null,
+    globalValueSet: f.valueSet?.valueSetName || null,
+  };
+}
+
+function parseValidationRule(meta, { object, name }) {
+  const v = parseXml(meta).ValidationRule || {};
+  return {
+    object,
+    name: v.fullName || name,
+    active: bool(v.active),
+    formula: v.errorConditionFormula ? String(v.errorConditionFormula) : '',
+    refs: formulaRefs(v.errorConditionFormula),
+    message: v.errorMessage || null,
+  };
+}
+
+function parseRecordType(meta, { object, name }) {
+  const r = parseXml(meta).RecordType || {};
+  return { object, name: r.fullName || name, label: r.label || name, active: bool(r.active) };
+}
+
+function parseObject(meta, { object }) {
+  const o = parseXml(meta).CustomObject || {};
+  return {
+    object,
+    label: o.label || object,
+    customSetting: Boolean(o.customSettingsType),
+    customMetadata: object.endsWith('__mdt'),
+  };
+}
+
+const EVENT_BY_TRIGGER_TYPE = { Create: ['insert'], Update: ['update'], CreateAndUpdate: ['insert', 'update'], Delete: ['delete'] };
+
+function parseFlow(meta, { name }) {
+  const f = parseXml(meta).Flow || {};
+  const start = f.start || {};
+  const processType = f.processType || null;
+  let object = start.object || null;
+  let timing = null;
+  if (start.triggerType === 'RecordBeforeSave') timing = 'before';
+  else if (start.triggerType === 'RecordAfterSave') timing = 'after';
+  else if (start.triggerType === 'RecordBeforeDelete') timing = 'before';
+
+  if (processType === 'Workflow') {
+    const objectMeta = arr(f.processMetadataValues).find((p) => p.name === 'ObjectType');
+    object = objectMeta?.value?.stringValue || object;
+  }
+
+  const fieldsWritten = new Set();
+  for (const a of arr(f.assignments)) {
+    for (const item of arr(a.assignmentItems)) {
+      const ref = item.assignToReference || '';
+      if (ref.startsWith('$Record.')) fieldsWritten.add(ref.slice('$Record.'.length));
+    }
+  }
+  for (const u of arr(f.recordUpdates)) {
+    if (u.inputReference === '$Record' || (!u.object && !u.inputReference)) {
+      for (const ia of arr(u.inputAssignments)) if (ia.field) fieldsWritten.add(ia.field);
+    }
+  }
+
+  const filters = arr(start.filters).map((x) => ({ field: x.field, operator: x.operator }));
+  return {
+    name,
+    label: f.label || name,
+    processType,
+    status: f.status || null,
+    active: f.status === 'Active',
+    object,
+    timing: processType === 'Workflow' ? 'process' : timing,
+    events: EVENT_BY_TRIGGER_TYPE[start.recordTriggerType] || (processType === 'Workflow' ? ['insert', 'update'] : []),
+    conditional: Boolean(filters.length || start.filterFormula || start.filterLogic),
+    filters,
+    filterFormula: start.filterFormula ? String(start.filterFormula) : null,
+    onlyWhenChanged: start.doesRequireRecordChangedToMeetCriteria === 'true',
+    async: arr(start.scheduledPaths).length > 0,
+    fieldsWritten: [...fieldsWritten],
+    creates: [...new Set(arr(f.recordCreates).map((c) => c.object).filter(Boolean))],
+    updates: [...new Set(arr(f.recordUpdates).map((u) => u.object).filter(Boolean))],
+    deletes: [...new Set(arr(f.recordDeletes).map((d) => d.object).filter(Boolean))],
+    reads: [...new Set(arr(f.recordLookups).map((l) => l.object).filter(Boolean))],
+    apexActions: [...new Set(arr(f.actionCalls).filter((a) => a.actionType === 'apex').map((a) => a.actionName))],
+    subflows: [...new Set(arr(f.subflows).map((s) => s.flowName).filter(Boolean))],
+  };
+}
+
+function parseWorkflow(meta, { object }) {
+  const w = parseXml(meta).Workflow || {};
+  return {
+    object,
+    rules: arr(w.rules).map((r) => ({ name: r.fullName, active: bool(r.active), triggerType: r.triggerType || null })),
+    fieldUpdates: arr(w.fieldUpdates).map((u) => ({ name: u.fullName, field: u.field, reevaluate: bool(u.reevaluateOnChange) })),
+  };
+}
+
+function parseDuplicateRule(meta, { object, name }) {
+  const d = parseXml(meta).DuplicateRule || {};
+  return { object, name, active: bool(d.isActive) };
+}
+
+function parseLwcJs(source, { name }) {
+  return {
+    name,
+    apex: [...new Set([...source.matchAll(/@salesforce\/apex\/([\w.]+)/g)].map((m) => m[1]))],
+    schema: [...new Set([...source.matchAll(/@salesforce\/schema\/([\w.]+)/g)].map((m) => m[1]))],
+  };
+}
+
+function parseLwcHtml(source, { name }) {
+  return { name, children: [...new Set([...source.matchAll(/<c-([\w-]+)/g)].map((m) => m[1]))] };
+}
+
+const PARSERS = {
+  class: (text, key) => parseApexClass(key.name, text),
+  trigger: (text, key) => parseTrigger(key.name, text),
+  field: parseField,
+  validationRule: parseValidationRule,
+  recordType: parseRecordType,
+  object: parseObject,
+  flow: parseFlow,
+  workflow: parseWorkflow,
+  duplicateRule: parseDuplicateRule,
+  lwcJs: parseLwcJs,
+  lwcHtml: parseLwcHtml,
+};
+
+/** Parses one file. Returns { type, data } or null; never throws. */
+function parseFile(file, text) {
+  const key = classify(file);
+  if (!key) return null;
+  try {
+    return { type: key.type, data: PARSERS[key.type](text, key) };
+  } catch (error) {
+    return { type: key.type, error: `${path.basename(file)}: ${error.message}` };
+  }
+}
+
+module.exports = { classify, parseFile, formulaRefs };

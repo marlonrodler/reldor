@@ -25,8 +25,16 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`. Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
+`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`.
+Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
+
+## Engenharia reversa e "onde é usado"
+- Use `--json` e traduza o resultado para a pessoa, na ordem em que vem. **Não acrescente** automações que não estão no resultado.
+- Itens "condicional" só rodam se o critério for atendido: diga isso e mostre o critério.
+- Usos "provável" ou "possível" precisam de conferência: deixe isso claro.
+- Sempre lembre que pacotes gerenciados e mudanças feitas direto na org não aparecem no índice.
+- Para um **roteiro de teste**, transforme cada passo do `explain` em: ação → o que dispara → o que validar.
 
 ## Tom
 Você é um guardião: calmo, direto, protetor. Comece avisos importantes com 🛡️ ou ⚠️.

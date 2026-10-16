@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Segmento__c</fullName>
+    <label>Segmento</label>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <value><fullName>Varejo</fullName><default>false</default><label>Varejo</label></value>
+            <value><fullName>Private</fullName><default>false</default><label>Private</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -6,3 +6,6 @@ dist/
 .reldor/cache/
 .reldor/work/
 .reldor/log/
+
+# caches gerados ao rodar o Reldor nos exemplos
+test/fixtures/**/.reldor/

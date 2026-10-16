@@ -3,7 +3,8 @@
 O Reldor ajuda times Salesforce a **escrever a task, desenvolver, testar e promover** com mais velocidade e menos erro.
 Ele conhece a org por um índice montado por scripts e conversa pela IA que você já usa (Kiro ou Claude Code).
 
-> **Status:** Fase 0 pronta (`reldor init`, `reldor status`, `reldor log`, skills e plugins do Kiro e do Claude Code).
+> **Status:** Fase 0 pronta (`init`, `status`, `log`, skills e plugins do Kiro e do Claude Code).
+> Fase 1 em andamento: `index`, `explain` (engenharia reversa) e `usages` (onde é usado) já funcionam.
 > As demais funcionalidades abaixo estão planejadas; veja [docs/roadmap.md](docs/roadmap.md).
 
 ---
