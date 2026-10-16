@@ -83,7 +83,7 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 **O problema.** Duas pessoas adicionam classes diferentes no mesmo profile e o Git oferece "tudo ou nada". Um retrieve mistura a org com o seu trabalho. Uma promoção falha porque um campo só existe em develop.
 
-**A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) um gancho pre-commit, um [merge inteligente](./docs/promote.pt-BR.md#merge-inteligente) que junta profiles e permission sets item a item dentro do `git merge`, e um [ensaio de promoção](./docs/promote.pt-BR.md) que acha conflitos, commits fora de ordem e campos que só existem na develop antes da pull request.
+**A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) um gancho pre-commit, um [merge inteligente](./docs/promote.pt-BR.md#merge-inteligente) que junta profiles e permission sets item a item dentro do `git merge`, e um [ensaio de promoção](./docs/promote.pt-BR.md) que acha conflitos, commits fora de ordem e campos que só existem na develop antes da pull request. Um [radar de colisão](./docs/collisions.pt-BR.md) avisa quando outra branch aberta mexe nos seus arquivos, e um [plano de rollback](./docs/rollback.pt-BR.md) desfaz uma PR com o revert, o `destructiveChanges.xml` e os riscos.
 
 ### #4: Brechas de segurança e código copiado que ninguém viu
 
@@ -130,7 +130,8 @@ Você quase não digita: a IA roda por você.
 | [`reldor hook install`](./docs/commit.pt-BR.md) | Gancho pre-commit, inclusive para commits feitos na mão | ✅ |
 | [`reldor promote`](./docs/promote.pt-BR.md) | Ensaio de promoção: commits, ordem, commits de outras pessoas, conflitos, dependências faltando | ✅ |
 | [`reldor merge install`](./docs/promote.pt-BR.md#merge-inteligente) | Merge inteligente de profiles, permission sets, labels... dentro do `git merge`, mais o `rerere` | ✅ |
-| `reldor rollback` | Plano de rollback de uma pull request | 🚧 |
+| [`reldor collisions`](./docs/collisions.pt-BR.md) | Outras branches abertas mexendo nos mesmos arquivos que a sua, com o risco | ✅ |
+| [`reldor rollback`](./docs/rollback.pt-BR.md) | Plano de rollback de uma PR: revert, `destructiveChanges.xml`, riscos | ✅ |
 
 ### Skills
 
@@ -156,7 +157,7 @@ Um **núcleo** genérico e um **módulo** por tecnologia. Salesforce é o primei
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, org, advisors (+ planejado: rollback)
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, advisors
 skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```

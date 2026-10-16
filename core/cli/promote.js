@@ -5,6 +5,7 @@ const gitApi = require('../git');
 const { logAction } = require('../log');
 const { print, printJson } = require('../report');
 const { rehearse } = require('../../modules/sf/promote');
+const { findCollisions } = require('../../modules/sf/promote/collisions');
 
 /** Next environment the branch has not fully reached yet. */
 function nextEnvironment(root, environments) {
@@ -90,4 +91,42 @@ function promoteCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { promoteCommand, renderPromote };
+
+const RISK_ICON = { alto: '🔴', 'médio': '🟡', baixo: '⚪' };
+
+function renderCollisions(r) {
+  const out = ['\n🛡️  Radar de colisão', '', `• ${r.files} arquivo(s) na sua branch · ${r.branches} branch(es) abertas conferidas`];
+  if (!r.collisions.length) {
+    out.push('', '✅ Nenhuma outra branch aberta mexe nos seus arquivos.');
+    return out;
+  }
+  for (const c of r.collisions) {
+    out.push('', `${c.branch} (${c.author}, ${c.date})${c.reached.length ? ` · já está em: ${c.reached.join(', ')}` : ''}`);
+    for (const f of c.files) out.push(`   ${RISK_ICON[f.risk]} ${f.file}: ${f.why}`);
+  }
+  out.push('', '➜ Risco alto: combine com a outra pessoa antes; quem promover depois vai resolver o conflito.');
+  out.push('➜ Se a outra branch já está num ambiente, rode o ensaio (reldor promote) para ver o conflito de verdade.');
+  return out;
+}
+
+function collisionsCommand(root, flags) {
+  if (!gitApi.isRepo(root)) {
+    print('⚠️ Esta pasta não é um repositório Git.');
+    return 1;
+  }
+  const { config } = loadConfig(root);
+  if (flags.fetch) gitApi.fetch(root);
+  const envs = config.environments || [];
+  const base = gitApi.resolveBranch(root, flags.base || (envs.length ? envs[envs.length - 1].branch : null)) || gitApi.resolveBranch(root, 'master') || gitApi.resolveBranch(root, 'main');
+  if (!base) {
+    print('⚠️ Não achei a branch de produção (master/main). Use --base <branch>.');
+    return 1;
+  }
+  const report = findCollisions(root, { base, environments: envs, days: Number(flags.days) || 30 });
+  logAction(root, 'collisions', { summary: `${report.collisions.length} branch(es) com arquivos em comum` });
+  if (flags.json) printJson(report);
+  else print(renderCollisions(report));
+  return 0;
+}
+
+module.exports = { promoteCommand, renderPromote, collisionsCommand };

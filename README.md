@@ -83,7 +83,7 @@ It detects the project, asks only what it cannot detect (environment branches, r
 
 **The problem.** Two people add different classes to the same profile and Git offers "all or nothing". A retrieve mixes the org into your work. A promotion fails because a field only exists in develop.
 
-**The fix.** [Clean commits](./docs/commit.md) that take only your lines, an [XML organizer](./docs/xml.md) a pre-commit guard, a [smart merge](./docs/promote.md#smart-merge) that joins profiles and permission sets item by item inside `git merge`, and a [promotion rehearsal](./docs/promote.md) that finds conflicts, out-of-order commits and fields that only exist in develop before the pull request.
+**The fix.** [Clean commits](./docs/commit.md) that take only your lines, an [XML organizer](./docs/xml.md) a pre-commit guard, a [smart merge](./docs/promote.md#smart-merge) that joins profiles and permission sets item by item inside `git merge`, and a [promotion rehearsal](./docs/promote.md) that finds conflicts, out-of-order commits and fields that only exist in develop before the pull request. A [collision radar](./docs/collisions.md) warns when another open branch changes your files, and a [rollback plan](./docs/rollback.md) undoes a PR with the revert, the `destructiveChanges.xml` and the risks.
 
 ### #4: Security holes and copied code nobody saw
 
@@ -130,7 +130,8 @@ You rarely type these: your AI runs them for you.
 | [`reldor hook install`](./docs/commit.md) | Pre-commit guard, also for commits made by hand | ✅ |
 | [`reldor promote`](./docs/promote.md) | Promotion rehearsal: commits, order, other people's commits, conflicts, missing dependencies | ✅ |
 | [`reldor merge install`](./docs/promote.md#smart-merge) | Smart merge of profiles, permission sets, labels... inside `git merge`, plus `rerere` | ✅ |
-| `reldor rollback` | Rollback plan for a pull request | 🚧 |
+| [`reldor collisions`](./docs/collisions.md) | Other open branches changing the same files as yours, with the risk | ✅ |
+| [`reldor rollback`](./docs/rollback.md) | Rollback plan for a PR: revert, `destructiveChanges.xml`, risks | ✅ |
 
 ### Skills
 
@@ -156,7 +157,7 @@ A generic **core** plus one **module** per technology. Salesforce is the first m
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, org, advisors (+ planned: rollback)
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, advisors
 skills/      the AI's instructions, shared by Kiro and Claude Code
 adapters/    thin per-IDE manifests
 ```

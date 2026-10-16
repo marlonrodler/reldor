@@ -25,7 +25,7 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`.
+`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor collisions`, `reldor rollback`.
 Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
 
@@ -78,3 +78,9 @@ Você é um guardião: calmo, direto, protetor. Comece avisos importantes com �
 - Conflitos em profile e permission set marcados como resolvíveis: se `driver` for falso, ofereça `reldor merge install` (só na máquina da pessoa, liga também o rerere).
 - Lembre a regra do time: ajustes vão na branch de desenvolvimento, nunca na branch de merge.
 - O ensaio não muda nada. Só rode `git checkout`/`git merge` com confirmação da pessoa.
+- Antes do ensaio, rode `reldor collisions --json`: se houver risco alto, diga quem é a outra pessoa e sugira combinar antes.
+
+## Rollback
+- Para "rollback da PR <n>", rode `reldor rollback <n> --fetch --json` e mostre, nesta ordem: itens que seriam apagados mas ainda são usados, arquivos que mudaram depois da PR, o que será apagado da org (com o aviso de cada tipo) e o passo a passo.
+- Nunca rode o revert, o checkout nem o deploy sem confirmação. O deploy fica com a esteira; ofereça só a validação `--dry-run`.
+- Lembre que dados de registros não voltam com o rollback.

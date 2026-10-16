@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+
+- `reldor collisions`: other open branches (last 30 days) that change the same files as yours, with the risk:
+  same lines (high), same file (medium), metadata the smart merge joins (low). Shows author, date and environments.
+- `reldor rollback <PR | commit | branch>`: rollback plan without changing anything. What goes back with the revert,
+  what the PR created and must be deleted (ready `destructiveChanges.xml`), items to delete that are still used,
+  files changed again after the PR, notes per type, and the steps in the team's flow (revert the feature's commits
+  in a rollback branch and promote it like a feature).
+- Windows: Git now runs without cmd.exe, so revisions like `abc^2` and paths with spaces are passed as they are.
+
 ## 0.7.0
 
 - `reldor promote <environment>`: promotion rehearsal, without changing anything. Lists the commits that go along,

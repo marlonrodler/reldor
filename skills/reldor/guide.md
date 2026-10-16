@@ -21,7 +21,8 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "organiza os profiles" | `reldor xml [--all]` | Mostre duplicados removidos e conflitos para decidir |
 | "quero subir para <ambiente>" | `reldor promote <ambiente> --fetch --json` | Problemas primeiro (ordem, dependências, conflitos), depois o próximo passo |
 | "deu conflito em profile" / antes do primeiro merge | `reldor merge status` → `reldor merge install` | Explique que é só na máquina da pessoa |
-| "rollback da PR…" | `reldor rollback` | Mostre o plano e os riscos; não execute sozinho |
+| "rollback da PR…" | `reldor rollback <n> --fetch --json` | Riscos primeiro (itens ainda usados, arquivos mudados depois); não execute sozinho |
+| "alguém mais mexe nisso?" / antes de promover | `reldor collisions --fetch --json` | Risco alto primeiro, com autor e ambiente |
 
 ## Ordem natural de uma task
 refinar → contexto → desenvolver (radar de testes) → retrieve/deploy → commit limpo → promover → documentar

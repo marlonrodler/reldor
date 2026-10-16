@@ -106,3 +106,46 @@ test('reldor promote: profile conflict is resolvable, order, missing field, and 
   assert.deepEqual(mixed.foreign.commits.map((c) => c.author), ['ana']);
   assert.deepEqual(mixed.foreign.from, ['develop']);
 });
+
+test('reldor collisions: same lines, same file, and metadata the smart merge joins', () => {
+  const dir = scenario();
+  const C = 'force-app/main/default/classes/ContaController.cls';
+  const edit = (line, tag) => {
+    const file = path.join(dir, C);
+    const rows = fs.readFileSync(file, 'utf8').split('\n');
+    rows[line] += ` // ${tag}`;
+    fs.writeFileSync(file, rows.join('\n'));
+  };
+  git(dir, ['checkout', '-qb', 'feature/mesma-linha', 'master']);
+  edit(1, 'outra pessoa');
+  git(dir, ['commit', '-qam', 'linha 2'], 'ana');
+  git(dir, ['checkout', '-qb', 'feature/outra-parte', 'master']);
+  edit(4, 'fim');
+  git(dir, ['commit', '-qam', 'linha 5'], 'ana');
+  git(dir, ['checkout', '-q', 'feature/minha']);
+  edit(1, 'minha');
+  git(dir, ['commit', '-qam', 'minha linha 2']);
+  const r = json(dir, ['collisions']);
+  const risk = Object.fromEntries(r.collisions.map((c) => [c.branch, c.files.map((f) => `${f.file.split('/').pop()}:${f.risk}`).join()]));
+  assert.equal(risk['feature/mesma-linha'], 'ContaController.cls:alto');
+  assert.equal(risk['feature/outra-parte'], 'ContaController.cls:médio');
+  assert.equal(risk['feature/outra'], 'Gestao_Contas.permissionset-meta.xml:baixo');
+});
+
+test('reldor rollback: what goes back, what must be deleted, and what still uses it', () => {
+  const dir = scenario();
+  git(dir, ['checkout', '-q', 'master']);
+  git(dir, ['merge', '-q', '--no-ff', '-m', 'Merge pull request #123 from org/feature/outra', 'feature/outra']);
+  // After the PR, someone starts using the new field.
+  write(dir, 'force-app/main/default/classes/Usa.cls', 'public class Usa { Object x(Account a) { return a.Perfil_Risco__c; } }\n');
+  git(dir, ['add', '-A'], 'ana');
+  git(dir, ['commit', '-qm', 'usa o campo'], 'ana');
+  const plan = json(dir, ['rollback', '123']);
+  assert.deepEqual(plan.commits.map((c) => c.subject), ['outra: campo']);
+  assert.deepEqual(plan.destructive.map((d) => `${d.type} ${d.member}`), ['CustomField Account.Perfil_Risco__c']);
+  assert.deepEqual(plan.restore.map((d) => `${d.type} ${d.member}`), ['PermissionSet Gestao_Contas']);
+  assert.deepEqual(plan.stillUsed.map((s) => s.files), [['force-app/main/default/classes/Usa.cls']]);
+  const xml = fs.readFileSync(path.join(dir, plan.manifests.destructive), 'utf8');
+  assert.match(xml, /<members>Account\.Perfil_Risco__c<\/members>\s*<name>CustomField<\/name>/);
+  assert.deepEqual(plan.environments, ['develop', 'production']);
+});
