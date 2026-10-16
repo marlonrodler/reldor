@@ -107,12 +107,28 @@ O [`quality`](./docs/quality.pt-BR.md) pega a cópia antes de ela se espalhar: u
 
 ✅ disponível · 🚧 planejado
 
-### Comandos
+### Os momentos
 
-Você quase não digita: a IA roda por você.
+Você não decora comandos: diz o que quer e a IA roda o certo. Estes são os momentos que ela cobre.
+
+| Momento | O que você diz | O que o Reldor faz |
+|---|---|---|
+| **E agora?** | "e agora?" | [`status`](./docs/status.pt-BR.md): onde você está, avisos se subir agora, próximo passo |
+| **Entender** | "o que acontece quando uma Oportunidade é fechada?", "onde isso é usado?", "me ajuda a escrever a task" | [`explain`](./docs/explain.pt-BR.md), [`usages`](./docs/usages.pt-BR.md), [`refine`](./docs/refine.pt-BR.md) e os conselheiros |
+| **Revisar** | "posso commitar?" | [`review`](./docs/review.pt-BR.md): segurança, qualidade e código repetido, campo fora da query, testes que podem quebrar e XML, num resumo só |
+| **Limpar** | "vou commitar, limpa o que não é meu" | [`clean`](./docs/clean.pt-BR.md): deixa na pasta só o seu; depois você commita pela sua ferramenta |
+| **Merge** | "faz o merge da minha branch" (na branch de merge) | [`merge`](./docs/merge.pt-BR.md): resolve os conflitos mantendo o destino e aplicando só a sua mudança, e confere se entrou só o seu |
+| **Subir** | "está pronto para o pré-UAT?" | [`promote`](./docs/promote.pt-BR.md): ordem dos commits e dependências faltando antes da PR |
+| **Desfazer** | "preciso fazer rollback da PR 123" | [`rollback`](./docs/rollback.pt-BR.md): revert, `destructiveChanges.xml` e riscos |
+
+Um gancho pre-commit também roda sozinho em todo commit, inclusive nos feitos por outras ferramentas.
+
+<details>
+<summary><b>Todos os comandos</b> (as peças por trás dos momentos)</summary>
 
 | Comando | O que faz | |
 |---|---|---|
+| [`reldor review`](./docs/review.pt-BR.md) | Revisão antes do commit: segurança, qualidade, queries, testes e XML de uma vez | ✅ |
 | [`reldor init`](./docs/init.pt-BR.md) | Configura o Reldor no projeto, perguntando só o que não detecta | ✅ |
 | [`reldor status`](./docs/status.pt-BR.md) | Onde você está: branch, pendências, ambientes, spec, próximo passo | ✅ |
 | [`reldor index`](./docs/index-command.pt-BR.md) | Monta o índice do projeto; só relê o que mudou | ✅ |
@@ -132,6 +148,8 @@ Você quase não digita: a IA roda por você.
 | [`reldor promote`](./docs/promote.pt-BR.md) | Ensaio de promoção: ordem dos commits, commits de outras pessoas, dependências faltando | ✅ |
 | [`reldor merge`](./docs/merge.pt-BR.md) | Merge assistido na branch de merge: resolve os conflitos e confere se entrou só o seu | ✅ |
 | [`reldor rollback`](./docs/rollback.pt-BR.md) | Plano de rollback de uma PR: revert, `destructiveChanges.xml`, riscos | ✅ |
+
+</details>
 
 ### Skills
 

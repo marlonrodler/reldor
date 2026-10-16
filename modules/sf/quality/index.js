@@ -62,7 +62,7 @@ const KIND_SEVERITY = { 'bloco-copiado': 'média' };
  * Code quality review. files: changed files (relative). all: review every class as if new.
  * Returns { findings, analyzer } with findings sorted by priority.
  */
-function qualityReview(root, files, { model, packageDirectories, base, all = false, analyzer = true, options = {} }) {
+function qualityReview(root, files, { model, packageDirectories, base, all = false, analyzer = true, analyzerSelectors = ['Recommended', 'cpd'], options = {} }) {
   const sources = loadSources(root, packageDirectories, model, options.include_tests);
   const changed = new Map();
   for (const f of all ? [...sources.keys()] : files.filter((x) => /\.cls$/i.test(x))) {
@@ -87,7 +87,7 @@ function qualityReview(root, files, { model, packageDirectories, base, all = fal
   let ca = { ran: false, findings: [] };
   if (analyzer) {
     const targets = all ? packageDirectories : files.filter((f) => /\.(cls|trigger|js|html|page|component)$/i.test(f) || /\.flow-meta\.xml$/i.test(f));
-    ca = runAnalyzer(root, targets, ['Recommended', 'cpd']);
+    ca = runAnalyzer(root, targets, analyzerSelectors);
   }
   const order = { alta: 0, 'média': 1, baixa: 2 };
   const all_ = [...findings, ...ca.findings.map((f) => ({ ...f, kind: 'code-analyzer' }))].sort((a, b) => order[a.severity] - order[b.severity] || String(a.file).localeCompare(String(b.file)) || (a.line || 0) - (b.line || 0));

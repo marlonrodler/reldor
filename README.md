@@ -107,12 +107,28 @@ It detects the project, asks only what it cannot detect (environment branches, r
 
 ✅ available · 🚧 planned
 
-### Commands
+### The moments
 
-You rarely type these: your AI runs them for you.
+You don't memorize commands: you say what you want and the AI runs the right one. These are the moments it covers.
+
+| Moment | What you say | What Reldor does |
+|---|---|---|
+| **What now?** | "what now?" | [`status`](./docs/status.md): where you are, warnings if you went up now, next step |
+| **Understand** | "what happens when an Opportunity is closed?", "where is this used?", "help me write this task" | [`explain`](./docs/explain.md), [`usages`](./docs/usages.md), [`refine`](./docs/refine.md) and the advisors |
+| **Review** | "can I commit?" | [`review`](./docs/review.md): security, quality and repeated code, fields outside the query, tests that can break and XML, in one summary |
+| **Clean** | "I'm going to commit, clean what is not mine" | [`clean`](./docs/clean.md): leaves only your work in the folder; then you commit with your tool |
+| **Merge** | "merge my branch" (on the merge branch) | [`merge`](./docs/merge.md): resolves the conflicts keeping the target and applying only your change, then checks that only yours went in |
+| **Go up** | "is it ready for pre-UAT?" | [`promote`](./docs/promote.md): commit order and missing dependencies before the PR |
+| **Undo** | "I need to roll back PR 123" | [`rollback`](./docs/rollback.md): revert, `destructiveChanges.xml` and risks |
+
+A pre-commit guard also runs by itself on every commit, even the ones made by other tools.
+
+<details>
+<summary><b>All commands</b> (the pieces behind the moments)</summary>
 
 | Command | What it does | |
 |---|---|---|
+| [`reldor review`](./docs/review.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
 | [`reldor init`](./docs/init.md) | Sets Reldor up in a project, asking only what it can't detect | ✅ |
 | [`reldor status`](./docs/status.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |
 | [`reldor index`](./docs/index-command.md) | Builds the project index; reads again only what changed | ✅ |
@@ -132,6 +148,8 @@ You rarely type these: your AI runs them for you.
 | [`reldor promote`](./docs/promote.md) | Promotion rehearsal: commit order, other people's commits, missing dependencies | ✅ |
 | [`reldor merge`](./docs/merge.md) | Assisted merge into the merge branch: resolves conflicts, checks that only yours went in | ✅ |
 | [`reldor rollback`](./docs/rollback.md) | Rollback plan for a PR: revert, `destructiveChanges.xml`, risks | ✅ |
+
+</details>
 
 ### Skills
 

@@ -16,8 +16,9 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "dá um retrieve" | `reldor retrieve [--metadata X] --yes --org <alias>` (depois de confirmar a org) | Diga se o que veio conta como seu ou da org |
 | "fiz retrieve por fora" | `reldor snapshot` | Explique que o que está na pasta agora conta como da org |
 | "quero commitar" | `reldor xml` → `reldor commit --dry-run --json` → `reldor commit -m "..." --yes` | Mostre o que é seu, o que é misto e o que veio da org |
-| "tem algum problema de segurança?" / antes de commitar código | `reldor security --json` | Prioridade alta primeiro, com como corrigir |
-| "repeti algum código?" / antes de commitar Apex | `reldor quality --json` | Onde está o original e como reaproveitar |
+| "posso commitar?" / antes de commitar | `reldor review --json` | 🔴 primeiro, depois 🟡, depois os testes |
+| "tem algum problema de segurança?" | `reldor security --json` | Prioridade alta primeiro, com como corrigir |
+| "repeti algum código?" | `reldor quality --json` | Onde está o original e como reaproveitar |
 | "organiza os profiles" | `reldor xml [--all]` | Mostre duplicados removidos e conflitos para decidir |
 | "quero subir para <ambiente>" | `reldor promote <ambiente> --fetch --json` | Problemas primeiro (ordem, dependências, conflitos), depois o próximo passo |
 | "deu conflito em profile" / antes do primeiro merge | `reldor merge status` → `reldor merge install` | Explique que é só na máquina da pessoa |

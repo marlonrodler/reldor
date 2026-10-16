@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0
+
+- `reldor review`: one review before the commit, with one summary: security, quality and repeated code, fields read
+  outside the query, tests the change can break, XML out of order and files that came from the org. 🔴 fix before
+  the commit, 🟡 attention. The Code Analyzer runs once for security and quality.
+- `reldor help` and the README show the moments (what now, understand, review, clean, merge, go up, undo); the
+  detailed commands are listed as the pieces behind them.
+
 ## 0.10.0
 
 - `reldor merge <branch>`: assisted merge into the merge branch. `git merge --no-ff --no-commit`, then every

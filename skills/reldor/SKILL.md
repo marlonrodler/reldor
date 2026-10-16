@@ -44,15 +44,20 @@ diga que ainda está em construção e ajude do jeito tradicional, sem inventar 
 - Para rodar, **pergunte a org** e só então use `reldor test-radar --run --yes --org <alias>`. Nunca em produção.
 - Explique que o `--run` é uma validação sem salvar: nada muda na org.
 
-## Segurança
-- Antes de commitar mudanças em Apex, LWC, Visualforce, flows ou profiles, rode `reldor security --json`.
+## Revisar antes do commit
+- Quando a pessoa disser "posso commitar?" ou for commitar, rode **um comando só**: `reldor review --json`. Ele já inclui segurança, qualidade, queries, testes afetados, XML e arquivos da org.
+- Mostre primeiro `blocking` (🔴 corrija antes do commit), depois `attention` (🟡), depois os testes. Ofereça corrigir.
+- Use os comandos separados (`security`, `quality`, `check`, `test-radar`, `xml`) só quando a pessoa pedir uma parte específica.
+- Se aparecer "arquivos da org", ofereça o `reldor clean` antes do commit.
+
+## Segurança (detalhes)
 - Mostre primeiro os itens de prioridade alta, com arquivo:linha e como corrigir. Ofereça corrigir.
 - Para "caminho-sem-sharing", mostre o caminho inteiro (da tela até a classe).
 - Diga que não substitui pentest nem a equipe de segurança. Nunca esconda um achado para parecer mais simples.
 - Um achado aceito de propósito se cala com o comentário `// reldor-ignore: <regra>` na linha ou acima dela.
 
-## Qualidade e código repetido
-- Antes de commitar Apex, rode também `reldor quality --json`. Ele só aponta a repetição que a mudança cria.
+## Qualidade e código repetido (detalhes)
+- O `review` já roda a qualidade. Ela só aponta a repetição que a mudança cria.
 - Para cada bloco copiado, query repetida ou método que já existe, mostre onde está o original e ofereça reaproveitar (chamar o Service ou o Selector existente) em vez de manter a cópia.
 - Texto repetido em várias classes: sugira um Custom Label.
 - Se o Code Analyzer não estiver instalado, diga que as regras do PMD ficaram de fora e como instalar (`sf plugins install code-analyzer`).

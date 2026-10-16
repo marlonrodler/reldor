@@ -9,32 +9,35 @@ const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkComm
 const { snapshotCommand, commitCommand, cleanCommand, hookCommand, mergeCommand, mergeDriverCommand } = require('./git-commands');
 const { promoteCommand, collisionsCommand } = require('./promote');
 const { rollbackCommand } = require('./rollback');
+const { reviewCommand } = require('./review');
 const pkg = require('../../package.json');
 
+// main: the moments people use (shown first). detail: the pieces behind them, still available.
 const COMMANDS = {
-  status: { run: statusCommand, help: 'Mostra a etapa atual e o próximo passo (--json, --fetch)' },
+  status: { run: statusCommand, main: true, help: 'E agora? Onde você está, avisos e o próximo passo (--json, --fetch)' },
+  explain: { run: explainCommand, main: true, help: 'Entender: o que acontece quando um registro é salvo (reldor explain <Objeto>)' },
+  usages: { run: usagesCommand, main: true, help: 'Entender: onde algo é usado, antes de mudar ou apagar' },
+  refine: { run: refineCommand, main: true, help: 'Entender: fatos para escrever uma task (reldor refine "<ideia>")' },
+  review: { run: reviewCommand, main: true, help: 'Revisar antes do commit: segurança, qualidade, queries, testes e XML de uma vez' },
+  clean: { run: cleanCommand, main: true, help: 'Limpar antes do commit: deixa na pasta só o seu (--dry-run, --undo)' },
+  merge: { run: mergeCommand, main: true, help: 'Merge assistido na branch de merge: reldor merge <sua-branch> (--check, --continue, --abort)' },
+  promote: { run: promoteCommand, main: true, help: 'Subir: ensaio para um ambiente (ordem dos commits, dependências)' },
+  rollback: { run: rollbackCommand, main: true, help: 'Desfazer: plano de rollback de uma PR (não altera nada)' },
   init: { run: initCommand, help: 'Configura o Reldor neste projeto (--yes, --envs, --org, --design-system, --git-actions on|off)' },
-  log: { run: logCommand, help: 'Mostra o histórico de ações do Reldor (--json)' },
+  log: { run: logCommand, help: 'Histórico de ações do Reldor (--json)' },
   index: { run: indexCommand, help: 'Monta ou atualiza o índice do projeto (--full, --json)' },
-  explain: { run: explainCommand, help: 'O que acontece quando um registro é salvo: reldor explain <Objeto> [--event insert|update|delete]' },
-  refine: { run: refineCommand, help: 'Fatos para escrever uma task: reldor refine "<ideia>" [--objects A,B] [--fields A.Campo__c]' },
-  'test-radar': { run: testRadarCommand, help: 'Testes afetados pelas suas mudanças (--base, --files, --run --org <alias>, --json)' },
-  retrieve: { run: retrieveCommand, help: 'Retrieve com confirmação da org e foto para o commit limpo (--metadata, --manifest, --org)' },
-  snapshot: { run: snapshotCommand, help: 'Tira a foto depois de um retrieve feito fora do Reldor (--clear para apagar)' },
-  commit: { run: commitCommand, help: 'Commit limpo: só o que é seu, linha a linha (-m, --include, --dry-run)' },
-  hook: { run: hookCommand, help: 'Instala o gancho pre-commit do Reldor (install | uninstall)' },
-  precommit: { run: precommitCommand, help: 'Checagem usada pelo gancho pre-commit' },
-  xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check, [arquivos])' },
-  security: { run: securityCommand, help: 'Revisão de segurança das mudanças (--all, --no-analyzer, --fail-on alta|média)' },
-  quality: { run: qualityCommand, help: 'Qualidade: código repetido que a mudança cria + PMD/CPD (--all, --no-analyzer, --fail-on)' },
-  promote: { run: promoteCommand, help: 'Ensaio de promoção para um ambiente: ordem, conflitos, dependências (--fetch, --json)' },
+  'test-radar': { run: testRadarCommand, help: 'Testes afetados pelas mudanças (--run --org <alias> roda sem salvar)' },
+  security: { run: securityCommand, help: 'Só a parte de segurança da revisão (--all, --no-analyzer, --fail-on)' },
+  quality: { run: qualityCommand, help: 'Só a parte de qualidade e código repetido da revisão (--all, --no-analyzer)' },
+  check: { run: checkCommand, help: 'Só a checagem de queries (campo lido fora da SOQL/Selector)' },
+  xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check)' },
+  retrieve: { run: retrieveCommand, help: 'Retrieve com confirmação da org e foto para o clean (--metadata, --manifest, --org)' },
+  snapshot: { run: snapshotCommand, help: 'Foto depois de um retrieve feito fora do Reldor (--clear para apagar)' },
+  commit: { run: commitCommand, help: 'Commit limpo, se as ações de Git estiverem ligadas (-m, --stage, --dry-run)' },
+  hook: { run: hookCommand, help: 'Gancho pre-commit do Reldor (install | uninstall)' },
+  precommit: { run: precommitCommand, help: 'Checagem usada pelo gancho pre-commit', hidden: true },
   collisions: { run: collisionsCommand, help: 'Radar de colisão (opcional): PRs abertas que mexem nos seus arquivos', hidden: true },
-  rollback: { run: rollbackCommand, help: 'Plano de rollback de uma PR, commit ou branch (não altera nada)' },
-  clean: { run: cleanCommand, help: 'Antes do commit: tira da pasta o que veio da org e deixa só o seu (--dry-run, --undo)' },
-  merge: { run: mergeCommand, help: 'Merge assistido: reldor merge <sua-branch> (--check, --continue, --abort); install liga o driver de XML' },
   'merge-driver': { run: mergeDriverCommand, help: 'Uso interno do Git (chamado pelo merge inteligente)', hidden: true },
-  check: { run: checkCommand, help: 'Checagem de queries: campo lido fora da SOQL/Selector (reldor check [Classe...])' },
-  usages: { run: usagesCommand, help: 'Onde algo é usado: reldor usages <Classe | Classe.metodo | Objeto.Campo__c | Objeto>' },
 };
 
 /** Parses `cmd --flag value --bool` into { command, flags, args }. */
@@ -68,8 +71,11 @@ function help() {
     '',
     'Você não precisa decorar comandos: peça à sua IA, por exemplo "quero usar o Reldor".',
     '',
-    'Comandos:',
-    ...Object.entries(COMMANDS).filter(([, c]) => !c.hidden).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
+    'Os momentos:',
+    ...Object.entries(COMMANDS).filter(([, c]) => c.main).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
+    '',
+    'Peças por trás deles (a IA usa quando precisa):',
+    ...Object.entries(COMMANDS).filter(([, c]) => !c.main && !c.hidden).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
   ];
   process.stdout.write(lines.join('\n') + '\n');
 }
