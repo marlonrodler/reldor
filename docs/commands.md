@@ -4,8 +4,9 @@ Você não precisa decorar nada: **quem usa estes comandos é a IA**. Eles estã
 
 | Comando | O que faz | Fase |
 |---|---|---|
-| `reldor init` | Instala no projeto e pergunta só o que não detecta | 0 |
-| `reldor status` | Etapa atual: branch, pendências, ambientes da feature | 0 |
+| `reldor init` ✅ | Instala no projeto e pergunta só o que não detecta (`--yes --envs --org --design-system --force`) | 0 |
+| `reldor status` ✅ | Etapa atual: branch, pendências, ambientes da feature, spec, próximo passo (`--json --fetch`) | 0 |
+| `reldor log` ✅ | Histórico de ações do Reldor (`--json --limit`) | 0 |
 | `reldor scan` | Gera o perfil do projeto (framework, padrões, times) | 1 |
 | `reldor index` | Monta ou atualiza o índice da org | 1 |
 | `reldor explain "<pergunta>"` | Engenharia reversa: cadeia de automações, fluxo, roteiro de teste | 1 |

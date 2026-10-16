@@ -9,5 +9,22 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "yaml": "^2.5.1"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build:adapters": "node scripts/build-adapters.js"
+  },
+  "files": [
+    "core",
+    "modules",
+    "skills",
+    "steering",
+    "adapters",
+    "scripts",
+    "docs",
+    "README.md"
+  ]
 }

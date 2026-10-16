@@ -3,7 +3,8 @@
 O Reldor ajuda times Salesforce a **escrever a task, desenvolver, testar e promover** com mais velocidade e menos erro.
 Ele conhece a org por um índice montado por scripts e conversa pela IA que você já usa (Kiro ou Claude Code).
 
-> **Status:** em planejamento. Este repositório contém a estrutura e a documentação; o código começa pela Fase 0.
+> **Status:** Fase 0 pronta (`reldor init`, `reldor status`, `reldor log`, skills e plugins do Kiro e do Claude Code).
+> As demais funcionalidades abaixo estão planejadas; veja [docs/roadmap.md](docs/roadmap.md).
 
 ---
 
@@ -82,21 +83,26 @@ Os comandos existem (`reldor status`, `reldor explain`…), mas **quem usa é a 
 
 ---
 
-## Instalação (planejada)
+## Instalação
 
-Requisitos: **Node.js** (já vem com o Salesforce CLI), **Salesforce CLI `sf` v2** e **Git**.
+Requisitos: **Node.js 18+** (já vem com o Salesforce CLI), **Salesforce CLI `sf` v2** e **Git**.
 
 ```bash
-# 1. instalar o núcleo
-npm install -g reldor            # ou: baixar o release (.zip) e rodar install
+# 1. instalar o núcleo (na pasta deste repositório)
+npm install
+npm install -g .
 
-# 2. dentro do projeto Salesforce
+# 2. gerar os plugins das IDEs
+npm run build:adapters           # cria dist/claude/reldor e dist/kiro/reldor
+
+# 3. dentro do projeto Salesforce
 reldor init                      # detecta o projeto e pergunta só o que falta
+reldor status                    # mostra a etapa atual e o próximo passo
 ```
 
-Depois, instale a casca da sua IDE:
-- **Kiro:** plugin em `adapters/kiro`
-- **Claude Code:** plugin em `adapters/claude`
+Depois, instale o plugin da sua IDE a partir de `dist/` (detalhes em [adapters/README.md](adapters/README.md)).
+
+Para desenvolver o Reldor: `npm test`.
 
 ---
 
