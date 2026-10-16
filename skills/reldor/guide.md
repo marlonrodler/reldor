@@ -10,7 +10,8 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "como testo…" | `reldor explain <Objeto> --event <evento> --json` | Monte o roteiro: ação → o que dispara → o que validar |
 | "documenta o fluxo de…" | `reldor explain` para cada evento | Escreva o documento a partir do resultado |
 | "vou começar a desenvolver" | `reldor context` | Mostre o resumo com nota de risco e peça aprovação |
-| salvou um metadado | `reldor test-radar` | Ofereça rodar os testes afetados |
+| salvou um metadado ou Apex / "quais testes podem quebrar?" | `reldor test-radar --json` | Mostre os testes e os motivos; ofereça rodar com `--run` depois de confirmar a org |
+| "tem campo fora da query?" | `reldor check [Classe] --json` | Liste os achados e o erro que evitam |
 | "vou apagar…" / "onde isso é usado?" | `reldor usages <item> --json` | Liste todos os usos antes de apagar |
 | "dá um retrieve" | `reldor retrieve` | Confirme a org e avise sobre alterações não commitadas |
 | "quero commitar" | `reldor xml` → `reldor commit` | Mostre o que é seu e o que veio da org |

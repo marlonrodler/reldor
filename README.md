@@ -8,7 +8,7 @@ AI already writes Salesforce code fast. What it does not do is see the whole org
 
 Reldor fixes this with one rule: **scripts do the heavy, reliable work; the AI only explains and guides.** It builds an index of your project, follows the real order of execution, and talks to you through the AI you already use (Kiro or Claude Code). You don't memorize commands: you say what you want.
 
-> **Status:** Phase 1 in progress. `index`, `explain` and `usages` work today. See the [roadmap](./docs/roadmap.md).
+> **Status:** Phase 1 in progress. `index`, `explain`, `usages`, `test-radar` and `check` work today. See the [roadmap](./docs/roadmap.md).
 
 ## Installation (5-minute setup)
 
@@ -76,7 +76,7 @@ It detects the project, asks only what it cannot detect (environment branches, r
 
 **The problem.** A new validation rule, a required field or a permission breaks tests from other teams. Nobody notices until the pipeline fails, hours later.
 
-**The fix.** The test radar 🚧 points to and runs the affected tests before you deploy, and checks that every field your code uses is in the query. For now, `explain` already lists the related test classes.
+**The fix.** [`test-radar`](./docs/test-radar.md) points to the tests your change can break, says why, and runs them in a sandbox without saving anything. It also checks that every field your code reads is in the query.
 
 ### #3: Git doesn't understand Salesforce
 
@@ -111,7 +111,8 @@ You rarely type these: your AI runs them for you.
 | [`reldor usages`](./docs/usages.md) | Where something is used, before you change or delete it | ✅ |
 | `reldor log` | Everything Reldor did, newest first | ✅ |
 | `reldor refine` | Turns a task idea into impact, open questions and acceptance criteria | 🚧 |
-| `reldor test-radar` | Tests affected by your current changes | 🚧 |
+| [`reldor test-radar`](./docs/test-radar.md) | Tests that can break with your changes, and runs them without saving | ✅ |
+| [`reldor check`](./docs/check.md) | Fields read outside the query (SOQL or selector) | ✅ |
 | `reldor commit` · `xml` · `promote` · `rollback` | Clean commit, XML organizer, promotion rehearsal, rollback plan | 🚧 |
 
 ### Skills
@@ -137,7 +138,7 @@ A generic **core** plus one **module** per technology. Salesforce is the first m
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, advisors (+ planned: test-radar, xml, merge, promote, rollback)
+modules/sf/  indexer, explain, checks, test-radar, org, advisors (+ planned: xml, merge, promote, rollback)
 skills/      the AI's instructions, shared by Kiro and Claude Code
 adapters/    thin per-IDE manifests
 ```

@@ -23,7 +23,7 @@ function run(command, args = [], options = {}) {
   return {
     ok: result.status === 0,
     code: result.status,
-    stdout: (result.stdout || '').trim(),
+    stdout: (result.stdout || '').replace(/\s+$/, ''),
     stderr: (result.stderr || '').trim(),
   };
 }

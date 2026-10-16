@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- `reldor test-radar`: tests that can break with your changes, with reason and priority (objects, classes, permissions,
+  custom metadata, factories). `--run` validates your changed files in a sandbox without saving (`--dry-run` with
+  `RunSpecifiedTests`), confirms the org and refuses production; reports failures and coverage of changed classes.
+- `reldor check`: fields read outside the SOQL or selector.
+- Fixed: the first file of `git status` lost its first letter.
+- DML like `insert new Account(...)` is now recognized.
+
 ## 0.1.1
 
 Validated against public Salesforce projects (fflib sample code, apex-recipes, dreamhouse, ebikes, coral cloud).

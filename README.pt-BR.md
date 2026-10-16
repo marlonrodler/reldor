@@ -8,7 +8,7 @@ A IA já escreve código Salesforce rápido. O que ela não faz é enxergar a or
 
 O Reldor resolve isso com uma regra: **scripts fazem o trabalho pesado e confiável; a IA só explica e conduz.** Ele monta um índice do projeto, segue a ordem de execução real e conversa com você pela IA que você já usa (Kiro ou Claude Code). Você não decora comandos: diz o que quer.
 
-> **Status:** Fase 1 em andamento. `index`, `explain` e `usages` já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
+> **Status:** Fase 1 em andamento. `index`, `explain`, `usages`, `test-radar` e `check` já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
 
 ## Instalação (5 minutos)
 
@@ -76,7 +76,7 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 **O problema.** Uma validation rule nova, um campo obrigatório ou uma permissão quebra testes de outros times. Ninguém percebe até a esteira falhar, horas depois.
 
-**A solução.** O radar de testes 🚧 aponta e roda os testes afetados antes do deploy, e confere se todo campo usado no código está na query. Por enquanto, o `explain` já lista as classes de teste relacionadas.
+**A solução.** O [`test-radar`](./docs/test-radar.pt-BR.md) aponta os testes que a sua mudança pode quebrar, diz por quê e roda na sandbox sem salvar nada. Ele também confere se todo campo lido no código está na query.
 
 ### #3: O Git não entende Salesforce
 
@@ -111,7 +111,8 @@ Você quase não digita: a IA roda por você.
 | [`reldor usages`](./docs/usages.pt-BR.md) | Onde algo é usado, antes de alterar ou apagar | ✅ |
 | `reldor log` | Tudo o que o Reldor fez, do mais recente ao mais antigo | ✅ |
 | `reldor refine` | Transforma a ideia da task em impacto, perguntas em aberto e critérios de aceite | 🚧 |
-| `reldor test-radar` | Testes afetados pelas suas mudanças | 🚧 |
+| [`reldor test-radar`](./docs/test-radar.pt-BR.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |
+| [`reldor check`](./docs/check.pt-BR.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
 | `reldor commit` · `xml` · `promote` · `rollback` | Commit limpo, organizador de XML, ensaio de promoção, plano de rollback | 🚧 |
 
 ### Skills
@@ -137,7 +138,7 @@ Um **núcleo** genérico e um **módulo** por tecnologia. Salesforce é o primei
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, advisors (+ planejados: test-radar, xml, merge, promote, rollback)
+modules/sf/  indexer, explain, checks, test-radar, org, advisors (+ planejados: xml, merge, promote, rollback)
 skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```

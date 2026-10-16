@@ -79,7 +79,37 @@ function parseDml(code) {
     const name = m[2] || m[4] || m[6];
     if (type && name && !types[name]) types[name] = type;
   }
-  return unique(vars).map((v) => ({ variable: v, type: types[v] || null }));
+  const direct = [...code.matchAll(/\b(?:insert|update|upsert|delete)\s+new\s+(?:List\s*<\s*)?(\w+)/gi)].map((x) => ({ variable: null, type: x[1] }));
+  const byVar = unique(vars).map((v) => ({ variable: v, type: types[v] || null }));
+  const seen = new Set();
+  return [...byVar, ...direct].filter((d) => {
+    const key = `${d.variable}|${d.type}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** Variable name -> declared type (locals, loop variables, parameters). */
+function varTypes(code) {
+  const types = {};
+  const re = /\b(?:List|Set)\s*<\s*(\w+)\s*>\s+(\w+)|\bMap\s*<\s*\w+\s*,\s*(\w+)\s*>\s+(\w+)|\b([A-Z]\w*)\s+(\w+)\s*(?:=|;|,|\)|:)/g;
+  let m;
+  while ((m = re.exec(code))) {
+    const type = m[1] || m[3] || m[5];
+    const name = m[2] || m[4] || m[6];
+    if (type && name && !types[name]) types[name] = type;
+  }
+  return types;
+}
+
+/** Custom fields read (not assigned) on a variable: acc.Score__c used in an expression. */
+function fieldReads(code) {
+  const reads = [];
+  const re = /\b([a-z]\w*)\.(\w+__c)\b(?!\s*=[^=])/g;
+  let m;
+  while ((m = re.exec(code))) reads.push(`${m[1]}.${m[2]}`);
+  return unique(reads);
 }
 
 function detectKind(name, code) {
@@ -184,6 +214,10 @@ function parseApexClass(name, source) {
     dml: parseDml(code),
     fieldRefs: unique([...code.matchAll(/\b(?:(\w+)\.)?(\w+__(?:c|r))\b/g)].map((m) => (m[1] ? `${m[1]}.${m[2]}` : m[2]))),
     enqueues: unique([...code.matchAll(/(?:System\.enqueueJob|Database\.executeBatch)\s*\(\s*new\s+(\w+)/gi)].map((m) => m[1])),
+    varTypes: varTypes(code),
+    fieldReads: fieldReads(code),
+    dynamicSoql: /Database\.query(WithBinds)?\s*\(/i.test(code) || strings.some((x) => /^\s*SELECT\s/i.test(x)),
+    runAs: /System\.runAs\s*\(/i.test(code),
     async: /@future/i.test(code) || /System\.enqueueJob|Database\.executeBatch|System\.schedule/i.test(code),
     strings: unique(strings.filter((s) => /^[A-Za-z_]\w{2,}$/.test(s))).slice(0, 50),
   };
