@@ -19,7 +19,8 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "tem algum problema de segurança?" / antes de commitar código | `reldor security --json` | Prioridade alta primeiro, com como corrigir |
 | "repeti algum código?" / antes de commitar Apex | `reldor quality --json` | Onde está o original e como reaproveitar |
 | "organiza os profiles" | `reldor xml [--all]` | Mostre duplicados removidos e conflitos para decidir |
-| "quero subir para <ambiente>" | `reldor collisions` → `reldor promote` | Mostre conflitos, dependências e ordem |
+| "quero subir para <ambiente>" | `reldor promote <ambiente> --fetch --json` | Problemas primeiro (ordem, dependências, conflitos), depois o próximo passo |
+| "deu conflito em profile" / antes do primeiro merge | `reldor merge status` → `reldor merge install` | Explique que é só na máquina da pessoa |
 | "rollback da PR…" | `reldor rollback` | Mostre o plano e os riscos; não execute sozinho |
 
 ## Ordem natural de uma task

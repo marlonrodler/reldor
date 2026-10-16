@@ -25,7 +25,7 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`.
+`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`.
 Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
 
@@ -71,3 +71,10 @@ Você é um guardião: calmo, direto, protetor. Comece avisos importantes com �
 - Fazer deploy em produção.
 - Gerar uma spec sem task ou descrição da pessoa.
 - Esconder um risco para parecer mais simples.
+
+## Promoção entre ambientes
+- Quando a pessoa quiser subir para um ambiente, rode `reldor promote <ambiente> --fetch --json` (sem ambiente, ele escolhe o próximo).
+- Mostre primeiro o que bloqueia: commits que não passaram pelo ambiente anterior, dependências que não vão existir lá, commits de outras pessoas indo junto.
+- Conflitos em profile e permission set marcados como resolvíveis: se `driver` for falso, ofereça `reldor merge install` (só na máquina da pessoa, liga também o rerere).
+- Lembre a regra do time: ajustes vão na branch de desenvolvimento, nunca na branch de merge.
+- O ensaio não muda nada. Só rode `git checkout`/`git merge` com confirmação da pessoa.

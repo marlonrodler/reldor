@@ -6,7 +6,8 @@ const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { logCommand } = require('./log');
 const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, qualityCommand } = require('./sf-commands');
-const { snapshotCommand, commitCommand, hookCommand } = require('./git-commands');
+const { snapshotCommand, commitCommand, hookCommand, mergeCommand, mergeDriverCommand } = require('./git-commands');
+const { promoteCommand } = require('./promote');
 const pkg = require('../../package.json');
 
 const COMMANDS = {
@@ -25,6 +26,9 @@ const COMMANDS = {
   xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check, [arquivos])' },
   security: { run: securityCommand, help: 'Revisão de segurança das mudanças (--all, --no-analyzer, --fail-on alta|média)' },
   quality: { run: qualityCommand, help: 'Qualidade: código repetido que a mudança cria + PMD/CPD (--all, --no-analyzer, --fail-on)' },
+  promote: { run: promoteCommand, help: 'Ensaio de promoção para um ambiente: ordem, conflitos, dependências (--fetch, --json)' },
+  merge: { run: mergeCommand, help: 'Merge inteligente de profiles, permission sets, labels... (install | uninstall | status)' },
+  'merge-driver': { run: mergeDriverCommand, help: 'Uso interno do Git (chamado pelo merge inteligente)', hidden: true },
   check: { run: checkCommand, help: 'Checagem de queries: campo lido fora da SOQL/Selector (reldor check [Classe...])' },
   usages: { run: usagesCommand, help: 'Onde algo é usado: reldor usages <Classe | Classe.metodo | Objeto.Campo__c | Objeto>' },
 };
@@ -61,7 +65,7 @@ function help() {
     'Você não precisa decorar comandos: peça à sua IA, por exemplo "quero usar o Reldor".',
     '',
     'Comandos:',
-    ...Object.entries(COMMANDS).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
+    ...Object.entries(COMMANDS).filter(([, c]) => !c.hidden).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
   ];
   process.stdout.write(lines.join('\n') + '\n');
 }

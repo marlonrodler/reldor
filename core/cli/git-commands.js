@@ -160,4 +160,85 @@ function hookCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { snapshotCommand, commitCommand, hookCommand, HOOK };
+
+const MERGE_MARK = '# reldor-merge';
+const MERGE_PATTERNS = ['*.profile-meta.xml', '*.permissionset-meta.xml', '*.mutingpermissionset-meta.xml', '*.labels-meta.xml', '*.translation-meta.xml', '*.sharingRules-meta.xml', '*.globalValueSet-meta.xml', '*.standardValueSet-meta.xml', '*.objectTranslation-meta.xml', 'package.xml'];
+
+/** Called by Git during a merge: reldor merge-driver %O %A %B %P. Writes the result into %A. */
+function mergeDriverCommand(root, flags, args) {
+  const { mergeXml } = require('../../modules/sf/merge/xml-merge');
+  const [basePath, oursPath, theirsPath, name] = args;
+  const read = (f) => (f && fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
+  let result = { supported: false };
+  try {
+    result = mergeXml(read(basePath), read(oursPath), read(theirsPath), { oursLabel: 'ours', theirsLabel: 'theirs' });
+  } catch {
+    result = { supported: false };
+  }
+  if (!result.supported) {
+    // Not a type Reldor knows: the normal line-by-line merge.
+    const r = run('git', ['merge-file', '-L', 'ours', '-L', 'base', '-L', 'theirs', oursPath, basePath, theirsPath], { cwd: root });
+    return r.code === 0 ? 0 : 1;
+  }
+  fs.writeFileSync(oursPath, result.text);
+  const msg = result.conflicts.length
+    ? `🛡️  Reldor: ${name || ''} — ${result.merged} item(ns) juntados; ${result.conflicts.length} conflito(s) real(is): ${result.conflicts.map((c) => `${c.section} ${c.key}`).join(', ')}\n`
+    : `🛡️  Reldor: ${name || ''} — juntado item a item (${result.merged} item(ns) do outro lado)\n`;
+  process.stderr.write(msg);
+  try {
+    logAction(root, 'merge-driver', { summary: msg.trim() });
+  } catch {
+    /* log is best effort */
+  }
+  return result.conflicts.length ? 1 : 0;
+}
+
+/** reldor merge install|uninstall|status: registers the merge driver (local only) and rerere. */
+function mergeCommand(root, flags, args) {
+  const action = args[0] || 'status';
+  const gitDir = path.resolve(root, run('git', ['rev-parse', '--git-dir'], { cwd: root }).stdout || '.git');
+  const attrFile = path.join(gitDir, 'info', 'attributes');
+  const current = fs.existsSync(attrFile) ? fs.readFileSync(attrFile, 'utf8') : '';
+  const stripped = current.replace(new RegExp(`${MERGE_MARK} start[\\s\\S]*?${MERGE_MARK} end\\n?`), '');
+  const cli = path.join(__dirname, 'index.js').split(path.sep).join('/');
+  const node = process.execPath.split(path.sep).join('/');
+  if (action === 'uninstall') {
+    fs.mkdirSync(path.dirname(attrFile), { recursive: true });
+    fs.writeFileSync(attrFile, stripped);
+    run('git', ['config', '--unset', 'merge.reldor.driver'], { cwd: root });
+    run('git', ['config', '--unset', 'merge.reldor.name'], { cwd: root });
+    print('🛡️  Merge inteligente removido. (O rerere continua como estava.)');
+    return 0;
+  }
+  if (action === 'install') {
+    fs.mkdirSync(path.dirname(attrFile), { recursive: true });
+    const block = [`${MERGE_MARK} start`, ...MERGE_PATTERNS.map((p) => `${p} merge=reldor`), `${MERGE_MARK} end`, ''].join('\n');
+    fs.writeFileSync(attrFile, (stripped && !stripped.endsWith('\n') ? `${stripped}\n` : stripped) + block);
+    run('git', ['config', 'merge.reldor.name', 'Reldor: metadados Salesforce item a item'], { cwd: root });
+    run('git', ['config', 'merge.reldor.driver', `"${node}" "${cli}" merge-driver %O %A %B %P`], { cwd: root });
+    const { config } = require('../config').loadConfig(root);
+    const rerere = config.git?.rerere !== false && !flags['no-rerere'];
+    if (rerere) {
+      run('git', ['config', 'rerere.enabled', 'true'], { cwd: root });
+      run('git', ['config', 'rerere.autoupdate', 'true'], { cwd: root });
+    }
+    logAction(root, 'merge-install', { summary: rerere ? 'driver + rerere' : 'driver' });
+    print([
+      '\n🛡️  Merge inteligente ligado neste repositório (só na sua máquina, nada é versionado)',
+      '',
+      '• Profiles, permission sets, labels, sharing rules, traduções e package.xml são juntados item a item',
+      '  dentro do próprio `git merge`. Só sobra conflito quando os dois lados mudaram o mesmo item.',
+      rerere ? '• rerere ligado: o Git lembra como você resolveu um conflito e repete a resolução no próximo ambiente.' : '• rerere não foi ligado.',
+      '',
+      'Para remover: reldor merge uninstall',
+    ]);
+    return 0;
+  }
+  const on = current.includes(MERGE_MARK) && Boolean(run('git', ['config', 'merge.reldor.driver'], { cwd: root }).stdout);
+  const rerereOn = run('git', ['config', 'rerere.enabled'], { cwd: root }).stdout === 'true';
+  if (flags.json) printJson({ driver: on, rerere: rerereOn });
+  else print([`🛡️  Merge inteligente: ${on ? 'ligado' : 'desligado (reldor merge install)'}`, `   rerere: ${rerereOn ? 'ligado' : 'desligado'}`]);
+  return 0;
+}
+
+module.exports = { snapshotCommand, commitCommand, hookCommand, mergeCommand, mergeDriverCommand, HOOK, MERGE_PATTERNS };

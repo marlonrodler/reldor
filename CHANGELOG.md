@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+- `reldor promote <environment>`: promotion rehearsal, without changing anything. Lists the commits that go along,
+  commits that have not gone through the previous environment (the pipeline would block them), other people's
+  commits (develop merged or pulled into the branch), conflicts (metadata XML tried item by item) and fields,
+  objects and classes that will not exist in the environment after the merge, with where they do exist.
+- `reldor merge install | uninstall | status`: smart merge driver for profiles, permission sets, labels,
+  translations, sharing rules, value sets and package.xml, inside the normal `git merge`. Only the item both sides
+  changed differently becomes a conflict. Also turns on `rerere`. Local only (`.git/info/attributes`).
+- Simulates the merge with `git merge-tree` (Git 2.38+) or a temporary worktree on older Git.
+
 ## 0.6.0
 
 - `reldor quality`: reports the repetition a change creates, and only that: blocks copied from elsewhere in the

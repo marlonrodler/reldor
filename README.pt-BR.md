@@ -8,7 +8,7 @@ A IA já escreve código Salesforce rápido. O que ela não faz é enxergar a or
 
 O Reldor resolve isso com uma regra: **scripts fazem o trabalho pesado e confiável; a IA só explica e conduz.** Ele monta um índice do projeto, segue a ordem de execução real e conversa com você pela IA que você já usa (Kiro ou Claude Code). Você não decora comandos: diz o que quer.
 
-> **Status:** Fase 1 concluída; Fase 2 em andamento: revisão de segurança e de qualidade, commit limpo, organizador de XML e gancho pre-commit já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
+> **Status:** Fase 1 concluída; Fase 2 em andamento: revisão de segurança e de qualidade, merge inteligente, ensaio de promoção, commit limpo, organizador de XML e gancho pre-commit já funcionam. Veja o [roadmap](./docs/roadmap.pt-BR.md).
 
 ## Instalação (5 minutos)
 
@@ -83,7 +83,7 @@ Ele detecta o projeto, pergunta só o que não consegue descobrir (branches dos 
 
 **O problema.** Duas pessoas adicionam classes diferentes no mesmo profile e o Git oferece "tudo ou nada". Um retrieve mistura a org com o seu trabalho. Uma promoção falha porque um campo só existe em develop.
 
-**A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) e um gancho pre-commit (já disponíveis); depois, merge que entende Salesforce e ensaio de promoção 🚧.
+**A solução.** [Commit limpo](./docs/commit.pt-BR.md), que leva só as suas linhas, [organizador de XML](./docs/xml.pt-BR.md) um gancho pre-commit, um [merge inteligente](./docs/promote.pt-BR.md#merge-inteligente) que junta profiles e permission sets item a item dentro do `git merge`, e um [ensaio de promoção](./docs/promote.pt-BR.md) que acha conflitos, commits fora de ordem e campos que só existem na develop antes da pull request.
 
 ### #4: Brechas de segurança e código copiado que ninguém viu
 
@@ -128,7 +128,9 @@ Você quase não digita: a IA roda por você.
 | [`reldor quality`](./docs/quality.pt-BR.md) | Código que a sua mudança repete (blocos, queries, métodos, textos) mais PMD e CPD | ✅ |
 | [`reldor xml`](./docs/xml.pt-BR.md) | Ordena e remove duplicados em profiles, permission sets, labels, sharing rules, package.xml | ✅ |
 | [`reldor hook install`](./docs/commit.pt-BR.md) | Gancho pre-commit, inclusive para commits feitos na mão | ✅ |
-| `reldor promote` · `rollback` | Ensaio de promoção e merge inteligente, plano de rollback | 🚧 |
+| [`reldor promote`](./docs/promote.pt-BR.md) | Ensaio de promoção: commits, ordem, commits de outras pessoas, conflitos, dependências faltando | ✅ |
+| [`reldor merge install`](./docs/promote.pt-BR.md#merge-inteligente) | Merge inteligente de profiles, permission sets, labels... dentro do `git merge`, mais o `rerere` | ✅ |
+| `reldor rollback` | Plano de rollback de uma pull request | 🚧 |
 
 ### Skills
 
@@ -154,7 +156,7 @@ Um **núcleo** genérico e um **módulo** por tecnologia. Salesforce é o primei
 
 ```
 core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, org, advisors (+ planejados: merge, promote, rollback)
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, org, advisors (+ planejado: rollback)
 skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```
