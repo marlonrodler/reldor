@@ -6,8 +6,7 @@ const { classify } = require('../indexer/parsers');
 
 /** The branch the feature is compared against: production env, then usual names. */
 function defaultBase(root, config) {
-  const envs = config.environments || [];
-  const candidates = [envs.length ? envs[envs.length - 1].branch : null, 'master', 'main'].filter(Boolean);
+  const candidates = [require('../../../core/config').baseBranch(config), 'master', 'main'].filter(Boolean);
   for (const name of candidates) {
     const ref = gitApi.resolveBranch(root, name);
     if (ref) return ref;

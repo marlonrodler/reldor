@@ -33,7 +33,10 @@ function parseEnvs(value) {
     const branch = maybeBranch.trim();
     const name = maybeName ? maybeName.trim() : envName(branch, i, parts.length);
     const env = { name, branch };
-    if (i === parts.length - 1) env.deploy = 'blocked';
+    if (i === parts.length - 1) {
+      env.production = true;
+      env.deploy = 'blocked';
+    }
     return env;
   });
 }

@@ -1,7 +1,7 @@
 'use strict';
 
 const gitApi = require('../git');
-const { loadConfig, gitActionsOn } = require('../config');
+const { loadConfig, gitActionsOn, baseBranch } = require('../config');
 const { findSpecs, specForBranch } = require('../spec');
 const { loadModules } = require('../modules');
 
@@ -9,9 +9,9 @@ const { loadModules } = require('../modules');
  * Where is this feature in the environment chain?
  * The base is the last environment (production): commits already there are not "the feature".
  */
-function environmentStatus(root, environments, branch) {
+function environmentStatus(root, environments, branch, baseName) {
   if (!environments.length) return { configured: false, items: [] };
-  const base = gitApi.resolveBranch(root, environments[environments.length - 1].branch);
+  const base = gitApi.resolveBranch(root, baseName || environments[environments.length - 1].branch);
   const items = environments.map((env) => {
     const ref = gitApi.resolveBranch(root, env.branch);
     if (!ref) return { name: env.name, branch: env.branch, state: 'unknown', reason: 'branch não encontrada' };
@@ -60,7 +60,7 @@ function buildStatus(root, options = {}) {
     root,
     config: { exists, file },
     git: { repo, branch, pending, actions: gitActionsOn(config) ? 'on' : 'off' },
-    environments: repo ? environmentStatus(root, config.environments || [], branch) : { configured: false, items: [] },
+    environments: repo ? environmentStatus(root, config.environments || [], branch, baseBranch(config)) : { configured: false, items: [] },
     spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },
     modules: modules.map(({ mod, facts }) => ({ name: mod.name, label: mod.label, facts })),
   };

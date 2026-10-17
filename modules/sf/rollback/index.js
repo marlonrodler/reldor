@@ -64,7 +64,8 @@ function planRollback(root, config, { target, apiVersion = '61.0' }) {
 
   let from;
   let commits;
-  const production = environments.length ? gitApi.resolveBranch(root, environments[environments.length - 1].branch) : null;
+  const startBranch = require('../../../core/config').baseBranch(config);
+  const production = startBranch ? gitApi.resolveBranch(root, startBranch) : null;
   if (isMerge) {
     from = parents[0];
     commits = lines(git(root, ['log', '--no-merges', '--format=%H%x09%h%x09%an%x09%s', `${parents[0]}..${parents[1]}`]));

@@ -99,7 +99,7 @@ Open **the Salesforce project folder** (the one with `sfdx-project.json`) in you
 
 > I want to use Reldor
 
-It detects the project, asks only what it cannot detect (environment branches, reference org, design system, whether you already have a tool that commits and opens PRs) and tells you the next step. This creates a `.reldor/` folder **in that project**, with the project's settings. Do it once per project.
+It detects the project, asks only what it cannot detect (environment branches, reference org, design system, whether you already have a tool that commits and opens PRs) and tells you the next step. This creates a `.reldor/` folder **in that project**, with the project's settings. Do it once per project. The environment chain (names, branches, order, which one is production) is yours to set and change later with [`reldor env`](./docs/env.md).
 
 ## Why Reldor exists
 
@@ -168,6 +168,7 @@ A pre-commit guard also runs by itself on every commit, even the ones made by ot
 
 | Command | What it does | |
 |---|---|---|
+| [`reldor env`](./docs/env.md) | The environment chain and branch names: show and change, nothing fixed in the code | ✅ |
 | [`reldor review`](./docs/review.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
 | [`reldor init`](./docs/init.md) | Sets Reldor up in a project, asking only what it can't detect | ✅ |
 | [`reldor status`](./docs/status.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |

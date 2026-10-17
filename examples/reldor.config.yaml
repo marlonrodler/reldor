@@ -6,17 +6,19 @@
 modules:
   - sf
 
-# Cadeia de ambientes, na ordem de promoção
+# Cadeia de ambientes, na ordem de promoção. Nomes, branches e quantidade são livres.
+# Para ver e mudar sem editar à mão: reldor env  /  reldor env set "nome:branch, ..."
 environments:
-  - name: develop
-    branch: develop
-    org: dev-sandbox        # alias do sf CLI
+  - name: pre-uat
+    branch: develop/x
+    org: dev-sandbox        # alias do sf CLI (opcional)
   - name: uat
     branch: rc/uat
     org: uat-sandbox
-  - name: production
+  - name: producao
     branch: master
     org: production
+    production: true        # qual ambiente é produção (padrão: o último)
     deploy: blocked         # o Reldor nunca faz deploy aqui
 
 # Org usada como referência para o índice e o retrieve
@@ -32,6 +34,9 @@ spec:
 
 # Commit limpo e Git
 git:
+  base_branch: null         # de onde nascem as branches de desenvolvimento (padrão: a branch de produção)
+  merge_branch: merge/{feature}-{env}      # padrão sugerido para a branch de merge
+  rollback_branch: rollback/{id}
   actions: off              # off: o Reldor só confere e avisa (branch, commit, merge e PR ficam com a sua ferramenta, ex.: o plugin de fluxo do time)
                             # on: o Reldor também pode fazer o commit limpo, sempre com confirmação
   clean_commit: true

@@ -9,8 +9,8 @@ function resolveOrg(config, flags, defaultOrg) {
   if (!org) return { error: 'Nenhuma org definida. Informe com --org <alias> ou defina reference_org na configuração.' };
   const envs = config.environments || [];
   const env = envs.find((e) => e.org && e.org === org) || null;
-  const last = envs[envs.length - 1];
-  const production = Boolean(env && (env.deploy === 'blocked' || env === last)) || /^(prod|production|producao)$/i.test(org);
+  const prod = envs.find((e) => e.production === true) || envs[envs.length - 1];
+  const production = Boolean(env && (env.deploy === 'blocked' || env.production === true || env === prod)) || /^(prod|production|producao)$/i.test(org);
   return { org, environment: env ? env.name : null, production };
 }
 

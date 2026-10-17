@@ -9,7 +9,8 @@ const { planRollback } = require('../../modules/sf/rollback');
 function renderRollback(r, config, root) {
   const envs = config.environments || [];
   const first = envs[0];
-  const prod = envs[envs.length - 1];
+  const { baseBranch, branchName } = require('../config');
+  const start = baseBranch(config);
   const out = [`\n🛡️  Plano de rollback: ${r.target} (commit ${r.merge})`, ''];
   out.push(`• Está em: ${r.environments.length ? r.environments.join(', ') : 'nenhum ambiente configurado'}`);
   out.push(`• ${r.commits.length} commit(s) a desfazer:`);
@@ -35,7 +36,7 @@ function renderRollback(r, config, root) {
 
   const hashes = r.commits.map((c) => c.short).join(' ');
   out.push('', require('../config').gitActionsOn(config) ? '📋 Passo a passo, no fluxo do time:' : '📋 O que precisa ser feito (pelo seu fluxo ou à mão; o Reldor não executa):');
-  out.push(`   1. git checkout -b rollback/${r.id} ${prod ? gitApi.resolveBranch(root, prod.branch) || prod.branch : 'master'}`);
+  out.push(`   1. git checkout -b ${branchName(config.git?.rollback_branch || 'rollback/{id}', { id: r.id })} ${start ? gitApi.resolveBranch(root, start) || start : 'master'}`);
   out.push(`   2. git revert --no-edit ${hashes || r.merge}`);
   out.push('      (reverter os commits da feature, e não o merge, faz o rollback passar pela esteira em ordem)');
   if (r.destructive.length) {

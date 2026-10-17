@@ -99,7 +99,7 @@ Abra **a pasta do projeto Salesforce** (a que tem o `sfdx-project.json`) na sua 
 
 > quero usar o Reldor
 
-Ela detecta o projeto, pergunta só o que não consegue detectar (branches dos ambientes, org de referência, design system, se vocês já têm uma ferramenta que commita e abre PR) e diz o próximo passo. Isso cria uma pasta `.reldor/` **nesse projeto**, com as configurações dele. Faça uma vez por projeto.
+Ela detecta o projeto, pergunta só o que não consegue detectar (branches dos ambientes, org de referência, design system, se vocês já têm uma ferramenta que commita e abre PR) e diz o próximo passo. Isso cria uma pasta `.reldor/` **nesse projeto**, com as configurações dele. Faça uma vez por projeto. A cadeia de ambientes (nomes, branches, ordem, qual é produção) é sua para definir e mudar depois com o [`reldor env`](./docs/env.pt-BR.md).
 
 ## Por que o Reldor existe
 
@@ -168,6 +168,7 @@ Um gancho pre-commit também roda sozinho em todo commit, inclusive nos feitos p
 
 | Comando | O que faz | |
 |---|---|---|
+| [`reldor env`](./docs/env.pt-BR.md) | A cadeia de ambientes e os nomes de branch: ver e mudar, nada fixo no código | ✅ |
 | [`reldor review`](./docs/review.pt-BR.md) | Revisão antes do commit: segurança, qualidade, queries, testes e XML de uma vez | ✅ |
 | [`reldor init`](./docs/init.pt-BR.md) | Configura o Reldor no projeto, perguntando só o que não detecta | ✅ |
 | [`reldor status`](./docs/status.pt-BR.md) | Onde você está: branch, pendências, ambientes, spec, próximo passo | ✅ |

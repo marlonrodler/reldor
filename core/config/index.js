@@ -18,7 +18,9 @@ const DEFAULTS = Object.freeze({
   spec: { generator: null, path: '.kiro/specs' },
   // actions: off = Reldor only checks and advises; your own flow (e.g. the team's workflow plugin) creates branches, commits,
   // merges and PRs. on = Reldor may also commit, with confirmation.
-  git: { actions: 'off', clean_commit: true, pre_commit_hook: true, smart_merge: 'suggest', rerere: true },
+  // base_branch: where development branches start (default: the production environment's branch).
+  // merge_branch / rollback_branch: name patterns Reldor suggests; {feature}, {env} and {id} are filled in.
+  git: { actions: 'off', base_branch: null, merge_branch: 'merge/{feature}-{env}', rollback_branch: 'rollback/{id}', clean_commit: true, pre_commit_hook: true, smart_merge: 'suggest', rerere: true },
   advisors: { mode: 'ask', enabled: ['spec-review', 'automation-design', 'lwc-ux'], design_system: null },
   test_radar: { auto_run: 'ask' },
   automations: [],
@@ -85,9 +87,32 @@ function saveConfig(root, config) {
   return p.config;
 }
 
+/** The production environment: the one marked `production: true`, or the last one of the chain. */
+function productionEnv(config) {
+  const envs = config?.environments || [];
+  return envs.find((e) => e.production === true) || envs[envs.length - 1] || null;
+}
+
+/** Where development branches start: git.base_branch, or the production environment's branch. */
+function baseBranch(config) {
+  return config?.git?.base_branch || productionEnv(config)?.branch || null;
+}
+
+/** Fills a branch name pattern such as "merge/{feature}-{env}". */
+function branchName(template, vars) {
+  return String(template).replace(/\{(\w+)\}/g, (m, k) => String(vars[k] ?? '').replace(/[^\w./-]+/g, '-'));
+}
+
+/** The config file as written (without defaults), to change it without writing every default back. */
+function readRawConfig(root) {
+  const p = paths(root);
+  if (!fs.existsSync(p.config)) return {};
+  return YAML.parse(fs.readFileSync(p.config, 'utf8')) || {};
+}
+
 /** True when Reldor may run Git actions itself (commit, branch, merge). */
 function gitActionsOn(config) {
   return String(config?.git?.actions || 'off').toLowerCase() === 'on';
 }
 
-module.exports = { gitActionsOn, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };
+module.exports = { gitActionsOn, productionEnv, baseBranch, branchName, readRawConfig, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };

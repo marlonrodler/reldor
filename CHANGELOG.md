@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0
+
+- The environment chain is fully configurable: any names, branches and number of environments; any of them can be
+  production (`production: true`, default the last one); `git.base_branch` says where development branches start;
+  `git.merge_branch` and `git.rollback_branch` are name patterns (`{feature}`, `{env}`, `{id}`).
+- `reldor env`: shows the chain and changes it (`set "name:branch, ..."`, `--production`, `--base`,
+  `--merge-branch`, `--rollback-branch`), keeping the orgs already set.
+
 ## 0.11.0
 
 - `reldor review`: one review before the commit, with one summary: security, quality and repeated code, fields read

@@ -23,6 +23,7 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "quero subir para <ambiente>" | `reldor promote <ambiente> --fetch --json` | Problemas primeiro (ordem, dependências, conflitos), depois o próximo passo |
 | "deu conflito em profile" / antes do primeiro merge | `reldor merge status` → `reldor merge install` | Explique que é só na máquina da pessoa |
 | "rollback da PR…" | `reldor rollback <n> --fetch --json` | Riscos primeiro (itens ainda usados, arquivos mudados depois); não execute sozinho |
+| "muda os ambientes" / "qual é a cadeia?" | `reldor env --json` / `reldor env set "nome:branch, ..."` | A cadeia na ordem, qual é produção, de onde nascem as branches |
 | "vou commitar" / "limpa o que não é meu" | `reldor clean --dry-run --json` → `reldor clean --yes` | O que sai, o que fica, como desfazer |
 | "faz o merge da minha branch" (na branch de merge) | `reldor merge <branch> --yes --json` → resolver `hard` → `reldor merge --check` | O que foi resolvido, o que revisar, "entrou só o seu?" |
 

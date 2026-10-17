@@ -1,6 +1,6 @@
 'use strict';
 
-const { loadConfig } = require('../config');
+const { loadConfig, branchName, baseBranch } = require('../config');
 const gitApi = require('../git');
 const { logAction } = require('../log');
 const { print, printJson } = require('../report');
@@ -18,7 +18,7 @@ function nextEnvironment(root, environments) {
   return null;
 }
 
-function renderPromote(r, actions = false) {
+function renderPromote(r, actions = false, config = {}) {
   const out = [`\n🛡️  Ensaio de promoção: ${r.source} → ${r.env} (${r.branch})`, ''];
   if (!r.commits.length) {
     out.push(`✅ Nada para promover: tudo da sua branch já está em ${r.env}.`);
@@ -58,7 +58,7 @@ function renderPromote(r, actions = false) {
   } else {
     if (!problems) out.push(`✅ Pronto para ${r.env}. Próximo passo, no fluxo do time:`);
     else out.push('Quando estiver tudo certo, o próximo passo é:');
-    out.push(`   git checkout -b merge/${String(r.source).replace(/[^\w.-]+/g, '-')}-${r.env} ${r.targetRef}`, `   reldor merge ${r.source}   (merge assistido: resolve os conflitos e confere se entrou só o seu)`, `   e abra a PR para ${r.branch}.`);
+    out.push(`   git checkout -b ${branchName(config.git?.merge_branch || 'merge/{feature}-{env}', { feature: String(r.source).replace(/\//g, '-'), env: r.env })} ${r.targetRef}`, `   reldor merge ${r.source}   (merge assistido: resolve os conflitos e confere se entrou só o seu)`, `   e abra a PR para ${r.branch}.`);
   }
   out.push('', 'ℹ️  Conflito de merge se resolve na branch de merge. Correção de código vai na sua branch de desenvolvimento.');
   return out;
@@ -79,7 +79,7 @@ function promoteCommand(root, flags, args) {
   const report = rehearse(root, config, { env, source: flags.branch || 'HEAD' });
   logAction(root, 'promote', { summary: `${report.source} → ${report.env}: ${report.commits.length} commit(s), ${report.conflicts.length} conflito(s), ${report.missing.length} dependência(s)` });
   if (flags.json) printJson(report);
-  else print(renderPromote(report, require('../config').gitActionsOn(config)));
+  else print(renderPromote(report, require('../config').gitActionsOn(config), config));
   return 0;
 }
 
@@ -112,7 +112,7 @@ function collisionsCommand(root, flags) {
   const { config } = loadConfig(root);
   if (flags.fetch) gitApi.fetch(root);
   const envs = config.environments || [];
-  const base = gitApi.resolveBranch(root, flags.base || (envs.length ? envs[envs.length - 1].branch : null)) || gitApi.resolveBranch(root, 'master') || gitApi.resolveBranch(root, 'main');
+  const base = gitApi.resolveBranch(root, flags.base || baseBranch(config)) || gitApi.resolveBranch(root, 'master') || gitApi.resolveBranch(root, 'main');
   if (!base) {
     print('⚠️ Não achei a branch de produção (master/main). Use --base <branch>.');
     return 1;
