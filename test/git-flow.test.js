@@ -1,5 +1,11 @@
 'use strict';
 
+// Windows: Git is often set to turn \n into \r\n on checkout (core.autocrlf). The tests build files with \n and
+// edit them by text, so they turn that conversion off for every git call, including the ones Reldor makes.
+process.env.GIT_CONFIG_COUNT = '1';
+process.env.GIT_CONFIG_KEY_0 = 'core.autocrlf';
+process.env.GIT_CONFIG_VALUE_0 = 'false';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
