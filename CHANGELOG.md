@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.1
+
+- The task-refine advisor shows how the request was understood (`detected.why`), asks for confirmation only when a
+  name was matched by its last word or named inside another one, and puts a similar existing rule first.
+
 ## 0.16.0
 
 - `refine` reads a request written in Portuguese against English labels: a business glossary, plurals, reversed word
