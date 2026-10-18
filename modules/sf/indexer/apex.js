@@ -3,14 +3,18 @@
 /** Removes comments and string literals (strings are returned apart, for "possible use" checks). */
 function stripApex(source) {
   const strings = [];
-  const code = source
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\/\/[^\n]*/g, ' ')
-    .replace(/'(?:\\.|[^'\\])*'/g, (m) => {
-      strings.push(m.slice(1, -1));
-      return "''";
-    });
+  // One pass, so a "//" or "/*" inside a string ('image/*', 'https://...') is not taken for a comment.
+  const code = source.replace(/\/\*[\s\S]*?(?:\*\/|$)|\/\/[^\n]*|'(?:\\.|[^'\\\n])*'/g, (m) => {
+    if (m[0] !== "'") return m.startsWith('/*') ? m.replace(/[^\n]/g, ' ') : ' ';
+    strings.push(m.slice(1, -1));
+    return "''";
+  });
   return { code, strings };
+}
+
+/** Comments out, strings kept, line and column positions unchanged. "//" inside a string stays. */
+function stripApexComments(source) {
+  return source.replace(/\/\*[\s\S]*?(?:\*\/|$)|\/\/[^\n]*|'(?:\\.|[^'\\\n])*'/g, (m) => (m[0] === "'" ? m : m.replace(/[^\n]/g, ' ')));
 }
 
 /** Returns the text between the first "{" after `start` and its matching "}". */
@@ -72,7 +76,7 @@ function parseDml(code) {
   let m;
   DML_RE.lastIndex = 0;
   while ((m = DML_RE.exec(code))) vars.push(m[1] || m[2] || m[3]);
-  const types = {};
+  const types = Object.create(null);
   DECL_RE.lastIndex = 0;
   while ((m = DECL_RE.exec(code))) {
     const type = m[1] || m[3] || m[5];
@@ -92,7 +96,7 @@ function parseDml(code) {
 
 /** Variable name -> declared type (locals, loop variables, parameters). */
 function varTypes(code) {
-  const types = {};
+  const types = Object.create(null);
   const re = /\b(?:List|Set)\s*<\s*(\w+)\s*>\s+(\w+)|\bMap\s*<\s*\w+\s*,\s*(\w+)\s*>\s+(\w+)|\b([A-Z]\w*)\s+(\w+)\s*(?:=|;|,|\)|:)/g;
   let m;
   while ((m = re.exec(code))) {
@@ -145,7 +149,7 @@ function arity(params) {
  * (followed inside the class). Key: "name/arity".
  */
 function handlerRefs(code) {
-  const methods = {};
+  const methods = Object.create(null); // no prototype: Apex methods can be named toString, valueOf...
   const re = /\b(?:(?:public|private|protected|global|static|override|virtual)\s+)+[\w<>,.\s]+?\s+(\w+)\s*\(([^)]*)\)\s*\{/g;
   let m;
   while ((m = re.exec(code))) {
@@ -157,7 +161,7 @@ function handlerRefs(code) {
     for (const x of body.matchAll(/(?:^|[^.\w])(\w+)\s*\(/g)) entry.calls.add(x[1]);
     methods[m[1]] = entry;
   }
-  const out = {};
+  const out = Object.create(null);
   for (const [name, entry] of Object.entries(methods)) {
     if (!PHASE_METHOD_RE.test(name)) continue;
     const ids = new Set(entry.ids);
@@ -198,6 +202,27 @@ function parseApplication(code) {
   return result;
 }
 
+/**
+ * Per method: the objects it creates (new X(...) or DML) and the methods it calls. Lets the test radar follow
+ * factories method by method instead of treating a whole factory class as "creates everything".
+ */
+function methodFacts(code) {
+  const creates = Object.create(null);
+  const calls = Object.create(null);
+  const re = /\b(?:(?:public|private|protected|global|static|override|virtual|testmethod)\s+)+[\w<>,.[\]\s]+?\s+(\w+)\s*\([^)]*\)\s*\{/gi;
+  let m;
+  while ((m = re.exec(code))) {
+    const body = blockAfter(code, m.index);
+    const made = new Set([...body.matchAll(/\bnew\s+([A-Za-z]\w*)\s*\(/g)].map((x) => x[1])); // npe01__X__c starts in lower case
+    for (const d of parseDml(body)) if (d.type) made.add(d.type);
+    if (made.size) creates[m[1]] = [...new Set([...(creates[m[1]] || []), ...made])];
+    const called = new Set([...body.matchAll(/\b([A-Z]\w*|[a-z]\w*_\w*)\.(\w+)\s*\(/g)].map((x) => `${x[1]}.${x[2]}`));
+    for (const x of body.matchAll(/(?:^|[^.\w])([a-z]\w*)\s*\(/g)) if (!/^(if|for|while|switch|catch|return|new|system)$/i.test(x[1])) called.add(x[1]);
+    if (called.size) calls[m[1]] = [...new Set([...(calls[m[1]] || []), ...called])];
+  }
+  return { creates, calls };
+}
+
 function parseApexClass(name, source) {
   const { code, strings } = stripApex(source);
   const kinds = detectKind(name, code);
@@ -205,9 +230,14 @@ function parseApexClass(name, source) {
     name,
     kinds,
     isTest: kinds.includes('test'),
-    identifiers: unique((code.match(/\b[A-Z]\w+\b/g) || []).filter((id) => id !== name)),
+    // Capitalized words, plus lower-case names used as a type or qualifier (class names like mc_Recipients).
+    identifiers: unique([
+      ...(code.match(/\b[A-Z]\w+\b/g) || []),
+      ...[...code.matchAll(/(?:\bnew\s+|<\s*|,\s*|\bextends\s+|\bimplements\s+)?\b([a-z]\w*_\w*|[a-z]\w*(?=\s*\.\s*\w+\s*\())/g)].map((m) => m[1]),
+      ...[...code.matchAll(/(?:\bnew\s+|<\s*|\bextends\s+|\bimplements\s+)([a-z]\w*)/g)].map((m) => m[1]),
+    ].filter((id) => id !== name)),
     classRefs: unique([...code.matchAll(/\b(\w+)\.class\b/g)].map((m) => m[1])),
-    calls: unique([...code.matchAll(/\b([A-Z]\w*)\.(\w+)\s*\(/g)].map((m) => `${m[1]}.${m[2]}`)),
+    calls: unique([...code.matchAll(/\b([A-Z]\w*|[a-z]\w*_\w*)\.(\w+)\s*\(/g)].map((m) => `${m[1]}.${m[2]}`)),
     invoked: unique([...code.matchAll(/\.(\w+)\s*\(/g)].map((m) => m[1])),
     methods: unique([...code.matchAll(/\b(?:(?:public|private|protected|global|static|override|virtual)\s+)+[\w<>,.\s]+?\s+(\w+)\s*\([^)]*\)\s*\{/g)].map((m) => m[1])),
     soql: parseSoql(code),
@@ -236,6 +266,11 @@ function parseApexClass(name, source) {
     info.selectorFields = unique([...body.matchAll(/\b(\w+)\.(\w+)\b/g)].filter((m) => m[1] !== 'Schema').map((m) => `${m[1]}.${m[2]}`));
   }
   if (kinds.includes('application')) info.application = parseApplication(code);
+  // A test class is one with test methods; an @isTest class with only helpers (a data factory) is not run.
+  info.hasTestMethods = info.isTest && (/\btestMethod\b/i.test(code) || /@isTest(\s*\([^)]*\))?\s+(?:(?:public|private|protected|global|static)\s+)*void\s+\w+\s*\(/i.test(code));
+  const facts = methodFacts(code);
+  info.methodCreates = facts.creates;
+  info.methodCalls = facts.calls;
   return info;
 }
 
@@ -252,4 +287,4 @@ function parseTrigger(name, source) {
   };
 }
 
-module.exports = { handlerRefs, PHASE_METHOD_RE, stripApex, parseApexClass, parseTrigger, parseSoql, parseDml, parseApplication, blockAfter };
+module.exports = { stripApexComments, methodFacts, handlerRefs, PHASE_METHOD_RE, stripApex, parseApexClass, parseTrigger, parseSoql, parseDml, parseApplication, blockAfter };

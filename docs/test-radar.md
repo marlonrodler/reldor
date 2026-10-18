@@ -29,6 +29,9 @@ That is why `--run` sends your changed files in a check-only deploy. Use `--org-
 **Can it miss a test?**
 Yes, when a test builds the object name in a string, or when the impact goes through code the index cannot follow. Treat the list as the minimum to run, not the maximum.
 
+**How does it handle test data factories?**
+Method by method. A factory method that inserts the object counts, and so does a method that calls it (chains are followed). A test that calls one of those methods gets priority high ("creates X through the factory"). A factory class that creates thirty objects only pulls in the tests that call the methods for the changed object. An `@isTest` class with no test methods (the factory itself) is never listed as a test. A test that only builds records in memory, without saving, gets priority medium.
+
 **Salesforce has RunRelevantTests. Why not use it?**
 It is a good option for the pipeline. The radar explains *why* each test is on the list and runs before you push.
 

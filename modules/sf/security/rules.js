@@ -15,7 +15,7 @@ function lineAt(text, index) {
 
 /** Same length as the original, so indexes still point at the right line. */
 function maskComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+  return require('../indexer/apex').stripApexComments(source);
 }
 
 /** Methods with their annotations: { name, annotations, start, body }. */
@@ -31,8 +31,13 @@ function methodsOf(code) {
   return out;
 }
 
+/**
+ * Something a screen, an API or a flow can call. @AuraEnabled on a property (a data class sent to a screen) is
+ * not an entry point: only on a method.
+ */
 function entryPoint(code) {
-  return /@AuraEnabled|@RestResource|\bwebservice\b|@InvocableMethod|@RemoteAction/i.test(code);
+  if (/@RestResource|\bwebservice\b|@InvocableMethod|@RemoteAction/i.test(code)) return true;
+  return /@AuraEnabled(\s*\([^)]*\))?\s+(?:(?:public|global|static|private|protected|override|virtual)\s+)+[\w<>,.[\]\s]+?\s+\w+\s*\(/i.test(code);
 }
 
 const APEX_RULES = [
@@ -122,7 +127,10 @@ const APEX_RULES = [
     const out = [];
     for (const m of text.matchAll(/'([^'\n]*)'/g)) {
       const s = m[1];
-      if (/^(Bearer|Basic)\s+[A-Za-z0-9+/=._-]{12,}$/.test(s) || /(password|senha|secret|api[_-]?key|client_secret|token)\s*[=:]\s*[^\s]{4,}/i.test(s)) {
+      const value = (/(?:password|senha|secret|api[_-]?key|client_secret|token)\s*[=:]\s*([^\s&]+)/i.exec(s) || [])[1] || '';
+      // A template placeholder ({0}, %s, {{x}}, :var) is not a secret.
+      const placeholder = /^(\{\d+\}|%s|\{\{.*\}\}|:\w+|\$\{.*\}|<[^>]+>)$/.test(value);
+      if (/^(Bearer|Basic)\s+[A-Za-z0-9+/=._-]{12,}$/.test(s) || (!placeholder && /(password|senha|secret|api[_-]?key|client_secret|token)\s*[=:]\s*[^\s]{4,}/i.test(s))) {
         out.push({ rule: 'segredo-no-codigo', severity: 'alta', line: lineAt(text, m.index), message: 'Credencial ou token escrito no código.', fix: 'Use Named Credential / External Credential, ou Custom Metadata protegido. Troque a credencial exposta.' });
       }
     }
@@ -153,6 +161,8 @@ const APEX_RULES = [
 function scanApex(text, ctx) {
   const masked = maskComments(text);
   const code = masked.replace(/'(?:\\.|[^'\\])*'/g, (m) => `'${' '.repeat(Math.max(0, m.length - 2))}'`);
+  // Test classes never run for an end user: injection, CRUD/FLS, secrets in fake data are not risks there.
+  if (/@isTest/i.test(code.slice(0, Math.max(0, code.search(/\bclass\b/i)) + 1)) || /^\s*@isTest/im.test(code.split(/\bclass\b/i)[0] || '')) return [];
   return APEX_RULES.flatMap((rule) => rule(text, code, ctx));
 }
 
@@ -161,7 +171,7 @@ function scanLwc(text) {
   const checks = [
     [/\.innerHTML\s*=/g, 'alta', 'innerHTML recebe conteúdo: risco de XSS se vier do usuário.', 'Use template com {variavel} ou textContent.'],
     [/\beval\s*\(|new\s+Function\s*\(/g, 'alta', 'Código executado a partir de texto (eval/Function).', 'Remova; não há uso seguro em componente.'],
-    [/lwc:dom\s*=\s*"manual"/g, 'média', 'lwc:dom="manual" permite inserir HTML fora do controle do LWC.', 'Confira se o conteúdo inserido nunca vem do usuário sem tratamento.'],
+    [/<(?!canvas\b|svg\b)\w+[^>]*lwc:dom\s*=\s*"manual"/g, 'média', 'lwc:dom="manual" permite inserir HTML fora do controle do LWC.', 'Confira se o conteúdo inserido nunca vem do usuário sem tratamento.'],
     [/document\.write\s*\(/g, 'média', 'document.write.', 'Use o template do componente.'],
   ];
   for (const [re, severity, message, fix] of checks) for (const m of text.matchAll(re)) out.push({ rule: 'lwc-xss', severity, line: lineAt(text, m.index), message, fix });
@@ -170,9 +180,43 @@ function scanLwc(text) {
 
 function scanVisualforce(text) {
   const out = [];
-  for (const m of text.matchAll(/escape\s*=\s*"false"/gi)) out.push({ rule: 'vf-xss', severity: 'alta', line: lineAt(text, m.index), message: 'escape="false" mostra HTML sem tratamento: risco de XSS.', fix: 'Remova escape="false" ou trate com HTMLENCODE.' });
+  // Values the end user cannot control: labels, site/component globals, quoted literals, booleans and numbers,
+  // and IF(...) whose results are only those.
+  const safe = (expr) => {
+    const e = expr.trim();
+    if (/^\$(Label|Site|Component|Resource|RemoteAction|Setup|Organization)\b/i.test(e) || /^('[^']*'|"[^"]*"|true|false|-?\d+(\.\d+)?)$/i.test(e)) return true;
+    const iff = /^IF\s*\(([\s\S]*)\)$/i.exec(e);
+    if (!iff) return false;
+    const parts = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of iff[1]) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth -= 1;
+      if (ch === ',' && depth === 0) {
+        parts.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    parts.push(cur);
+    return parts.length === 3 && safe(parts[1]) && safe(parts[2]);
+  };
+  for (const m of text.matchAll(/escape\s*=\s*"false"/gi)) {
+    const start = text.lastIndexOf('<', m.index);
+    // The tag ends at the first ">" outside quotes (a literal like '<b>' inside value="..." is not the end).
+    const tagRe = /<[^>"]*(?:"[^"]*"[^>"]*)*>/y;
+    tagRe.lastIndex = start;
+    const tag = (tagRe.exec(text) || [text.slice(start, text.indexOf('>', m.index) + 1)])[0];
+    const value = /\bvalue\s*=\s*"\{!([^"]*)\}"/i.exec(tag);
+    if (value && safe(value[1])) continue;
+    if (!/\bvalue\s*=/.test(tag) && /^<apex:outputText[^>]*\/?>$/i.test(tag)) continue;
+    out.push({ rule: 'vf-xss', severity: 'alta', line: lineAt(text, m.index), message: 'escape="false" mostra HTML sem tratamento: risco de XSS.', fix: 'Remova escape="false" ou trate com HTMLENCODE.' });
+  }
   for (const m of text.matchAll(/<script[\s\S]*?<\/script>/gi)) {
-    for (const v of m[0].matchAll(/\{!(?!\s*(?:JSENCODE|JSINHTMLENCODE|URLFOR|\$))([^}]+)\}/gi)) out.push({ rule: 'vf-xss', severity: 'média', line: lineAt(text, m.index + v.index), message: `Merge field {!${v[1].trim()}} dentro de <script> sem JSENCODE.`, fix: 'Use {!JSENCODE(...)}.' });
+    for (const v of m[0].matchAll(/\{!(?!\s*(?:JSENCODE|JSINHTMLENCODE|URLFOR|\$))([^}]+)\}/gi)) {
+      if (safe(v[1])) continue;
+      out.push({ rule: 'vf-xss', severity: 'média', line: lineAt(text, m.index + v.index), message: `Merge field {!${v[1].trim()}} dentro de <script> sem JSENCODE.`, fix: 'Use {!JSENCODE(...)}.' });
+    }
   }
   return out;
 }

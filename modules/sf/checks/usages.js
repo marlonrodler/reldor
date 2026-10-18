@@ -5,6 +5,25 @@
  * a field ("Score__c" or "Account.Score__c"), a flow name or an object name.
  * Each hit has a certainty: "certo", "provável" or "possível" (name found only inside a text string).
  */
+
+/**
+ * Follows a formula path (Parent__r.Owner.Field__c) from `objectName` through lookups the index knows.
+ * Returns { object, field } or null when a step cannot be followed (standard relationships not in the project).
+ */
+function resolveRef(model, objectName, ref) {
+  const parts = ref.replace(/^\$?\w+:/, '').split('.');
+  let current = objectName;
+  for (const step of parts.slice(0, -1)) {
+    const o = model.objects[current];
+    if (!o) return null;
+    const lookup = Object.values(o.fields).find((f) => f.referenceTo && (f.name.replace(/__c$/i, '__r').toLowerCase() === step.toLowerCase() || f.name.replace(/Id$/, '').toLowerCase() === step.toLowerCase() || (f.relationshipName || '').toLowerCase() === step.toLowerCase()));
+    if (lookup) current = lookup.referenceTo;
+    else if (model.objects[step]) current = step; // Object.Field written with the object name
+    else return null;
+  }
+  return { object: current, field: parts[parts.length - 1] };
+}
+
 function findUsages(model, query) {
   const hits = [];
   const add = (where, name, how, certainty = 'certo') => hits.push({ where, name, how, certainty });
@@ -53,14 +72,22 @@ function findUsages(model, query) {
     const sameField = (ref) => ref.split('.').pop().toLowerCase() === field.toLowerCase();
     const exact = (ref) => object && ref.toLowerCase() === `${object}.${field}`.toLowerCase();
 
+    // A formula or rule reference such as Parent__r.Field__c points to Field__c on the parent object, not here.
+    const refHits = (o, ref) => {
+      if (!object) return sameField(ref);
+      const target = resolveRef(model, o.name, ref);
+      if (target) return target.object.toLowerCase() === object.toLowerCase() && target.field.toLowerCase() === field.toLowerCase();
+      return exact(ref) || (o.name === object && !ref.includes('.') && sameField(ref));
+    };
     for (const o of Object.values(model.objects)) {
       if (object && o.name !== object) {
-        for (const f of Object.values(o.fields)) if (f.formulaRefs.some(exact)) add('Fórmula', `${o.name}.${f.name}`, 'fórmula usa o campo');
+        for (const v of o.validationRules) if (v.refs.some((r) => r.includes('.') && refHits(o, r))) add('Validation rule', `${o.name}.${v.name}`, v.active ? 'condição usa o campo' : 'condição usa o campo (inativa)');
+        for (const f of Object.values(o.fields)) if (f.formulaRefs.some((r) => refHits(o, r))) add('Fórmula', `${o.name}.${f.name}`, 'fórmula usa o campo');
         continue;
       }
-      for (const v of o.validationRules) if (v.refs.some(sameField)) add('Validation rule', `${o.name}.${v.name}`, v.active ? 'condição usa o campo' : 'condição usa o campo (inativa)');
+      for (const v of o.validationRules) if (v.refs.some((r) => refHits(o, r))) add('Validation rule', `${o.name}.${v.name}`, v.active ? 'condição usa o campo' : 'condição usa o campo (inativa)');
       for (const f of Object.values(o.fields)) {
-        if (f.formulaRefs.some(sameField)) add('Fórmula', `${o.name}.${f.name}`, 'fórmula usa o campo');
+        if (f.formulaRefs.some((r) => refHits(o, r))) add('Fórmula', `${o.name}.${f.name}`, 'fórmula usa o campo');
         if (f.summary && f.summary.field && sameField(f.summary.field)) add('Roll-up', `${o.name}.${f.name}`, 'resume o campo');
       }
       if (o.workflow) for (const u of o.workflow.fieldUpdates) if (sameField(u.field)) add('Workflow', `${o.name}.${u.name}`, 'atualização de campo');

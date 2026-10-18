@@ -16,12 +16,47 @@ function referencedBy(model, name) {
   return Object.values(model.classes).filter((c) => c.name !== name && (c.identifiers.some((id) => aliases.has(id)) || c.classRefs.some((id) => aliases.has(id))));
 }
 
-/** Test helper classes (factories) that create records of an object. */
+/** Test helper classes (factories) that create records of an object. Kept for callers; the radar uses methods. */
 function factoriesFor(model, object) {
-  return Object.values(model.classes)
-    .filter((c) => (c.isTest || /factory|testdata|testutil|datafactory/i.test(c.name)) && c.dml.some((d) => d.type === object))
-    .map((c) => c.name);
+  return [...new Set([...creatorMethods(model, object)].map((k) => k.split('.')[0]))];
 }
+
+/**
+ * "Class.method" of every method that creates records of `object`, directly or by calling another such method
+ * (factory chains). Method by method: a factory that creates 30 objects only counts for the methods used.
+ */
+function creatorMethods(model, object) {
+  const set = new Set();
+  const lower = new Set(); // Apex names are case-insensitive: "Fabrica.Conta(" calls "fabrica.conta"
+  const add = (key) => {
+    set.add(key);
+    lower.add(key.toLowerCase());
+  };
+  const classes = Object.values(model.classes);
+  for (const c of classes) for (const [m, types] of Object.entries(c.methodCreates || {})) if (types.some((t) => sameName(t, object))) add(`${c.name}.${m}`);
+  for (let round = 0; round < 4; round++) {
+    let grew = false;
+    for (const c of classes) {
+      for (const [m, calls] of Object.entries(c.methodCalls || {})) {
+        const key = `${c.name}.${m}`;
+        if (lower.has(key.toLowerCase())) continue;
+        if (calls.some((x) => lower.has((x.includes('.') ? x : `${c.name}.${x}`).toLowerCase()))) {
+          add(key);
+          grew = true;
+        }
+      }
+    }
+    if (!grew) break;
+  }
+  set.hasName = (k) => lower.has(String(k).toLowerCase());
+  return set;
+}
+
+/** Apex and metadata names compare without case (npe01__Contacts_and_Orgs_Settings__c is the same object). */
+const sameName = (a, b) => Boolean(a && b) && a.toLowerCase() === b.toLowerCase();
+
+/** True for a class that runs as a test (has test methods). Old indexes without the flag fall back to isTest. */
+const runsAsTest = (c) => Boolean(c && c.isTest && c.hasTestMethods !== false);
 
 /** What each changed file means for tests: objects whose save behaviour changed, classes whose code changed. */
 function impactsOf(model, changes) {
@@ -74,7 +109,7 @@ function buildRadar(model, changes) {
   const tests = new Map();
   const hit = (name, priority, reason) => {
     const c = model.classes[name];
-    if (!c || !c.isTest) return;
+    if (!runsAsTest(c)) return;
     const t = tests.get(name) || { name, priority: 'média', reasons: [] };
     if (priority === 'alta') t.priority = 'alta';
     if (!t.reasons.includes(reason)) t.reasons.push(reason);
@@ -97,16 +132,21 @@ function buildRadar(model, changes) {
   }
 
   function addVia(object, why) {
-    for (const c of Object.values(model.classes)) if (c.isTest && c.dml.some((d) => d.type === object)) hit(c.name, 'média', `cria ou altera ${object} (${why})`);
+    for (const c of Object.values(model.classes)) if (runsAsTest(c) && c.dml.some((d) => sameName(d.type, object))) hit(c.name, 'média', `cria ou altera ${object} (${why})`);
   }
 
   for (const [object, whys] of objects) {
     const why = whys.join('; ');
-    const factories = factoriesFor(model, object);
+    const creators = creatorMethods(model, object);
     for (const c of Object.values(model.classes)) {
-      if (!c.isTest) continue;
-      if (c.dml.some((d) => d.type === object)) hit(c.name, 'alta', `cria ou altera ${object} (${why})`);
-      else if (factories.some((f) => f !== c.name && c.identifiers.includes(f))) hit(c.name, 'alta', `cria ${object} pela factory (${why})`);
+      if (!runsAsTest(c)) continue;
+      const saves = c.dml.some((d) => sameName(d.type, object));
+      // A factory call first: a test method that calls a factory is itself in `creators`, but it saves through it.
+      const via = saves ? null : (c.calls || []).find((k) => creators.hasName(k) && !k.toLowerCase().startsWith(`${c.name.toLowerCase()}.`));
+      const builds = !saves && !via && Object.values(c.methodCreates || {}).some((types) => types.some((t) => sameName(t, object)));
+      if (saves) hit(c.name, 'alta', `cria ou altera ${object} (${why})`);
+      else if (via) hit(c.name, 'alta', `cria ${object} pela factory ${via} (${why})`);
+      else if (builds) hit(c.name, 'média', `monta registros de ${object} no teste (${why})`);
       else if (c.runAs && whys.some((w) => w.startsWith('permissão')) && c.identifiers.includes(object)) hit(c.name, 'média', `usa System.runAs com ${object} (${why})`);
     }
     for (const r of model.objects[object]?.rollupsTo || []) notes.push(`${object} faz roll-up em ${r.parent}: as automações de ${r.parent} também rodam.`);
@@ -122,4 +162,4 @@ function buildRadar(model, changes) {
   };
 }
 
-module.exports = { buildRadar, impactsOf, referencedBy, factoriesFor, OBJECT_TYPES };
+module.exports = { buildRadar, impactsOf, referencedBy, factoriesFor, creatorMethods, runsAsTest, OBJECT_TYPES };

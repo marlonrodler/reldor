@@ -123,7 +123,7 @@ function parseFlow(meta, { name }) {
     }
   }
 
-  const fieldsByObject = {};
+  const fieldsByObject = Object.create(null);
   for (const el of [...arr(f.recordCreates), ...arr(f.recordUpdates)]) {
     const target = el.object || (el.inputReference === '$Record' ? object : null);
     if (!target) continue;
@@ -171,7 +171,7 @@ function parseDuplicateRule(meta, { object, name }) {
 
 function parseCustomMetadataRecord(meta, { object, name }) {
   const r = parseXml(meta).CustomMetadata || {};
-  const values = {};
+  const values = Object.create(null);
   for (const v of arr(r.values)) {
     const value = arr(v.value)[0];
     values[v.field] = value && typeof value === 'object' ? value['#text'] ?? '' : value;

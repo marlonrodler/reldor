@@ -29,6 +29,9 @@ Por isso o `--run` manda os arquivos alterados num deploy de validação. Use `-
 **Ele pode deixar um teste de fora?**
 Pode, quando um teste monta o nome do objeto em texto, ou quando o impacto passa por código que o índice não consegue seguir. Trate a lista como o mínimo a rodar, não o máximo.
 
+**Como ele trata as factories de dados de teste?**
+Método a método. Um método da factory que insere o objeto conta, e também um método que chama esse (cadeias são seguidas). Um teste que chama um desses métodos ganha prioridade alta ("cria X pela factory"). Uma factory que cria trinta objetos só puxa os testes que chamam os métodos do objeto alterado. Uma classe `@isTest` sem métodos de teste (a própria factory) nunca aparece como teste. Um teste que só monta registros em memória, sem salvar, ganha prioridade média.
+
 **O Salesforce tem RunRelevantTests. Por que não usar?**
 É uma boa opção para a esteira. O radar explica *por que* cada teste está na lista e roda antes do push.
 

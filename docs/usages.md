@@ -25,7 +25,10 @@ To see what runs when a record is saved, use [explain](./explain.md) instead.
 Calls through a variable (`service.calcularScore()`) don't say the class name. Reldor links them through the variable's interface and the `Application` factory, which is strong evidence, not proof.
 
 **Does it cover layouts and permissions?**
-Yes: page layouts, list views, compact layouts, and field or class access in permission sets and profiles. Custom metadata records that name a class count too. Reports and Lightning pages are not covered yet.
+Yes: page layouts, list views, compact layouts, and field or class access in permission sets and profiles. Custom metadata records that name a class count too. For custom fields, a second pass reads the rest of the project: any metadata that names `Object.Field` (reports, report types, dashboards, field sets, quick actions, Lightning pages, prompt templates) is **certain**; LWC, Aura and Visualforce that use the field by name are **likely**; Apex that has the field name only inside a string (dynamic SOQL) is **possible**.
+
+**What does it leave out?**
+Jest tests (`__tests__`) and fields with the same name on another object when the code does not say which object.
 
 ## Where it fits
 

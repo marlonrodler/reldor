@@ -71,7 +71,30 @@ function qualityReview(root, files, { model, packageDirectories, base, all = fal
   }
 
   const findings = [];
+  // One finding per pair of files: a generated class can have hundreds of blocks equal to another file (or itself).
+  const pairs = new Map();
   for (const b of findDuplicateBlocks(sources, changed, { minTokens: options.min_tokens, minLines: options.min_lines })) {
+    const key = `${b.file}|${b.other}`;
+    if (!pairs.has(key)) pairs.set(key, []);
+    pairs.get(key).push(b);
+  }
+  for (const blocks of pairs.values()) {
+    const b = blocks[0];
+    if (blocks.length > 1) {
+      const lines = blocks.reduce((n, x) => n + (x.to - x.from + 1), 0);
+      const where = b.other === b.file ? 'outros trechos deste mesmo arquivo' : `trechos de ${path.basename(b.other)}`;
+      findings.push({
+        kind: 'bloco-copiado',
+        severity: KIND_SEVERITY['bloco-copiado'],
+        file: b.file,
+        line: b.from,
+        message: `${blocks.length} trechos (${lines} linhas, a partir da linha ${b.from}) são iguais a ${where}.`,
+        fix: b.other === b.file ? 'Se o arquivo é gerado (ex.: classe de WSDL), ignore; se não, extraia o trecho repetido para um método.' : 'Se é a mesma classe copiada em outro pacote, deixe uma só e dependa dela; se não, extraia os trechos para um método compartilhado.',
+        source: 'reldor',
+        blocks: blocks.map((x) => ({ from: x.from, to: x.to, otherFrom: x.otherFrom, otherTo: x.otherTo })),
+      });
+      continue;
+    }
     findings.push({
       kind: 'bloco-copiado',
       severity: KIND_SEVERITY['bloco-copiado'],

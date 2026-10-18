@@ -91,8 +91,11 @@ function planRollback(root, config, { target, apiVersion = '61.0' }) {
   const restore = new Map();
   const unknown = [];
   const bundles = new Map();
+  const changedFiles = new Set(changes.map((c) => c.file));
   for (const c of changes) {
     const m = memberOf(c.file);
+    // The -meta.xml next to a class, trigger or page goes with that file.
+    if (!m && /-meta\.xml$/.test(c.file) && changedFiles.has(c.file.replace(/-meta\.xml$/, ''))) continue;
     if (!m) {
       if (!/(^|\/)(\.|README|package\.json|sfdx-project\.json)/i.test(c.file) && !/\.md$/i.test(c.file)) unknown.push(c.file);
       continue;
@@ -120,7 +123,6 @@ function planRollback(root, config, { target, apiVersion = '61.0' }) {
     const after = lines(git(root, ['log', '--no-merges', '--format=%h%x09%an%x09%s', `${merge}..${envRef}`, '--', c.file]));
     if (after.length) later.push({ file: c.file, commits: after.map((l) => l.split('\t')).map(([h, a, s]) => ({ hash: h, author: a, subject: s })) });
   }
-  const changedFiles = new Set(changes.map((c) => c.file));
   const deletedFiles = new Set(changes.filter((c) => c.status === 'A').map((c) => c.file));
   const stillUsed = [];
   for (const d of destructive.values()) {

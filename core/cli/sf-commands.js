@@ -91,6 +91,15 @@ function usagesCommand(root, flags, args) {
   }
   const { model } = freshModel(root, flags);
   const hits = findUsages(model, query);
+  // Fields: a second pass over metadata and code the index does not model (reports, field sets, Aura, ...).
+  const [left, right] = query.includes('.') ? query.split('.', 2) : [null, query];
+  if (/__c$/i.test(right) && !model.classes[left || '']) {
+    const { sweepFieldUsages } = require('../../modules/sf/checks/usages-sweep');
+    const { readProject } = require('../../modules/sf');
+    const object = left && Object.keys(model.objects).find((o) => o.toLowerCase() === left.toLowerCase());
+    const known = new Set(hits.map((h) => String(h.name).toLowerCase()));
+    hits.push(...sweepFieldUsages(root, readProject(root).packageDirectories, object || left, right, known));
+  }
   logAction(root, 'usages', { summary: `${query}: ${hits.length} uso(s)` });
   if (flags.json) printJson({ query, hits });
   else print(renderUsages(query, hits));

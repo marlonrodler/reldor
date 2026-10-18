@@ -16,7 +16,7 @@
 | Repeated text | The same message in three or more classes: a Custom Label candidate |
 | Code Analyzer | PMD `Recommended` rules (complexity, naming, best practices, performance) and CPD |
 
-Only what **your change** touches is reported. Old duplication in files you did not touch, or in parts of a file you did not edit, stays out, so the list fits in one pull request. `--all` reviews the whole project as if it were new, for a one-time cleanup.
+Only what **your change** touches is reported. Old duplication in files you did not touch, or in parts of a file you did not edit, stays out, so the list fits in one pull request. `--all` reviews the whole project as if it were new, for a one-time cleanup. Each repetition is reported once: one finding per repeated text, per repeated query, per pair of similar methods and per pair of files with copied blocks (a generated class with hundreds of equal blocks is one line).
 
 Classes that share a contract are left out of "method that already exists": two Selectors with `selectById`, two classes implementing the same interface. That is the pattern, not a copy.
 

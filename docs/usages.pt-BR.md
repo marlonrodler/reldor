@@ -25,7 +25,10 @@ Para ver o que roda quando um registro é salvo, use o [explain](./explain.pt-BR
 Chamadas por variável (`service.calcularScore()`) não dizem o nome da classe. O Reldor liga pela interface da variável e pela fábrica `Application`: é uma evidência forte, não uma prova.
 
 **Cobre layouts e permissões?**
-Sim: page layouts, list views, compact layouts e acesso a campo ou classe em permission sets e profiles. Registros de custom metadata que citam uma classe também contam. Relatórios e Lightning pages ainda não.
+Sim: page layouts, list views, compact layouts e acesso a campo ou classe em permission sets e profiles. Registros de custom metadata que citam uma classe também contam. Para campos custom, uma segunda passada lê o resto do projeto: qualquer metadado que cite `Objeto.Campo` (reports, report types, dashboards, field sets, quick actions, Lightning pages, prompt templates) é **certo**; LWC, Aura e Visualforce que usam o campo pelo nome são **prováveis**; Apex que tem o nome do campo só dentro de texto (SOQL dinâmica) é **possível**.
+
+**O que fica de fora?**
+Testes Jest (`__tests__`) e campos com o mesmo nome em outro objeto quando o código não diz qual objeto.
 
 ## Onde se encaixa
 

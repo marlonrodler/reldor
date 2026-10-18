@@ -133,9 +133,9 @@ function relatedTests(model, object, classNames) {
   const direct = [];
   const byObject = [];
   for (const c of Object.values(model.classes)) {
-    if (!c.isTest) continue;
+    if (!c.isTest || c.hasTestMethods === false) continue; // helpers such as a data factory are not tests
     if (c.identifiers.some((id) => names.has(id))) direct.push(c.name);
-    else if (c.dml.some((d) => d.type === object)) byObject.push(c.name);
+    else if (c.dml.some((d) => d.type && object && d.type.toLowerCase() === object.toLowerCase())) byObject.push(c.name);
   }
   return { direct, byObject };
 }

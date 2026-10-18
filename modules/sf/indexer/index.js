@@ -6,7 +6,7 @@ const { paths } = require('../../../core/config');
 const { readProject } = require('..');
 const { classify, parseFile } = require('./parsers');
 
-const INDEX_VERSION = 10;
+const INDEX_VERSION = 14;
 const SKIP_DIRS = new Set(['node_modules', '.git', '.sfdx', '.sf', '.reldor', '__tests__', 'jsconfig.json']);
 
 function walk(dir, files = []) {

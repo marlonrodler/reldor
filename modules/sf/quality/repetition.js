@@ -85,6 +85,7 @@ function findRepetition(sources, changed, model, options = {}) {
   const touches = (added, line, span = 1) => !added || [...Array(span).keys()].some((k) => added.has(line + k));
 
   // SOQL
+  const reportedQueries = new Set(); // one finding per repeated query
   const soqlIndex = new Map();
   for (const [file, s] of sources) {
     if (s.isTest) continue;
@@ -100,6 +101,8 @@ function findRepetition(sources, changed, model, options = {}) {
       if (!touches(added, q.line)) continue;
       const elsewhere = (soqlIndex.get(q.text) || []).filter((o) => o.file !== file);
       const selector = q.object ? (model.objects[q.object]?.selectors || [])[0] : null;
+      if (elsewhere.length && reportedQueries.has(q.text)) continue;
+      if (elsewhere.length) reportedQueries.add(q.text);
       if (elsewhere.length) {
         findings.push({ kind: 'soql-repetida', severity: 'média', file, line: q.line, message: `Esta query já existe em ${[...new Set(elsewhere.map((o) => o.className))].join(', ')}.`, fix: selector ? `Coloque a query no ${selector} e use o método dele nos dois lugares.` : 'Extraia a query para um método compartilhado (um Selector, se o projeto usar fflib).' });
       } else if (selector) {
@@ -109,6 +112,7 @@ function findRepetition(sources, changed, model, options = {}) {
   }
 
   // Methods that already exist
+  const reportedPairs = new Set();
   const methodIndex = [];
   for (const [file, s] of sources) {
     if (s.isTest) continue;
@@ -126,6 +130,11 @@ function findRepetition(sources, changed, model, options = {}) {
         && !(s.isSelector && sources.get(o.file).isSelector)
         && ![...basesOf(codeOf(sources.get(o.file)))].some((x) => mine.has(x))
         && similarity(m.shingles, o.shingles) >= 0.5);
+      // A↔B is one finding, not two (matters when the whole project is reviewed).
+      const pair = (o) => [`${m.file}:${m.name}`, `${o.file}:${o.name}`].sort().join('|');
+      const fresh = sameSignature.filter((o) => !reportedPairs.has(pair(o)));
+      for (const o of sameSignature) reportedPairs.add(pair(o));
+      if (sameSignature.length && !fresh.length) continue;
       if (sameSignature.length) {
         findings.push({ kind: 'metodo-ja-existe', severity: 'média', file, line: m.line, message: `${m.name}(${m.params.join(', ')}) já existe em ${sameSignature.map((o) => o.className).join(', ')}.`, fix: 'Reaproveite o método existente, ou junte os dois num lugar só.' });
         continue;
@@ -136,6 +145,8 @@ function findRepetition(sources, changed, model, options = {}) {
         .map((o) => ({ o, score: similarity(m.shingles, o.shingles) }))
         .filter((x) => x.score >= (options.similarity || 0.8))
         .sort((a, b) => b.score - a.score)[0];
+      if (similar && reportedPairs.has([`${m.file}:${m.name}`, `${similar.o.file}:${similar.o.name}`].sort().join('|'))) continue;
+      if (similar) reportedPairs.add([`${m.file}:${m.name}`, `${similar.o.file}:${similar.o.name}`].sort().join('|'));
       if (similar) {
         findings.push({ kind: 'metodo-parecido', severity: 'baixa', file, line: m.line, message: `${m.name} é ${Math.round(similar.score * 100)}% parecido com ${similar.o.className}.${similar.o.name}.`, fix: 'Veja se dá para reaproveitar ou generalizar o método existente.' });
       }
@@ -146,8 +157,11 @@ function findRepetition(sources, changed, model, options = {}) {
   const literalIndex = new Map();
   for (const [file, s] of sources) {
     if (s.isTest) continue;
-    for (const m of codeOf(s).matchAll(/'((?:\\.|[^'\\]){15,})'/g)) {
+    // Every string literal, from its own opening quote (a regex for long strings only would start at the
+    // closing quote of a short one and take the code between two strings as "text").
+    for (const m of codeOf(s).matchAll(/'((?:\\.|[^'\\\n])*)'/g)) {
       const value = m[1];
+      if (value.length < 15) continue;
       if (!/\s/.test(value) || /^\s*SELECT\b/i.test(value)) continue;
       if (!literalIndex.has(value)) literalIndex.set(value, new Map());
       if (!literalIndex.get(value).has(file)) literalIndex.get(value).set(file, lineAt(codeOf(s), m.index));
@@ -155,9 +169,11 @@ function findRepetition(sources, changed, model, options = {}) {
   }
   for (const [value, files] of literalIndex) {
     if (files.size < (options.minLiteralFiles || 3)) continue;
+    // One finding per text, on the first changed file that has it.
     for (const [file, added] of changed) {
       if (!files.has(file) || !touches(added, files.get(file))) continue;
       findings.push({ kind: 'texto-repetido', severity: 'baixa', file, line: files.get(file), message: `O texto "${value.slice(0, 60)}${value.length > 60 ? '…' : ''}" aparece em ${files.size} classes.`, fix: 'Use um Custom Label: uma tradução, um lugar para mudar.' });
+      break;
     }
   }
   return findings;

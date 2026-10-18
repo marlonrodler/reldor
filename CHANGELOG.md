@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.13.0
+
+Fixes from a full run over 16 large public Salesforce projects (NPSP, EDA, PMM, Outbound Funds, Volunteers for
+Salesforce, the Salesforce sample apps and more).
+
+- Index: Apex methods named like JavaScript built-ins (`toString`, `valueOf`) no longer break the class.
+- Index: a `//` or `/*` inside an Apex string (`'image/*'`, `'https://...'`) is no longer read as a comment (it hid the
+  rest of the class). Classes and objects whose names start in lower case (`mc_Recipients`, `npe01__X__c`) are found,
+  and names compare without letter case, as in Apex.
+- `usages`: a formula or validation rule that reads `Parent__r.Field__c` counts for the field on the parent object,
+  not for a field with the same name on the object itself.
+- `usages`: a second pass for custom fields finds reports, report types, dashboards, field sets, Lightning pages,
+  quick actions and prompt templates (certain), LWC/Aura/Visualforce by name (likely) and field names inside Apex
+  strings (possible).
+- `test-radar`: test data factories are followed method by method, through chains. A test that calls a factory method
+  is high priority; a factory class that creates many objects no longer pulls in every test. `@isTest` classes with no
+  test methods are not listed as tests.
+- `clean --undo` keeps the snapshot, so the same retrieve can be cleaned again.
+- The pre-commit hook calls this Reldor by absolute path (an old `reldor` on the PATH could block commits).
+- `quality --all`: one finding per repeated text, query, method pair and pair of files with copied blocks, instead of
+  one per occurrence. The code between two short strings is no longer taken for a repeated text.
+- `rollback`: the `-meta.xml` next to a class or trigger goes with it instead of being listed as unknown.
+- `security`: fewer false alarms. Test classes, placeholder "secrets" (`{0}`, `%s`), Visualforce `escape="false"` on
+  labels or literals, `lwc:dom="manual"` on canvas/svg and data classes with only `@AuraEnabled` properties are no
+  longer flagged.
+
 ## 0.12.0
 
 - The environment chain is fully configurable: any names, branches and number of environments; any of them can be
