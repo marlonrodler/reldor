@@ -92,9 +92,33 @@ function usagesCommand(root, flags, args) {
   const { model } = freshModel(root, flags);
   const hits = findUsages(model, query);
   logAction(root, 'usages', { summary: `${query}: ${hits.length} uso(s)` });
-  if (flags.json) printJson({ query, hits });
-  else print(renderUsages(query, hits));
+  const elsewhere = findUsagesElsewhere(hits);
+  // Fields: the developer's second look at what code reaches only by name (stores of field names, texts in code).
+  let dynamic = null;
+  const [qLeft, qRight] = query.includes('.') ? query.split('.', 2) : [null, query];
+  if (/__c$/i.test(qRight) && !model.classes[qLeft || '']) {
+    const { analyzeDynamicField } = require('../../modules/sf/checks/dynamicfields');
+    dynamic = analyzeDynamicField(model, qLeft, qRight, hits.filter((h) => h.certainty !== 'certo'));
+  }
+  if (flags.json) printJson({ query, hits, elsewhere, dynamic });
+  else {
+    const { renderDynamicField } = require('../../modules/sf/checks/dynamicfields');
+    print([...renderUsages(query, hits), ...renderElsewhere(query, elsewhere), ...(dynamic ? renderDynamicField(qLeft, qRight, dynamic) : [])]);
+  }
   return 0;
+}
+
+/** References to a field with the same name on other objects: left out, but said, so nothing is silent. */
+function findUsagesElsewhere(hits) {
+  return hits.elsewhere || [];
+}
+
+function renderElsewhere(query, elsewhere) {
+  if (!elsewhere.length) return [];
+  const byObject = {};
+  for (const e of elsewhere) (byObject[e.object] = byObject[e.object] || new Set()).add(e.name);
+  const parts = Object.entries(byObject).map(([o, names]) => `${o} (${[...names].slice(0, 4).join(', ')}${names.size > 4 ? `, +${names.size - 4}` : ''})`);
+  return ['', `ℹ️  Fora da lista: campos com o mesmo nome em outros objetos — ${parts.join('; ')}.`];
 }
 
 function renderQueryIssues(issues) {

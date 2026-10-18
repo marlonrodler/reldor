@@ -21,11 +21,24 @@ To see what runs when a record is saved, use [explain](./explain.md) instead.
 
 ## Common questions
 
-**Why "likely" instead of "certain" for methods?**
-Calls through a variable (`service.calcularScore()`) don't say the class name. Reldor links them through the variable's interface and the `Application` factory, which is strong evidence, not proof.
+**Does a field with the same name on several objects (`Status__c`, `Contact__c`) get mixed up?**
+No. Every use is tied to the object that owns the field by what the code says: the variable's type (`List<Account> accounts`), the query's `FROM` (subqueries and semi-joins too), `new Account(...)`, a `Parent__r.Field__c` path, a method's return type, a data class property, the flow element or `$Record`, the screen's form or imports, the report column, the layout's related list. Uses on other objects are listed apart under "Fora da lista", so nothing disappears silently.
 
-**Does it cover layouts and permissions?**
-Yes: page layouts, list views, compact layouts, and field or class access in permission sets and profiles. Custom metadata records that name a class count too. Reports and Lightning pages are not covered yet.
+**And when the code does not say the object?**
+That happens with a field name in a string handed to dynamic code, such as `'Status__c'` in a field list or `prefix + 'Role__c'`. The hit is then **possible**, with the line, the reason and the objects that have a field with that name. When only one object in the project has that field, it is certain.
+
+**And a field used dynamically (an engine that receives the field name)?**
+`usages` takes the second look a developer would, in the "Campos dinâmicos" section:
+- it finds the objects that **keep field names** (custom metadata, custom settings and objects with fields such as `Field__c`, `Field_API_Name__c`, `Source_Field__c`, or a relationship to FieldDefinition) and the classes that **use that name** to reach the field (`record.get(name)`, `fields.getMap()`, `Database.query(text)`);
+- **custom metadata**: the records are in the project, so it checks them and says which records name the field;
+- **custom settings and objects**: the records live in the org and Reldor does not read data; it says "check for records" and hands over the SOQL to run;
+- **text in code** (a JSON built in an LWC, a field list in Apex): it shows the file and line, because these break at run time, not at compile time.
+
+**Does it cover layouts, permissions and other metadata?**
+Yes: layouts (related lists included), list views, compact layouts, record types, permission sets and profiles, reports, report types, dashboards, quick actions, Lightning pages, field sets, sharing sets, rules, apps, custom metadata records, Apex, triggers, flows, LWC, Aura and Visualforce.
+
+**What does it leave out?**
+Jest tests (`__tests__`), comments and sentences (error and assert messages that only mention the field).
 
 ## Where it fits
 

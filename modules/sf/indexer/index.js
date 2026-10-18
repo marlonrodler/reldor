@@ -6,7 +6,8 @@ const { paths } = require('../../../core/config');
 const { readProject } = require('..');
 const { classify, parseFile } = require('./parsers');
 
-const INDEX_VERSION = 10;
+// The cache is tied to the code that wrote it: any change in the indexer files makes a fresh index.
+const INDEX_VERSION = `15-${require('node:crypto').createHash('sha1').update(['apex.js', 'parsers.js', 'fieldrefs.js', 'xml.js', 'index.js'].map((f) => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n')).digest('hex').slice(0, 10)}`;
 const SKIP_DIRS = new Set(['node_modules', '.git', '.sfdx', '.sf', '.reldor', '__tests__', 'jsconfig.json']);
 
 function walk(dir, files = []) {
@@ -61,9 +62,20 @@ function emptyObject(name) {
   };
 }
 
+/** Joins the field references and context of every file of one screen component (LWC, Aura, Visualforce). */
+function addScreen(model, kind, name, screen, file) {
+  if (!screen) return;
+  const key = `${kind}:${name}`;
+  const s = model.screens[key] || (model.screens[key] = { kind, name, refs: [], context: { objects: [], apex: [], controllers: [], types: {} }, files: [] });
+  s.files.push(file);
+  for (const r of screen.refs) s.refs.push({ ...r, file });
+  for (const k of ['objects', 'apex', 'controllers']) for (const v of screen.context[k]) if (!s.context[k].includes(v)) s.context[k].push(v);
+  Object.assign(s.context.types, screen.context.types);
+}
+
 /** Turns per-file results into a model organized by object. */
 function aggregate(fileResults) {
-  const model = { objects: {}, classes: {}, triggers: {}, flows: {}, lwc: {}, customMetadata: {}, ui: [], permissions: [], application: { services: {}, selectors: {}, domains: {} }, errors: [] };
+  const model = { objects: {}, classes: {}, triggers: {}, flows: {}, lwc: {}, screens: {}, meta: {}, customMetadata: {}, ui: [], permissions: [], application: { services: {}, selectors: {}, domains: {} }, errors: [] };
   const obj = (name) => {
     if (!name) return null;
     if (!model.objects[name]) model.objects[name] = emptyObject(name);
@@ -78,7 +90,7 @@ function aggregate(fileResults) {
     const d = r.data;
     switch (r.type) {
       case 'object':
-        Object.assign(obj(d.object), { label: d.label, customSetting: d.customSetting, customMetadata: d.customMetadata });
+        Object.assign(obj(d.object), { label: d.label, pluralLabel: d.pluralLabel, customSetting: d.customSetting, customMetadata: d.customMetadata });
         break;
       case 'field':
         obj(d.object).fields[d.name] = d;
@@ -96,7 +108,8 @@ function aggregate(fileResults) {
         obj(d.object).workflow = d;
         break;
       case 'class':
-        model.classes[d.name] = { ...d, file };
+        // Two files with the same class name (repositories with several packages): keep both field uses.
+        model.classes[d.name] = { ...d, file, fieldUses: [...(model.classes[d.name]?.fieldUses || []), ...(d.fieldUses || [])] };
         if (d.application) {
           for (const kind of ['services', 'selectors', 'domains']) Object.assign(model.application[kind], d.application[kind]);
         }
@@ -105,7 +118,7 @@ function aggregate(fileResults) {
         model.triggers[d.name] = { ...d, file };
         break;
       case 'flow':
-        model.flows[d.name] = { ...d, file };
+        model.flows[d.name] = { ...d, file, fieldUses: [...(model.flows[d.name]?.fieldUses || []), ...(d.fieldUses || [])] };
         break;
       case 'layout':
       case 'listView':
@@ -120,9 +133,17 @@ function aggregate(fileResults) {
         break;
       case 'lwcJs':
         model.lwc[d.name] = { ...(model.lwc[d.name] || {}), apex: d.apex, schema: d.schema };
+        addScreen(model, 'LWC', d.name, d.screen, file);
         break;
       case 'lwcHtml':
         model.lwc[d.name] = { ...(model.lwc[d.name] || {}), children: d.children };
+        addScreen(model, 'LWC', d.name, d.screen, file);
+        break;
+      case 'uiCode':
+        addScreen(model, d.kind, d.name, d.screen, file);
+        break;
+      case 'meta':
+        if (d.fieldUses.length) model.meta[file] = d;
         break;
       default:
         break;
@@ -198,6 +219,7 @@ function buildIndex(root, options = {}) {
   const removed = Object.keys(prevFiles).filter((rel) => !results[rel]).length;
 
   const model = aggregate(results);
+  model.namespace = project.namespace || null;
   const stats = {
     files: Object.keys(results).length,
     parsed,

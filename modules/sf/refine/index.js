@@ -31,42 +31,166 @@ function norm(text) {
     .replace(/[̀-ͯ]/g, '');
 }
 
-/** Objects and fields mentioned in free text, by API name, label or common word. */
-function detectMentions(model, text) {
-  const t = norm(text);
-  const words = new Set(t.split(/[^a-z0-9_]+/).filter(Boolean));
-  const objects = new Set();
-  const fields = new Set();
+const { STOPWORDS, meanings, singulars, ABBREVIATIONS } = require('./words');
 
-  for (const o of Object.values(model.objects)) {
-    if (o.customSetting || o.customMetadata) continue;
-    const api = norm(o.name);
-    const label = norm(o.label);
-    if (words.has(api) || (label && label.length > 3 && t.includes(label))) objects.add(o.name);
+const NAME_NOISE = new Set(['npsp', 'hed', 'deprecated', 'the', 'of', 'and', 'c', 'e', 'mdt', 'x']);
+
+/** Words of a name: "ServiceDelivery__c", "Course_Offering__c", "npe01__OppPayment__c", "GAU Allocation". */
+function nameWords(name) {
+  const bare = String(name || '').replace(/^[a-z0-9]+__(?=.*__)/i, '').replace(/__(c|e|mdt|x|b)$/i, '');
+  return norm(bare.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_\-./]+/g, ' '))
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && !NAME_NOISE.has(w))
+    .map((w) => (ABBREVIATIONS[w] ? ABBREVIATIONS[w] : w))
+    .join(' ')
+    .split(' ')
+    .filter(Boolean);
+}
+
+/** The different ways an object or field is named: label, plural label, API name. */
+function phrasesOf(item) {
+  const list = [item.label, item.pluralLabel, item.name].filter(Boolean).map(nameWords).filter((p) => p.length);
+  const seen = new Set();
+  return list.filter((p) => {
+    const k = p.join(' ');
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+/** The written words of a request with all their meanings (singular, translations). */
+function requestWords(text) {
+  const out = [];
+  let afterOf = false;
+  for (const w of norm(text).split(/[^a-z0-9_]+/).filter(Boolean)) {
+    if (STOPWORDS.has(w)) {
+      afterOf = afterOf || /^(de|do|da|dos|das|of)$/.test(w);
+      continue;
+    }
+    // afterOf: this word completes the one before ("lote de doações"), it is not a subject of its own
+    out.push({ word: w, pos: out.length, meanings: meanings(w), afterOf });
+    afterOf = false;
   }
-  for (const w of words) if (STANDARD_WORDS[w] && model.objects[STANDARD_WORDS[w]]) objects.add(STANDARD_WORDS[w]);
-  for (const m of String(text).matchAll(/\b(\w+)\.(\w+__c)\b/g)) {
-    if (model.objects[m[1]]) objects.add(m[1]);
-    fields.add(`${m[1]}.${m[2]}`);
-  }
-  for (const o of Object.values(model.objects)) {
-    for (const f of Object.values(o.fields)) {
-      const api = norm(f.name);
-      const label = norm(f.label);
-      const bare = api.replace(/__c$/, '');
-      const byValue = (f.picklist || []).some((v) => norm(v).length > 3 && words.has(norm(v)));
-      const loose = (bare.length >= 3 && words.has(bare)) || (label && label.length > 4 && t.includes(label)) || byValue;
-      if (words.has(api) || (loose && objects.has(o.name))) {
-        fields.add(`${o.name}.${f.name}`);
-        objects.add(o.name);
-      }
+  return out;
+}
+
+/** Best place in the request where every word of a name appears close together (any order, one extra word allowed). */
+function findPhrase(words, phrase, taken = new Set()) {
+  const hits = phrase.map((p) => words.filter((w) => singulars(p).some((s) => w.meanings.has(s))).map((w) => w.pos));
+  if (hits.some((h) => !h.length)) return null;
+  let best = null;
+  const walk = (i, chosen) => {
+    if (i === hits.length) {
+      const span = Math.max(...chosen) - Math.min(...chosen);
+      if (span > phrase.length) return; // the words must sit together (one extra word allowed)
+      const free = chosen.filter((c) => !taken.has(c)).length;
+      if (!best || span < best.span || (span === best.span && free > best.free)) best = { positions: [...chosen], span, free };
+      return;
+    }
+    for (const pos of hits[i]) if (!chosen.includes(pos)) walk(i + 1, [...chosen, pos]);
+  };
+  walk(0, []);
+  return best;
+}
+
+/**
+ * Objects and fields a request talks about, in Portuguese or English, by label, API name or common word.
+ * Longer names win over the shorter names they contain ("entrega de serviço" is Service Delivery, not Service);
+ * the contained ones are kept as `related`.
+ */
+function detectMentions(model, text) {
+  const words = requestWords(text);
+  const raw = String(text);
+  const candidates = [];
+  // Standard objects count even when the project has no metadata for them.
+  const { STANDARD } = require('../checks/fieldresolve');
+  const customPhrases = new Set(Object.values(model.objects).flatMap((o) => phrasesOf(o).map((p) => p.join(' '))));
+  // A standard object the project replaced with its own (Address__c, Order__c named "Order") stays out.
+  const standardOnly = [...STANDARD].filter((n) => !model.objects[n]).map((n) => ({ name: n, label: n.replace(/([a-z])([A-Z])/g, '$1 $2'), fields: {}, standardOnly: true })).filter((o) => !phrasesOf(o).some((p) => customPhrases.has(p.join(' '))));
+  const pool = [...Object.values(model.objects), ...standardOnly];
+  for (const o of pool) {
+    const config = o.customSetting || o.customMetadata;
+    const deprecated = /deprecated/i.test(o.label || '');
+    for (const phrase of phrasesOf(o)) {
+      // A one-word name of a settings object or a deprecated one only counts when written as is.
+      if ((config || deprecated) && phrase.length < 2) continue;
+      const m = findPhrase(words, phrase);
+      if (m) candidates.push({ object: o.name, phrase, ...m, score: phrase.length * 10 - m.span - (deprecated ? 5 : 0) - (config ? 3 : 0) });
     }
   }
-  return { objects: [...objects], fields: [...fields] };
+  candidates.sort((a, b) => b.score - a.score || a.object.localeCompare(b.object));
+  const taken = new Set();
+  const objects = [];
+  const related = [];
+  const why = {};
+  for (const c of candidates) {
+    if (objects.includes(c.object) || related.includes(c.object)) continue;
+    if (c.positions.every((p) => taken.has(p))) {
+      related.push(c.object);
+      continue;
+    }
+    objects.push(c.object);
+    why[c.object] = c.positions.map((p) => words.find((w) => w.pos === p).word).join(' + ');
+    for (const p of c.positions) taken.add(p);
+    if (/__e$/i.test(c.object)) {
+      // "evento de pacote submetido": the word "event" next to a platform event's name is part of it
+      const lo = Math.min(...c.positions);
+      const ev = words.find((w) => w.pos === lo - 1 && w.meanings.has('event'));
+      if (ev) taken.add(ev.pos);
+    }
+  }
+  // A name said by its last word only ("o cronograma" when Service Schedule is the only *schedule*): a lighter match
+  const loose = {};
+  for (const w of words) {
+    if (taken.has(w.pos)) continue;
+    if (w.afterOf && taken.has(w.pos - 1)) continue; // "lote de doações": the batch, not a donation object
+    const owners = pool.filter((o) => !o.customSetting && !o.customMetadata && !/deprecated/i.test(o.label || '') && phrasesOf(o).some((ph) => ph.length > 1 && singulars(ph[ph.length - 1]).some((s) => w.meanings.has(s))));
+    let names = [...new Set(owners.map((o) => o.name))];
+    if (names.length > 1) {
+      // Several names end with that word: keep the one whose other words the request also uses, if only one does.
+      const overlap = (o) => Math.max(...phrasesOf(o).map((ph) => ph.slice(0, -1).filter((t) => words.some((x) => singulars(t).some((s) => x.meanings.has(s)))).length));
+      const scored = owners.map((o) => [o.name, overlap(o)]).sort((a, b) => b[1] - a[1]);
+      if (scored[0][1] > 0 && (scored.length === 1 || scored[1][1] < scored[0][1])) names = [scored[0][0]];
+    }
+    if (names.length === 1 && !objects.includes(names[0])) {
+      objects.push(names[0]);
+      loose[names[0]] = w.word;
+      why[names[0]] = `${w.word} (só ${names[0]} tem esse nome)`;
+      taken.add(w.pos);
+    }
+  }
+  // Written in full: Object__c or Object__c.Field__c
+  for (const m of raw.matchAll(/\b([A-Za-z]\w*__(?:c|e))\b/g)) if (model.objects[m[1]] && !objects.includes(m[1])) objects.push(m[1]);
+  const fields = new Set();
+  for (const m of raw.matchAll(/\b(\w+)\.(\w+__c)\b/g)) {
+    if (model.objects[m[1]] && !objects.includes(m[1])) objects.push(m[1]);
+    fields.add(`${m[1]}.${m[2]}`);
+  }
+  // Fields of the objects found, named by words the object names did not use
+  for (const name of objects) {
+    const o = model.objects[name];
+    if (!o) continue;
+    for (const f of Object.values(o.fields)) {
+      const byValue = (f.picklist || []).some((v) => norm(v).length > 3 && words.some((w) => w.word === norm(v)));
+      const exact = words.some((w) => w.word === norm(f.name));
+      let byName = false;
+      for (const phrase of phrasesOf(f)) {
+        const m = findPhrase(words, phrase, taken);
+        if (m && m.free === m.positions.length) byName = true;
+      }
+      if (exact || byName || byValue) fields.add(`${name}.${f.name}`);
+    }
+  }
+  return { objects, fields: [...fields], related: related.filter((r) => !objects.includes(r)), why, loose: Object.keys(loose) };
 }
 
 function objectFacts(model, name) {
   const o = model.objects[name];
+  if (!o) {
+    // A standard object with no metadata in the project: it exists in the org, nothing of it is customized here.
+    return { name, label: name, exists: true, standardOnly: true, triggers: [], handlerChain: [], flows: [], validationRules: [], recordTypes: [], workflowRules: [], rollupsTo: [], parents: [], selectors: [], lwcs: [], writtenBy: [], bypass: [], tests: [] };
+  }
   const ins = explainObject(model, name, 'insert');
   const upd = explainObject(model, name, 'update');
   const activeFlows = [...o.flows.before, ...o.flows.after, ...o.flows.process].filter((f) => model.flows[f]?.active);
@@ -142,20 +266,53 @@ function sizeSignal(objects, fields) {
   return { size, pieces };
 }
 
+/**
+ * Rules that already exist and look like the request: an active validation rule or a flow of the same objects
+ * whose name, fields or message share at least two of the request's words (in any language).
+ */
+function similarRules(model, objectNames, text) {
+  const req = new Set(requestWords(text).flatMap((w) => [...w.meanings]));
+  const words = (s) => nameWords(s).flatMap((w) => singulars(w));
+  const out = [];
+  for (const name of objectNames) {
+    const o = model.objects[name];
+    if (!o) continue;
+    for (const v of o.validationRules.filter((x) => x.active)) {
+      const own = new Set([...words(v.name), ...v.refs.flatMap((r) => words(r.split('.').pop())), ...nameWords(v.message || '').flatMap((w) => [...meanings(w)])]);
+      const shared = [...own].filter((w) => w.length > 2 && req.has(w));
+      if (shared.length >= 2) out.push({ kind: 'validation rule', object: name, name: v.name, shared, message: v.message });
+    }
+    for (const f of [...o.flows.before, ...o.flows.after]) {
+      const flow = model.flows[f];
+      if (!flow || !flow.active) continue;
+      const own = new Set([...words(flow.name), ...words(flow.label || ''), ...(flow.fieldsWritten || []).flatMap((x) => words(x))]);
+      const shared = [...own].filter((w) => w.length > 2 && req.has(w));
+      if (shared.length >= 2) out.push({ kind: 'flow', object: name, name: flow.name, shared });
+    }
+  }
+  return out;
+}
+
 function refineBrief(model, { text = '', objects = [], fields = [] }) {
   const detected = detectMentions(model, text);
-  const objectNames = [...new Set([...objects, ...detected.objects, ...fields.map((f) => f.split('.')[0])])].filter((o) => model.objects[o]);
-  const unknownObjects = [...new Set(objects)].filter((o) => !model.objects[o]);
+  const { STANDARD } = require('../checks/fieldresolve');
+  const known = (o) => Boolean(model.objects[o]) || STANDARD.has(o);
+  const objectNames = [...new Set([...objects, ...detected.objects, ...fields.map((f) => f.split('.')[0])])].filter(known);
+  const unknownObjects = [...new Set(objects)].filter((o) => !known(o));
   const fieldRefs = [...new Set([...fields, ...detected.fields])];
   const objs = objectNames.map((o) => objectFacts(model, o));
   const flds = fieldRefs.map((f) => fieldFacts(model, f));
+  const similar = similarRules(model, objectNames, text);
+  const qa = questionsFor(objs, flds, text);
+  for (const s of similar) qa.attention.unshift(`Já existe algo parecido: a ${s.kind} ${s.object}.${s.name} (fala de ${s.shared.join(', ')})${s.message ? ` — "${s.message}"` : ''}. Confira se a task é ajustar essa regra em vez de criar outra.`);
   return {
     text,
     detected,
+    similar,
     unknownObjects,
     objects: objs,
     fields: flds,
-    ...questionsFor(objs, flds, text),
+    ...qa,
     signal: sizeSignal(objs, flds),
   };
 }
@@ -166,8 +323,20 @@ function renderBrief(b) {
     out.push('Não identifiquei objetos do projeto no texto. Informe com --objects Objeto1,Objeto2.');
     return out;
   }
+  const why = (b.detected && b.detected.why) || {};
+  const loose = new Set((b.detected && b.detected.loose) || []);
+  if (Object.keys(why).length) {
+    out.push('Entendi assim (confira):');
+    for (const o of b.objects) if (why[o.name]) out.push(`   "${why[o.name]}" → ${o.name}${loose.has(o.name) ? ' (pela última palavra do nome; confirme)' : ''}`);
+    if (b.detected.related && b.detected.related.length) out.push(`   Citados dentro de outro nome: ${b.detected.related.join(', ')} (entram só se a task mexer neles também)`);
+    out.push('   Se faltou ou sobrou algum, rode de novo com --objects Objeto1,Objeto2.', '');
+  }
   for (const o of b.objects) {
     out.push(`📦 ${o.name}${o.label && o.label !== o.name ? ` (${o.label})` : ''}`);
+    if (o.standardOnly) {
+      out.push('   objeto padrão sem nada customizado no projeto (sem trigger, flow ou validation rule aqui)');
+      continue;
+    }
     out.push(`   triggers: ${o.triggers.join(', ') || 'nenhuma'}${o.handlerChain.length ? ` → ${o.handlerChain.join(', ')}` : ''}`);
     out.push(`   flows ativos: ${o.flows.join(', ') || 'nenhum'} · validation rules: ${o.validationRules.length} · record types: ${o.recordTypes.join(', ') || 'nenhum'}`);
     if (o.rollupsTo.length) out.push(`   cascata: recalcula ${o.rollupsTo.join(', ')}`);

@@ -16,7 +16,7 @@ O `quality` revisa as classes Apex que a sua feature mudou e aponta **a repetiç
 | Texto repetido | A mesma mensagem em três ou mais classes: candidata a Custom Label |
 | Code Analyzer | Regras `Recommended` do PMD (complexidade, nomes, boas práticas, desempenho) e o CPD |
 
-Só entra o que **a sua mudança** toca. Repetição antiga em arquivos que você não mexeu, ou em partes do arquivo que você não editou, fica de fora, para a lista caber numa pull request. O `--all` revisa o projeto inteiro como se fosse novo, para uma limpeza pontual.
+Só entra o que **a sua mudança** toca. Repetição antiga em arquivos que você não mexeu, ou em partes do arquivo que você não editou, fica de fora, para a lista caber numa pull request. O `--all` revisa o projeto inteiro como se fosse novo, para uma limpeza pontual. Cada repetição aparece uma vez: um achado por texto repetido, por query repetida, por par de métodos parecidos e por par de arquivos com blocos copiados (uma classe gerada com centenas de blocos iguais vira uma linha).
 
 Classes que seguem o mesmo contrato ficam de fora de "método que já existe": dois Selectors com `selectById`, duas classes que implementam a mesma interface. Isso é o padrão, não cópia.
 

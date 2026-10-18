@@ -29,6 +29,15 @@ Por isso o `--run` manda os arquivos alterados num deploy de validação. Use `-
 **Ele pode deixar um teste de fora?**
 Pode, quando um teste monta o nome do objeto em texto, ou quando o impacto passa por código que o índice não consegue seguir. Trate a lista como o mínimo a rodar, não o máximo.
 
+**Como ele trata as factories de dados de teste?**
+Método a método, em qualquer profundidade. Um teste que chama um método que salva o objeto (direto ou por outro método) tem prioridade alta. Um teste que só monta o registro em memória, sem salvar, tem prioridade média. A própria factory (`@isTest` sem métodos de teste) nunca aparece como teste. `delete` não conta para validation rule.
+
+**E quando outro objeto salva o objeto alterado?**
+Se o teste salva Contact e a trigger, o flow ou o roll-up de Contact grava Account, uma mudança em Account traz esse teste com prioridade média e o motivo ("salva Contact, e a trigger X de Contact grava Account"). Custom settings e custom metadata não entram nessa cascata.
+
+**E para campo, record type e classe?**
+Campo: os testes que usam o campo no código vêm com prioridade alta, e os que usam uma classe que usa o campo, média. Salvar o objeto só é alta quando o campo é obrigatório, único ou novo. Record type: os testes que usam o nome dele. Classe: também os testes que citam o nome dela em texto (`Type.forName`, tabelas de handlers).
+
 **O Salesforce tem RunRelevantTests. Por que não usar?**
 É uma boa opção para a esteira. O radar explica *por que* cada teste está na lista e roda antes do push.
 

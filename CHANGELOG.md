@@ -1,5 +1,74 @@
 # Changelog
 
+## 0.16.1
+
+- The task-refine advisor shows how the request was understood (`detected.why`), asks for confirmation only when a
+  name was matched by its last word or named inside another one, and puts a similar existing rule first.
+
+## 0.16.0
+
+- `refine` reads a request written in Portuguese against English labels: a business glossary, plurals, reversed word
+  order and API names split into words. The longest name wins ("entrega de serviço" is Service Delivery; Service is
+  listed as named inside it), a name said by its last word only is used when one object ends that way, standard
+  objects count even without metadata in the project, and the answer starts with "Entendi assim" (which word led to
+  which object). On 62 requests over 9 projects: 119/119 objects found, none extra.
+- `refine` points to existing rules that look like the request ("Já existe algo parecido").
+
+## 0.15.0
+
+- `usages` for a field adds "Campos dinâmicos", the developer's second look at what code reaches only by name:
+  objects that keep field names (custom metadata, custom settings, config objects, FieldDefinition relationships)
+  and the classes that use those names (`record.get(name)`, describe maps, `Database.query(text)`); for custom
+  metadata, the records in the project that name the field; for custom settings and objects, a ready SOQL to check
+  the org (Reldor reads no data); and every text in code that names the field without its object.
+- The project's own namespace prefix is understood (`npsp__Amount__c` is `Amount__c` in an `npsp` project).
+- Report type tables follow child relationships even when a lookup has the same relationship name.
+
+## 0.14.0
+
+- `usages` knows which object each field belongs to. A field with the same name on several objects (`Status__c`,
+  `Contact__c`) is no longer mixed up: every use is tied to its object by the variable's type, the query's `FROM`
+  (subqueries and semi-joins too), `new Account(...)`, `Parent__r.Field__c` paths, the flow element or `$Record`, the
+  screen's form or imports, the report column, the layout's related list, and so on. Uses of the same name on other
+  objects are listed apart ("Fora da lista"), and what code cannot tell (a field name in a string handed to dynamic
+  code) is shown as "possível" with the reason and the candidate objects. Nothing is left out silently.
+- `usages` reads Apex, triggers, flows, LWC, Aura, Visualforce, layouts, record types, permissions, reports, report
+  types, dashboards, quick actions, record pages, field sets, sharing sets, custom metadata records and rules from
+  the index; the slower file sweep is gone.
+- `test-radar`: tests that only build records in memory no longer count as "saves"; a `delete` does not count for
+  validation rules. A test that saves another object whose trigger, flow or roll-up saves the changed one is found
+  ("salva Contact, e a trigger X de Contact grava Account"). A changed field also brings the tests that use it in
+  code; a changed record type, the tests that use its name; a changed class, the tests that name it in a string.
+- DML is read per method with the variable's declared type (`List<Account>`, `Map<Id, Account>`, casts, lower case
+  `list<account>`), so "who saves this object" is exact.
+- The index is rebuilt by itself whenever the indexer code changes.
+
+## 0.13.0
+
+Fixes from a full run over 16 large public Salesforce projects (NPSP, EDA, PMM, Outbound Funds, Volunteers for
+Salesforce, the Salesforce sample apps and more).
+
+- Index: Apex methods named like JavaScript built-ins (`toString`, `valueOf`) no longer break the class.
+- Index: a `//` or `/*` inside an Apex string (`'image/*'`, `'https://...'`) is no longer read as a comment (it hid the
+  rest of the class). Classes and objects whose names start in lower case (`mc_Recipients`, `npe01__X__c`) are found,
+  and names compare without letter case, as in Apex.
+- `usages`: a formula or validation rule that reads `Parent__r.Field__c` counts for the field on the parent object,
+  not for a field with the same name on the object itself.
+- `usages`: a second pass for custom fields finds reports, report types, dashboards, field sets, Lightning pages,
+  quick actions and prompt templates (certain), LWC/Aura/Visualforce by name (likely) and field names inside Apex
+  strings (possible).
+- `test-radar`: test data factories are followed method by method, through chains. A test that calls a factory method
+  is high priority; a factory class that creates many objects no longer pulls in every test. `@isTest` classes with no
+  test methods are not listed as tests.
+- `clean --undo` keeps the snapshot, so the same retrieve can be cleaned again.
+- The pre-commit hook calls this Reldor by absolute path (an old `reldor` on the PATH could block commits).
+- `quality --all`: one finding per repeated text, query, method pair and pair of files with copied blocks, instead of
+  one per occurrence. The code between two short strings is no longer taken for a repeated text.
+- `rollback`: the `-meta.xml` next to a class or trigger goes with it instead of being listed as unknown.
+- `security`: fewer false alarms. Test classes, placeholder "secrets" (`{0}`, `%s`), Visualforce `escape="false"` on
+  labels or literals, `lwc:dom="manual"` on canvas/svg and data classes with only `@AuraEnabled` properties are no
+  longer flagged.
+
 ## 0.12.0
 
 - The environment chain is fully configurable: any names, branches and number of environments; any of them can be

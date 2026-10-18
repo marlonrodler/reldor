@@ -10,11 +10,14 @@ description: Turns a task idea into a well-written Salesforce task with the real
 Objetivo: a task sai escrita **sabendo o que ela toca**, para as perguntas aparecerem agora, e não no meio do desenvolvimento.
 
 ## Passos
-1. Rode `reldor refine "<a ideia, como a pessoa escreveu>" --json`.
-   Se ele não achar os objetos certos, rode de novo com `--objects` e `--fields`.
-2. Se os fatos mostrarem uma automação ou regra parecida, rode `reldor explain <Objeto> --json` para entender antes de sugerir.
-3. Escreva a task com as seções abaixo. Use **só** os fatos do resultado; não invente automações nem campos.
-4. Mostre as perguntas em aberto como uma lista numerada e pergunte se a pessoa quer respondê-las agora.
+1. Rode `reldor refine "<a ideia, como a pessoa escreveu>" --json`, com o texto da pessoa sem traduzir.
+2. Mostre em uma linha como o pedido foi entendido: para cada objeto, a palavra que levou a ele (`detected.why`).
+   Peça confirmação só quando houver motivo: objeto achado pela última palavra (`detected.loose`) ou citado dentro
+   de outro nome (`detected.related`). Se faltar ou sobrar objeto, rode de novo com `--objects` e `--fields`.
+3. Se `similar` não estiver vazio, diga isso primeiro: já existe uma regra parecida, e talvez a task seja ajustá-la.
+   Rode `reldor explain <Objeto> --json` para entender a regra e as automações antes de sugerir.
+4. Escreva a task com as seções abaixo. Use **só** os fatos do resultado; não invente automações nem campos.
+5. Mostre as perguntas em aberto como uma lista numerada e pergunte se a pessoa quer respondê-las agora.
 
 ## Formato da task
 ```

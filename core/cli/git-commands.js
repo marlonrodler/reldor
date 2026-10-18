@@ -131,16 +131,28 @@ async function commitCommand(root, flags, args) {
 }
 
 const HOOK_MARK = '# reldor-guard';
-const HOOK = `#!/bin/sh
+/**
+ * The pre-commit hook. It calls the same Reldor that installed it (node + this CLI, absolute paths), so an older
+ * `reldor` left on the PATH cannot block commits; the PATH is only a fallback if this copy was moved.
+ */
+function hookScript(node = process.execPath, cli = path.join(__dirname, 'index.js')) {
+  const n = node.split(path.sep).join('/');
+  const c = cli.split(path.sep).join('/');
+  return `#!/bin/sh
 ${HOOK_MARK}
 # Gancho do Reldor: barra XML duplicado e arquivos que só vieram da org.
 # Para pular uma vez, de propósito: git commit --no-verify
 if [ -x "$(dirname "$0")/pre-commit.reldor-prev" ]; then
   "$(dirname "$0")/pre-commit.reldor-prev" "$@" || exit $?
 fi
+if [ -f "${c}" ] && [ -x "${n}" ]; then
+  exec "${n}" "${c}" precommit
+fi
 command -v reldor >/dev/null 2>&1 || exit 0
 exec reldor precommit
 `;
+}
+const HOOK = hookScript();
 
 function hookCommand(root, flags, args) {
   const action = args[0] || 'install';
@@ -165,7 +177,7 @@ function hookCommand(root, flags, args) {
   }
   fs.mkdirSync(dir, { recursive: true });
   if (fs.existsSync(file) && !fs.readFileSync(file, 'utf8').includes(HOOK_MARK)) fs.renameSync(file, `${file}.reldor-prev`);
-  fs.writeFileSync(file, HOOK, { mode: 0o755 });
+  fs.writeFileSync(file, hookScript(), { mode: 0o755 });
   logAction(root, 'hook-install', { summary: 'pre-commit' });
   print([
     '\n🛡️  Gancho instalado (.git/hooks/pre-commit)',
@@ -226,6 +238,18 @@ async function cleanCommand(root, flags) {
     }
     if (back.length) g(['reset', '-q', '--', ...back]);
     if (!skipped.length) g(['stash', 'drop', ref]);
+    // The snapshot of that retrieve comes back too, so "reldor clean" works again.
+    const keep = path.join(root, '.reldor', 'work', 'snapshot-before-clean.json');
+    if (fs.existsSync(keep)) {
+      try {
+        const info = JSON.parse(fs.readFileSync(keep, 'utf8'));
+        g(['update-ref', snapshotApi.REF, info.commit]);
+        fs.writeFileSync(path.join(root, '.reldor', 'work', 'snapshot.json'), JSON.stringify(info, null, 2));
+        fs.rmSync(keep, { force: true });
+      } catch {
+        /* without the snapshot, clean says there is nothing to clean */
+      }
+    }
     print([`🛡️  ${back.length} arquivo(s) da org voltaram para a pasta.`, ...(skipped.length ? [`⚠️ Estes você mudou depois da limpeza e ficaram como estão (o backup continua em ${ref}):`, ...skipped.map((f) => `   ${f}`)] : [])]);
     return 0;
   }
@@ -273,6 +297,10 @@ async function cleanCommand(root, flags) {
     return 1;
   }
   run('git', ['reset', '-q'], { cwd: root }); // back to normal: your work is in the folder, nothing staged
+  // Keep the snapshot aside: "clean --undo" brings it back, so the same retrieve can be cleaned again.
+  const keep = path.join(root, '.reldor', 'work', 'snapshot-before-clean.json');
+  fs.mkdirSync(path.dirname(keep), { recursive: true });
+  fs.writeFileSync(keep, JSON.stringify(snapshot, null, 2));
   snapshotApi.clearSnapshot(root);
   logAction(root, 'clean', { summary: `${staged.length} arquivo(s) seus ficaram; ${plan.fromOrg.length + plan.mixed.length} limpo(s)` });
   const done = ['', `✅ Pronto: a pasta tem só o seu (${staged.length} arquivo(s)). Pode commitar pelo seu fluxo (ex.: o plugin de fluxo do time).`, 'ℹ️  O que veio da org ficou guardado num stash. Para trazer de volta: reldor clean --undo'];
@@ -453,4 +481,4 @@ function mergeCommand(root, flags, args) {
   return 0;
 }
 
-module.exports = { snapshotCommand, commitCommand, cleanCommand, hookCommand, mergeCommand, mergeDriverCommand, HOOK, MERGE_PATTERNS };
+module.exports = { snapshotCommand, commitCommand, cleanCommand, hookCommand, mergeCommand, mergeDriverCommand, HOOK, hookScript, MERGE_PATTERNS };

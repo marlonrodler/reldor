@@ -21,8 +21,14 @@ Diga "quero criar uma task para..." ou "refina essa task", ou rode `reldor refin
 
 ## Perguntas comuns
 
+**Escrevo em português e os rótulos do projeto estão em inglês. Funciona?**
+Sim. Ele traduz o vocabulário comum de negócio ("entrega de serviço" → Service Delivery, "matrícula no programa" → Program Enrollment, "crédito leve" → Soft Credit), entende plural e ordem invertida das palavras, e lê o nome de API (`ServiceDelivery__c` → service delivery). O nome mais longo ganha: em "entrega de serviço" o objeto é Service Delivery, e Service aparece só como "citado dentro de outro nome". Quando só a última palavra aparece ("o cronograma") e um único objeto termina assim, ele usa e pede para você confirmar. No começo da resposta ele mostra "Entendi assim", com a palavra que levou a cada objeto.
+
+**E se já existir uma regra parecida?**
+Ele avisa: se uma validation rule ou um flow ativo dos mesmos objetos fala das mesmas coisas que o pedido, aparece "Já existe algo parecido", para você ver se a task é ajustar essa regra em vez de criar outra.
+
 **Ele não achou o meu objeto.**
-Os rótulos dos objetos padrão em outros idiomas não ficam no repositório. Informe com `--objects Opportunity` ou `--fields Opportunity.Etapa__c`.
+Informe com `--objects Opportunity` ou `--fields Opportunity.Etapa__c`.
 
 **O tamanho é uma estimativa?**
 Não. Ele conta as peças que a task toca. Use para pegar uma task "pequena" que, na verdade, é grande.
