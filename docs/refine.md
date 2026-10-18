@@ -21,6 +21,13 @@ Say "I want to create a task to..." or "refine this task", or run `reldor refine
 
 ## Common questions
 
+**I write in Portuguese and the project's labels are in English. Does it work?**
+Yes. It translates common business words ("entrega de serviço" → Service Delivery, "matrícula no programa" → Program Enrollment), understands plurals and reversed word order, and reads API names (`ServiceDelivery__c` → service delivery). The longer name wins: in "entrega de serviço" the object is Service Delivery, and Service shows only as "named inside another name". When only the last word appears ("o cronograma") and a single object ends that way, it uses it and asks you to confirm. The answer starts with "Entendi assim", the word that led to each object.
+
+**What if a similar rule already exists?**
+It says so: when an active validation rule or flow of the same objects talks about the same things as the request, "Já existe algo parecido" shows, so you can check whether the task is to adjust that rule instead of creating another one.
+
+
 **It didn't find my object.**
 Labels of standard objects in other languages are not in the repository. Pass them with `--objects Opportunity` or `--fields Opportunity.Stage__c`.
 

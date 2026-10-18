@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.0
+
+- `refine` reads a request written in Portuguese against English labels: a business glossary, plurals, reversed word
+  order and API names split into words. The longest name wins ("entrega de serviço" is Service Delivery; Service is
+  listed as named inside it), a name said by its last word only is used when one object ends that way, standard
+  objects count even without metadata in the project, and the answer starts with "Entendi assim" (which word led to
+  which object). On 62 requests over 9 projects: 119/119 objects found, none extra.
+- `refine` points to existing rules that look like the request ("Já existe algo parecido").
+
 ## 0.15.0
 
 - `usages` for a field adds "Campos dinâmicos", the developer's second look at what code reaches only by name:

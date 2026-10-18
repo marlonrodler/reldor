@@ -112,6 +112,7 @@ function parseObject(meta, { object }) {
   return {
     object,
     label: o.label || object,
+    pluralLabel: o.pluralLabel || null,
     customSetting: Boolean(o.customSettingsType),
     customMetadata: object.endsWith('__mdt'),
   };

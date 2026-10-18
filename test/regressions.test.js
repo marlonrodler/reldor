@@ -290,3 +290,24 @@ test('usages: dynamic fields — stores of field names, records in the project, 
   assert.equal(mapa.engines[0].name, 'Motor');
   assert.ok(r.dynamic.texts.some((t) => t.name === 'tela'), 'the JSON built in the LWC is pointed out');
 });
+
+test('refine: reads a Portuguese request against English labels, longer names first, and points similar rules', () => {
+  const { refineBrief } = require('../modules/sf/refine');
+  const obj = (name, label, extra = {}) => ({ name, label, fields: {}, validationRules: [], recordTypes: [], duplicateRules: [], workflow: null, triggers: [], flows: { before: [], after: [], process: [] }, selectors: [], parents: [], rollupsTo: [], queriedBy: [], writtenBy: [], lwcs: [], ...extra });
+  const model = {
+    classes: {}, triggers: {}, flows: {}, lwc: {}, screens: {}, meta: {}, ui: [], permissions: [], customMetadata: {}, application: { services: {}, selectors: {}, domains: {} },
+    objects: {
+      Service__c: obj('Service__c', 'Service'),
+      ServiceDelivery__c: obj('ServiceDelivery__c', 'Service Delivery', { validationRules: [{ name: 'ACCOUNT_MATCHES_CONTACT_ACCOUNT', active: true, refs: ['Account__c', 'Contact__c', 'Contact__r.AccountId'], message: 'Select an Account that matches the Contact.' }] }),
+      ServiceSchedule__c: obj('ServiceSchedule__c', 'Service Schedule'),
+      Contact: obj('Contact', null),
+    },
+  };
+  const b = refineBrief(model, { text: 'bloquear a entrega de serviço quando a conta não for a mesma do contato' });
+  assert.deepEqual(b.objects.map((o) => o.name), ['ServiceDelivery__c', 'Account', 'Contact']);
+  assert.deepEqual(b.detected.related, ['Service__c'], 'Service is only part of "entrega de serviço"');
+  assert.equal(b.objects.find((o) => o.name === 'Account').standardOnly, true);
+  assert.equal(b.similar[0].name, 'ACCOUNT_MATCHES_CONTACT_ACCOUNT');
+  const c = refineBrief(model, { text: 'ao criar a entrega, preencher o cronograma' });
+  assert.ok(c.objects.some((o) => o.name === 'ServiceSchedule__c'), '"o cronograma": the only object named ... Schedule');
+});

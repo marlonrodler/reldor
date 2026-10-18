@@ -90,7 +90,7 @@ function aggregate(fileResults) {
     const d = r.data;
     switch (r.type) {
       case 'object':
-        Object.assign(obj(d.object), { label: d.label, customSetting: d.customSetting, customMetadata: d.customMetadata });
+        Object.assign(obj(d.object), { label: d.label, pluralLabel: d.pluralLabel, customSetting: d.customSetting, customMetadata: d.customMetadata });
         break;
       case 'field':
         obj(d.object).fields[d.name] = d;

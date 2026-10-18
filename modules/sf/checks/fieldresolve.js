@@ -25,7 +25,7 @@ const STANDARD = new Set([
   'PricebookEntry', 'OpportunityLineItem', 'Contract', 'Order', 'OrderItem', 'Asset', 'Quote', 'QuoteLineItem', 'Individual',
   'ContentVersion', 'ContentDocument', 'ContentDocumentLink', 'Attachment', 'Note', 'RecordType', 'Profile', 'UserRole', 'Group',
   'AccountContactRelation', 'OpportunityContactRole', 'Entitlement', 'ServiceContract', 'WorkOrder', 'Knowledge__kav', 'EmailMessage',
-  'Organization', 'PermissionSet', 'Document', 'Folder', 'Report', 'Dashboard', 'Location', 'Address', 'Partner', 'Solution',
+  'Organization', 'PermissionSet', 'Document', 'Folder', 'Report', 'Dashboard', 'Partner', 'Solution',
 ]);
 
 /** The object's name as the model spells it, or the name itself when it looks like an sObject; else null. */
@@ -273,4 +273,4 @@ function resolveFieldRef(model, ref, screen = null, owner = null) {
   return { object: null, how, candidates: owners };
 }
 
-module.exports = { resolveFieldRef, objectsWithField, objectName, walkPath, childObject, screenObjects };
+module.exports = { STANDARD, resolveFieldRef, objectsWithField, objectName, walkPath, childObject, screenObjects };
