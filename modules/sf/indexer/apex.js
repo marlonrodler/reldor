@@ -249,7 +249,7 @@ function parseApexClass(name, source) {
     dynamicSoql: /Database\.query(WithBinds)?\s*\(/i.test(code) || strings.some((x) => /^\s*SELECT\s/i.test(x)),
     runAs: /System\.runAs\s*\(/i.test(code),
     async: /@future/i.test(code) || /System\.enqueueJob|Database\.executeBatch|System\.schedule/i.test(code),
-    strings: unique(strings.filter((s) => /^[A-Za-z_]\w{2,}$/.test(s))).slice(0, 50),
+    strings: unique(strings.filter((s) => /^[A-Za-z_]\w{2,}$/.test(s))).slice(0, 400),
   };
   const sharingDecl = /\b((?:with|without|inherited)\s+sharing)\s+class\b/i.exec(code.slice(0, code.search(/\{/) + 1 || 400));
   info.sharing = sharingDecl ? sharingDecl[1].toLowerCase().replace(/\s+/, ' ') : 'none';
@@ -271,6 +271,21 @@ function parseApexClass(name, source) {
   const facts = methodFacts(code);
   info.methodCreates = facts.creates;
   info.methodCalls = facts.calls;
+  const uses = require('./fieldrefs').apexFieldRefs(source);
+  info.fieldUses = uses.refs;
+  info.propertyTypes = uses.propertyTypes;
+  info.methodReturns = uses.methodReturns;
+  info.methodSaves = uses.methodSaves;
+  info.innerPropertyTypes = uses.innerPropertyTypes;
+  info.methodBuilds = uses.methodBuilds;
+  for (const [m, calls] of Object.entries(uses.typedCalls || {})) {
+    info.methodCalls[m] = [...new Set([...(info.methodCalls[m] || []), ...calls])];
+    info.calls = unique([...info.calls, ...calls]);
+  }
+  // DML with the type worked out per method (falls back to the old whole-class reading when it cannot tell).
+  const typed = uses.dml.filter((d) => d.type).map((d) => ({ variable: d.variable, type: d.type, op: d.op }));
+  const seen = new Set(typed.map((d) => `${d.variable}|${d.type}`));
+  info.dml = [...typed, ...info.dml.filter((d) => d.type && !seen.has(`${d.variable}|${d.type}`) && !typed.some((t) => t.variable && t.variable === d.variable))];
   return info;
 }
 
@@ -284,6 +299,7 @@ function parseTrigger(name, source) {
     events,
     identifiers: unique((code.match(/\b[A-Z]\w+\b/g) || []).filter((id) => !head || (id !== head[1] && id !== head[2]))),
     classRefs: unique([...code.matchAll(/\b(\w+)\.class\b/g)].map((m) => m[1])),
+    fieldUses: require('./fieldrefs').apexFieldRefs(source, { triggerObject: head ? head[2] : null }).refs,
   };
 }
 

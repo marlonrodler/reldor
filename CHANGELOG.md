@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.14.0
+
+- `usages` knows which object each field belongs to. A field with the same name on several objects (`Status__c`,
+  `Contact__c`) is no longer mixed up: every use is tied to its object by the variable's type, the query's `FROM`
+  (subqueries and semi-joins too), `new Account(...)`, `Parent__r.Field__c` paths, the flow element or `$Record`, the
+  screen's form or imports, the report column, the layout's related list, and so on. Uses of the same name on other
+  objects are listed apart ("Fora da lista"), and what code cannot tell (a field name in a string handed to dynamic
+  code) is shown as "possível" with the reason and the candidate objects. Nothing is left out silently.
+- `usages` reads Apex, triggers, flows, LWC, Aura, Visualforce, layouts, record types, permissions, reports, report
+  types, dashboards, quick actions, record pages, field sets, sharing sets, custom metadata records and rules from
+  the index; the slower file sweep is gone.
+- `test-radar`: tests that only build records in memory no longer count as "saves"; a `delete` does not count for
+  validation rules. A test that saves another object whose trigger, flow or roll-up saves the changed one is found
+  ("salva Contact, e a trigger X de Contact grava Account"). A changed field also brings the tests that use it in
+  code; a changed record type, the tests that use its name; a changed class, the tests that name it in a string.
+- DML is read per method with the variable's declared type (`List<Account>`, `Map<Id, Account>`, casts, lower case
+  `list<account>`), so "who saves this object" is exact.
+- The index is rebuilt by itself whenever the indexer code changes.
+
 ## 0.13.0
 
 Fixes from a full run over 16 large public Salesforce projects (NPSP, EDA, PMM, Outbound Funds, Volunteers for

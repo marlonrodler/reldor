@@ -11,7 +11,7 @@ const path = require('node:path');
 const { parseApexClass } = require('../modules/sf/indexer/apex');
 const { buildRadar, creatorMethods } = require('../modules/sf/test-radar');
 const { relatedTests } = require('../modules/sf/indexer/query');
-const { sweepFieldUsages } = require('../modules/sf/checks/usages-sweep');
+const { spawnSync } = require('node:child_process');
 const { scanFile } = require('../modules/sf/security/rules');
 const { hookScript } = require('../core/cli/git-commands');
 
@@ -56,7 +56,8 @@ test('radar: factories are followed method by method, through chains', () => {
     ContatoTest: `@isTest private class ContatoTest { @isTest static void b() { Fabrica.contato(); } }`,
     MemoriaTest: `@isTest private class MemoriaTest { @isTest static void c() { Account a = new Account(Name='z'); System.assert(a != null); } }`,
   });
-  assert.deepEqual([...creatorMethods(m, 'Account')].sort(), ['ContaTest.a', 'Fabrica.conta', 'Fabrica.contaCompleta', 'MemoriaTest.c']);
+  assert.deepEqual([...creatorMethods(m, 'Account')].sort(), ['ContaTest.a', 'Fabrica.conta', 'Fabrica.contaCompleta']);
+  assert.ok(creatorMethods(m, 'Account', 'builds').has('MemoriaTest.c'), 'built in memory, not saved');
   const radar = buildRadar(m, [{ file: 'x', status: 'modified', meta: { type: 'validationRule', object: 'Account', name: 'VR' } }]);
   const by = Object.fromEntries(radar.tests.map((t) => [t.name, t]));
   assert.equal(by.ContaTest.priority, 'alta');
@@ -66,29 +67,46 @@ test('radar: factories are followed method by method, through chains', () => {
   assert.equal(by.Fabrica, undefined, 'the factory itself is not a test');
 });
 
-test('usages sweep: finds the field in reports, field sets, LWC/VF and Apex strings', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-sweep-'));
+test('usages: each use of a field goes to its own object; same-named fields of other objects are set apart', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-usages-'));
   const base = path.join(root, 'force-app', 'main', 'default');
   const put = (rel, text) => {
     fs.mkdirSync(path.dirname(path.join(base, rel)), { recursive: true });
     fs.writeFileSync(path.join(base, rel), text);
   };
-  put('reports/R/Rel.report-meta.xml', '<Report><columns><field>Account.Score__c</field></columns></Report>');
+  fs.writeFileSync(path.join(root, 'sfdx-project.json'), JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }] }));
+  const field = (obj, name, extra = '') => put(`objects/${obj}/fields/${name}.field-meta.xml`, `<CustomField><fullName>${name}</fullName>${extra}</CustomField>`);
+  field('Account', 'Score__c');
+  field('Lead', 'Score__c');
+  field('Contact', 'Conta__c', '<referenceTo>Account</referenceTo><relationshipName>Conta</relationshipName><type>Lookup</type>');
   put('objects/Account/fieldSets/Resumo.fieldSet-meta.xml', '<FieldSet><displayedFields><field>Score__c</field></displayedFields></FieldSet>');
-  put('objects/Account/fields/Score__c.field-meta.xml', '<CustomField><fullName>Score__c</fullName></CustomField>');
-  put('lwc/painel/painel.html', '<template>{conta.Score__c}</template>');
+  put('reports/R/Rel.report-meta.xml', '<Report><columns><field>Account.Score__c</field></columns><columns><field>Lead.Score__c</field></columns></Report>');
+  put('permissionsets/Vendas.permissionset-meta.xml', '<PermissionSet><fieldPermissions><field>Lead.Score__c</field></fieldPermissions></PermissionSet>');
+  put('classes/Contas.cls', `public with sharing class Contas {
+    public static void a(List<Account> contas, Map<Id, Account> porId) {
+      for (Account c : contas) { c.Score__c = 1; }
+      Decimal x = porId.get(null).Score__c;
+      List<Contact> cs = [SELECT Id, Conta__r.Score__c FROM Contact];
+    } }`);
+  put('classes/Leads.cls', `public with sharing class Leads {
+    public static void b(Lead l) { l.Score__c = 2; insert new Lead(Score__c = 3); }
+    public static void c(SObject s) { Object v = s.get('Score__c'); }
+    public static List<Lead> d() { return Database.query('SELECT Score__c FROM Lead'); } }`);
+  put('classes/Dinamica.cls', `public with sharing class Dinamica {
+    public static void e() { String q = 'SELECT Id, Score__c '; q += ' FROM Account'; Database.query(q); } }`);
+  put('lwc/painel/painel.js', "import SCORE from '@salesforce/schema/Account.Score__c';\nexport default class Painel { get v() { return this.rec.Score__c; } }");
+  put('lwc/painel/painel.html', '<template><lightning-record-form object-api-name="Lead"><lightning-input-field field-name="Score__c"></lightning-input-field></lightning-record-form></template>');
   put('lwc/painel/__tests__/painel.test.js', 'Score__c');
-  put('classes/Dinamica.cls', "public class Dinamica { String q = 'SELECT Score__c FROM Account'; }");
-  const hits = sweepFieldUsages(root, ['force-app'], 'Account', 'Score__c', new Set());
-  const files = hits.map((h) => path.basename(h.file || h.path || h.name || '')).join(' ');
-  const text = JSON.stringify(hits);
-  assert.match(text, /"name":"Rel"/);
-  assert.match(text, /Account\.Resumo/);
-  assert.match(text, /"name":"painel"/);
-  assert.match(text, /Dinamica/);
-  assert.doesNotMatch(text, /__tests__/, 'jest tests are left out');
-  assert.doesNotMatch(text, /Score__c\.field-meta/, 'the field file itself is not a usage');
-  assert.ok(files.length > 0);
+  const run = (q) => JSON.parse(spawnSync(process.execPath, [path.join(__dirname, '..', 'core', 'cli', 'index.js'), 'usages', q, '--json'], { cwd: root, encoding: 'utf8' }).stdout);
+  const acc = run('Account.Score__c');
+  const names = (list, cert) => list.filter((h) => !cert || h.certainty === cert).map((h) => `${h.where}:${h.name}`).sort();
+  assert.deepEqual(names(acc.hits, 'certo'), ['Apex:Contas', 'Apex:Dinamica', 'Field set:Account.Resumo', 'LWC:painel', 'Report:Rel']);
+  assert.deepEqual(names(acc.hits, 'possível'), ['Apex:Leads'], 'SObject.get: cannot tell the object, and it says so');
+  assert.ok(acc.elsewhere.some((e) => e.name === 'Vendas' && e.object === 'Lead'));
+  assert.ok(acc.elsewhere.some((e) => e.name === 'Leads' && e.object === 'Lead'));
+  assert.ok(!JSON.stringify(acc).includes('__tests__'), 'jest tests are left out');
+  const lead = run('Lead.Score__c');
+  assert.deepEqual(names(lead.hits, 'certo'), ['Apex:Leads', 'LWC:painel', 'Permission set:Vendas', 'Report:Rel']);
 });
 
 test('security: DTO with @AuraEnabled properties is not an entry point; test classes and placeholders are quiet', () => {
@@ -177,4 +195,66 @@ test('quality: the code between two short strings is not a repeated text', () =>
   const sources = new Map(['A', 'B', 'C'].map((n) => [`${n}.cls`, { text: cls(n), className: n, isTest: false }]));
   const found = findRepetition(sources, new Map([['A.cls', null]]), { objects: {} }, {}).filter((f) => f.kind === 'texto-repetido');
   assert.deepEqual(found, []);
+});
+
+test('radar: a test that saves another object counts when that object\'s trigger saves the changed one', () => {
+  const m = model({
+    ContatoHandler: `public class ContatoHandler { public static void depois(List<Contact> cs) { List<Account> casas = new List<Account>(); insert casas; } }`,
+    ContatoTest: `@isTest private class ContatoTest { @isTest static void a() { Contact c = new Contact(LastName = 'x'); insert c; } }`,
+    SoMemoriaTest: `@isTest private class SoMemoriaTest { @isTest static void b() { Account a = new Account(Name = 'y'); System.assert(a != null); } }`,
+    ApagaTest: `@isTest private class ApagaTest { @isTest static void c(Account a) { delete a; } }`,
+  });
+  m.triggers.ContatoTrigger = { name: 'ContatoTrigger', object: 'Contact', events: ['after insert'], identifiers: ['ContatoHandler'], classRefs: [], fieldUses: [] };
+  const radar = buildRadar(m, [{ file: 'x', status: 'modified', meta: { type: 'validationRule', object: 'Account', name: 'VR' } }]);
+  const by = Object.fromEntries(radar.tests.map((t) => [t.name, t]));
+  assert.equal(by.ContatoTest.priority, 'média', 'the other object’s automation may save it only on some paths');
+  assert.match(by.ContatoTest.reasons[0], /salva Contact, e a trigger ContatoTrigger de Contact grava Account/);
+  assert.equal(by.SoMemoriaTest.priority, 'média');
+  assert.equal(by.ApagaTest, undefined, 'a delete does not run validation rules');
+});
+
+test('radar: a field change brings the tests that use the field; a record type change, the tests that use its name', () => {
+  const m = model({
+    UsaCampoTest: `@isTest private class UsaCampoTest { @isTest static void a(Account acc) { System.assertEquals(1, acc.Nota__c); } }`,
+    OutroTest: `@isTest private class OutroTest { @isTest static void b(Lead l) { System.assertEquals(1, l.Nota__c); } }`,
+    TipoTest: `@isTest private class TipoTest { @isTest static void c() { Id rt = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('Varejo').getRecordTypeId(); } }`,
+  });
+  m.objects.Account.fields.Nota__c = { name: 'Nota__c' };
+  m.objects.Lead = { fields: { Nota__c: { name: 'Nota__c' } } };
+  const f = buildRadar(m, [{ file: 'x', status: 'modified', meta: { type: 'field', object: 'Account', name: 'Nota__c' } }]);
+  assert.deepEqual(f.tests.map((t) => t.name), ['UsaCampoTest']);
+  const rt = buildRadar(m, [{ file: 'x', status: 'modified', meta: { type: 'recordType', object: 'Account', name: 'Varejo' } }]);
+  assert.deepEqual(rt.tests.map((t) => t.name), ['TipoTest']);
+});
+
+test('field references: method returns, nested collections, inner classes, safe navigation and binds', () => {
+  const { apexFieldRefs } = require('../modules/sf/indexer/fieldrefs');
+  const { refs } = apexFieldRefs(`public class Tela {
+    public class Linha { public Nota__c nota; }
+    public static void a(Map<Id, List<Nota__c>> porConta, Contact c, Linha l, Nota__c n) {
+      Decimal x = porConta.get(c.Id)[0].Valor__c;
+      Boolean y = Ajustes.atuais().Ativo__c;
+      Decimal z = l.nota.Valor__c;
+      Decimal w = n?.Valor__c;
+      List<Account> contas = [SELECT Id FROM Account WHERE Nota_Id__c = :n.Valor__c];
+      System.assert(true, 'Valor__c deve estar preenchido');
+    } }`);
+  const by = (f, line) => refs.filter((r) => r.field === f && r.line === line).map((r) => `${r.base}|${r.path.join('.')}`);
+  assert.deepEqual(by('Valor__c', 4), ['Nota__c|Valor__c']);
+  assert.deepEqual(by('Ativo__c', 5), ['ret:Ajustes.atuais|Ativo__c']);
+  assert.deepEqual(by('Valor__c', 6), ['Linha|nota.Valor__c']);
+  assert.deepEqual(by('Valor__c', 7), ['Nota__c|Valor__c']);
+  assert.deepEqual(by('Valor__c', 8), ['Nota__c|Valor__c'], 'the bind :n.Valor__c is the Apex variable');
+  assert.deepEqual(by('Nota_Id__c', 8), ['Account|Nota_Id__c']);
+  assert.ok(refs.some((r) => r.line === 9 && r.prose), 'a sentence is not a use');
+});
+
+test('field references in metadata: console mappings, flow choice sets, and prose', () => {
+  const { metaFieldRefs, flowFieldRefs } = require('../modules/sf/indexer/fieldrefs');
+  const app = metaFieldRefs('force-app/main/default/applications/Vendas.app-meta.xml', '<CustomApplication><workspaceConfig><mappings><fieldName>Loja__c</fieldName><tab>Pedido__c</tab></mappings><mappings><tab>Loja__c</tab></mappings></workspaceConfig></CustomApplication>');
+  assert.deepEqual(app.map((r) => `${r.field}|${r.base}`), ['Loja__c|Pedido__c'], 'the tab is an object, the fieldName its field');
+  const flow = flowFieldRefs({ dynamicChoiceSets: [{ name: 'Lojas', object: 'Loja__c', displayField: 'Apelido__c' }] }, null, '<Flow/>');
+  assert.ok(flow.some((r) => r.field === 'Apelido__c' && r.base === 'Loja__c'));
+  const fn = metaFieldRefs('force-app/main/default/genAiFunctions/X/X.genAiFunction-meta.xml', '<GenAiFunction><description\n>Shows details about an Experience__c record.</description><instruction>Look up the Experience__c the user wants to know about</instruction></GenAiFunction>');
+  assert.ok(fn.every((r) => r.prose), 'sentences in metadata are not uses');
 });

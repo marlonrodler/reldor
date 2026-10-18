@@ -6,24 +6,6 @@
  * Each hit has a certainty: "certo", "provável" or "possível" (name found only inside a text string).
  */
 
-/**
- * Follows a formula path (Parent__r.Owner.Field__c) from `objectName` through lookups the index knows.
- * Returns { object, field } or null when a step cannot be followed (standard relationships not in the project).
- */
-function resolveRef(model, objectName, ref) {
-  const parts = ref.replace(/^\$?\w+:/, '').split('.');
-  let current = objectName;
-  for (const step of parts.slice(0, -1)) {
-    const o = model.objects[current];
-    if (!o) return null;
-    const lookup = Object.values(o.fields).find((f) => f.referenceTo && (f.name.replace(/__c$/i, '__r').toLowerCase() === step.toLowerCase() || f.name.replace(/Id$/, '').toLowerCase() === step.toLowerCase() || (f.relationshipName || '').toLowerCase() === step.toLowerCase()));
-    if (lookup) current = lookup.referenceTo;
-    else if (model.objects[step]) current = step; // Object.Field written with the object name
-    else return null;
-  }
-  return { object: current, field: parts[parts.length - 1] };
-}
-
 function findUsages(model, query) {
   const hits = [];
   const add = (where, name, how, certainty = 'certo') => hits.push({ where, name, how, certainty });
@@ -45,7 +27,8 @@ function findUsages(model, query) {
       if (c.name === cls || (iface && c.kinds.includes('application'))) continue;
       const refers = c.identifiers.some((id) => aliases.has(id)) || c.classRefs.some((id) => aliases.has(id));
       if (method) {
-        if (c.calls.some((call) => aliases.has(call.split('.')[0]) && call.endsWith(`.${method}`))) add('Apex', c.name, `chama ${q}`);
+        const call = c.calls.find((x) => aliases.has(x.split('.')[0]) && x.toLowerCase().endsWith(`.${method.toLowerCase()}`));
+        if (call) add('Apex', c.name, call.split('.')[0] === cls ? `chama ${q}` : `chama ${call} (a fábrica Application liga ${iface} a ${cls})`);
         else if (refers && c.invoked.includes(method)) add('Apex', c.name, `usa ${iface || cls} e chama .${method}()`, 'provável');
       } else if (refers) {
         add('Apex', c.name, c.isTest ? 'classe de teste' : `referencia ${[...aliases].filter((a) => c.identifiers.includes(a) || c.classRefs.includes(a)).join(', ')}`);
@@ -68,56 +51,68 @@ function findUsages(model, query) {
 
   if (isField) {
     const field = right;
-    const object = left && model.objects[left] ? left : null;
-    const sameField = (ref) => ref.split('.').pop().toLowerCase() === field.toLowerCase();
-    const exact = (ref) => object && ref.toLowerCase() === `${object}.${field}`.toLowerCase();
+    const object = left ? require('./fieldresolve').objectName(model, left) : null;
 
-    // A formula or rule reference such as Parent__r.Field__c points to Field__c on the parent object, not here.
-    const refHits = (o, ref) => {
-      if (!object) return sameField(ref);
-      const target = resolveRef(model, o.name, ref);
-      if (target) return target.object.toLowerCase() === object.toLowerCase() && target.field.toLowerCase() === field.toLowerCase();
-      return exact(ref) || (o.name === object && !ref.includes('.') && sameField(ref));
+    // Code and flows: every reference carries the object it belongs to (see indexer/fieldrefs.js).
+    const { resolveFieldRef } = require('./fieldresolve');
+    const elsewhere = [];
+    const consider = (where, name, refs, screen, isTest, owner = null) => {
+      const mine = [];
+      const unsure = [];
+      for (const r of refs || []) {
+        if (r.field.toLowerCase() !== field.toLowerCase()) continue;
+        const res = resolveFieldRef(model, r, screen, owner);
+        if (res.objectMention) {
+          elsewhere.push({ where, name, object: res.prose ? 'mensagem de texto' : `${r.field} (o objeto)`, how: res.prose ? 'o campo só aparece numa frase (mensagem), não é um uso' : 'o texto é o nome do objeto, não um campo', line: r.line });
+          continue;
+        }
+        if (!object) mine.push(res);
+        else if (res.object && res.object.toLowerCase() === object.toLowerCase()) mine.push(res);
+        else if (res.object) elsewhere.push({ where, name, object: res.object, how: res.how, line: r.line });
+        else if (!res.candidates.length || res.candidates.some((o) => o.toLowerCase() === object.toLowerCase())) unsure.push({ ...res, line: r.line });
+        else elsewhere.push({ where, name, object: res.candidates.join(' ou '), how: res.how, line: r.line });
+      }
+      if (mine.length) {
+        const hows = [...new Set(mine.map((x) => x.how))];
+        const prefix = isTest ? 'classe de teste: ' : '';
+        add(where, name, `${prefix}${hows.slice(0, 3).join('; ')}${hows.length > 3 ? `; e mais ${hows.length - 3}` : ''}`);
+      } else if (unsure.length) {
+        const u = unsure[0];
+        const cands = u.candidates.length > 1 ? ` — pode ser de ${u.candidates.join(', ')}` : '';
+        add(where, name, `não dá para saber o objeto: ${u.how}${u.line ? ` (linha ${u.line})` : ''}${cands}`, 'possível');
+      }
     };
+    // Formulas, validation rules, roll-ups and workflow field updates, with the same resolution as code:
+    // Parent__r.Field__c in a rule of Child__c is Field__c of the parent object.
+    const formulaUses = (o, list, how) => list
+      .filter((r) => !r.startsWith('$') && /__c$/i.test(r.split('.').pop()))
+      .map((r) => ({ field: r.split('.').pop(), base: o.name, path: r.split('.'), how }));
     for (const o of Object.values(model.objects)) {
-      if (object && o.name !== object) {
-        for (const v of o.validationRules) if (v.refs.some((r) => r.includes('.') && refHits(o, r))) add('Validation rule', `${o.name}.${v.name}`, v.active ? 'condição usa o campo' : 'condição usa o campo (inativa)');
-        for (const f of Object.values(o.fields)) if (f.formulaRefs.some((r) => refHits(o, r))) add('Fórmula', `${o.name}.${f.name}`, 'fórmula usa o campo');
-        continue;
-      }
-      for (const v of o.validationRules) if (v.refs.some((r) => refHits(o, r))) add('Validation rule', `${o.name}.${v.name}`, v.active ? 'condição usa o campo' : 'condição usa o campo (inativa)');
+      for (const v of o.validationRules) consider('Validation rule', `${o.name}.${v.name}`, formulaUses(o, v.refs, v.active ? 'condição usa o campo' : 'condição usa o campo (inativa)'));
       for (const f of Object.values(o.fields)) {
-        if (f.formulaRefs.some((r) => refHits(o, r))) add('Fórmula', `${o.name}.${f.name}`, 'fórmula usa o campo');
-        if (f.summary && f.summary.field && sameField(f.summary.field)) add('Roll-up', `${o.name}.${f.name}`, 'resume o campo');
+        consider('Fórmula', `${o.name}.${f.name}`, formulaUses(o, f.formulaRefs || [], 'fórmula usa o campo'));
+        if (f.summary && f.summary.field) {
+          const [child, fld] = f.summary.field.includes('.') ? f.summary.field.split('.') : [null, f.summary.field];
+          consider('Roll-up', `${o.name}.${f.name}`, [{ field: fld, base: child, path: [fld], how: 'resume o campo' }]);
+        }
       }
-      if (o.workflow) for (const u of o.workflow.fieldUpdates) if (sameField(u.field)) add('Workflow', `${o.name}.${u.name}`, 'atualização de campo');
+      if (o.workflow && o.workflow.fieldUses) consider('Workflow', o.name, o.workflow.fieldUses);
+      else if (o.workflow) for (const u of o.workflow.fieldUpdates) if (u.field) consider('Workflow', `${o.name}.${u.name}`, [{ field: u.field.split('.').pop(), base: o.name, path: u.field.split('.'), how: 'atualização de campo' }]);
     }
     for (const c of Object.values(model.classes)) {
-      const inSoql = c.soql.some((s) => (!object || s.object === object) && s.fields.some(sameField));
-      const inSelector = (c.selectorFields || []).some((f) => (object ? exact(f) : sameField(f)));
-      const inCode = c.fieldRefs.some((r) => (object ? exact(r) : sameField(r)));
-      const inCodeLoose = object && !inCode && c.fieldRefs.some(sameField);
-      if (inSelector) add('Selector', c.name, 'lista de campos (getSObjectFieldList)');
-      if (inSoql) add('Apex', c.name, 'consulta (SOQL)');
-      if (inCode && !inSelector) add('Apex', c.name, c.isTest ? 'classe de teste' : 'lê ou grava o campo');
-      else if (inCodeLoose && !inSoql) add('Apex', c.name, 'usa um campo com esse nome', 'provável');
+      consider((c.kinds || []).includes('selector') ? 'Selector' : 'Apex', c.name, c.fieldUses, null, c.isTest, c);
     }
-    for (const f of Object.values(model.flows)) {
-      if (object && f.object && f.object !== object) continue;
-      if (f.fieldsWritten.some(sameField)) add('Flow', f.name, 'grava o campo');
-      if (f.filters.some((x) => x.field && sameField(x.field)) || (f.filterFormula && f.filterFormula.includes(field))) add('Flow', f.name, 'critério de entrada');
-    }
-    for (const [name, l] of Object.entries(model.lwc)) {
-      for (const s of l.schema || []) if (object ? exact(s) : sameField(s)) add('LWC', name, `importa ${s}`);
-    }
-    for (const f of Object.values(model.flows)) {
-      for (const [target, fields] of Object.entries(f.fieldsByObject || {})) {
-        if ((!object || target === object) && fields.some(sameField)) add('Flow', f.name, `grava o campo ao criar/atualizar ${target}`);
-      }
-    }
-    const UI = { layout: 'Layout', listView: 'List view', compactLayout: 'Compact layout' };
-    for (const u of model.ui) if ((!object || u.object === object) && u.fields.some(sameField)) add(UI[u.kind], u.name, 'exibe o campo');
-    for (const p of model.permissions) if (p.fields.some((f) => (object ? exact(f) : sameField(f)))) add(p.kind, p.name, 'permissão de campo (FLS)');
+    for (const t of Object.values(model.triggers)) consider('Trigger', t.name, t.fieldUses, null, false);
+    for (const f of Object.values(model.flows)) consider('Flow', f.name, f.fieldUses, null, false);
+    for (const sc of Object.values(model.screens || {})) consider(sc.kind, sc.name, sc.refs, sc, false);
+    // Other metadata: layouts, permissions, record types, reports, record pages, quick actions, field sets...
+    const UI_LABEL = { layout: 'Layout', listView: 'List view', compactLayout: 'Compact layout' };
+    for (const u of model.ui) if (u.fieldUses) consider(UI_LABEL[u.kind], u.name, u.fieldUses, null, false);
+    for (const p of model.permissions) if (p.fieldUses) consider(p.kind, p.name, p.fieldUses, null, false);
+    for (const o of Object.values(model.objects)) for (const rt of o.recordTypes || []) if (rt.fieldUses) consider('Record type', `${o.name}.${rt.name}`, rt.fieldUses, null, false);
+    for (const m of Object.values(model.meta || {})) consider(m.where, m.name, m.fieldUses, null, false);
+    for (const [type, records] of Object.entries(model.customMetadata)) for (const r of records) if (r.fieldUses) consider('Custom metadata', `${type.replace(/__mdt$/, '')}.${r.name}`, r.fieldUses, null, false);
+    hits.elsewhere = elsewhere;
   }
 
   if (isFlow) {
@@ -136,12 +131,14 @@ function findUsages(model, query) {
   }
 
   const seen = new Set();
-  return hits.filter((h) => {
+  const out = hits.filter((h) => {
     const key = `${h.where}|${h.name}|${h.how}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+  out.elsewhere = hits.elsewhere || [];
+  return out;
 }
 
 function renderUsages(query, hits) {

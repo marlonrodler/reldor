@@ -3,6 +3,7 @@
 const path = require('node:path');
 const { parseXml, bool, arr } = require('./xml');
 const { parseApexClass, parseTrigger } = require('./apex');
+const { flowFieldRefs, uiFieldRefs, metaFieldRefs } = require('./fieldrefs');
 
 /** Field and object references inside a formula (validation rules, formula fields, flow formulas). */
 function formulaRefs(text) {
@@ -10,6 +11,15 @@ function formulaRefs(text) {
   const tokens = String(text).match(/\$?[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*/g) || [];
   return [...new Set(tokens.filter((t) => !t.startsWith('$') && (/__(c|r)\b/.test(t) || t.includes('.'))))];
 }
+
+const META_LABEL = {
+  report: 'Report', reportType: 'Report type', dashboard: 'Dashboard', fieldSet: 'Field set', quickAction: 'Quick action',
+  flexipage: 'Página (FlexiPage)', layout: 'Layout', listView: 'List view', compactLayout: 'Compact layout', recordType: 'Record type',
+  genAiPromptTemplate: 'Prompt template', genAiFunction: 'Ação de agente', pathAssistant: 'Path', app: 'App', sharingRules: 'Sharing rule',
+  md: 'Custom metadata', webLink: 'Botão/link', email: 'E-mail template', matchingRule: 'Matching rule', matchingRules: 'Matching rule',
+  duplicateRule: 'Duplicate rule', assignmentRules: 'Regra de atribuição', escalationRules: 'Regra de escalonamento', sharingSet: 'Sharing set',
+  businessProcess: 'Business process', validationRule: 'Validation rule', approvalProcess: 'Processo de aprovação', navigationMenu: 'Menu',
+};
 
 /** Recognizes a metadata file by its path and returns { type, key } or null. */
 function classify(file) {
@@ -40,6 +50,20 @@ function classify(file) {
   if (base.endsWith('.permissionset-meta.xml')) return { type: 'permission', kind: 'Permission set', name: base.replace('.permissionset-meta.xml', '') };
   if (base.endsWith('.profile-meta.xml')) return { type: 'permission', kind: 'Profile', name: base.replace('.profile-meta.xml', '') };
   if (grand === 'lwc' && (base === `${parent}.js` || base === `${parent}.html`)) return { type: base.endsWith('.js') ? 'lwcJs' : 'lwcHtml', name: parent };
+  // Other screen code: LWC helper files, Aura bundles, Visualforce pages and components.
+  const lwcAt = parts.lastIndexOf('lwc');
+  if (lwcAt >= 0 && lwcAt < parts.length - 2 && /\.(js|html)$/.test(base) && !parts.includes('__tests__')) return { type: 'uiCode', kind: 'LWC', name: parts[lwcAt + 1] };
+  const auraAt = parts.lastIndexOf('aura');
+  if (auraAt >= 0 && auraAt < parts.length - 2 && /\.(cmp|app|js)$/.test(base)) return { type: 'uiCode', kind: 'Aura', name: parts[auraAt + 1] };
+  if (base.endsWith('.page')) return { type: 'uiCode', kind: 'Visualforce', name: base.slice(0, -5) };
+  if (base.endsWith('.component') && parent === 'components') return { type: 'uiCode', kind: 'Visualforce', name: base.slice(0, -10) };
+  // Any other metadata: only its field references are read (reports, record pages, quick actions, field sets...).
+  const meta = /^(.+)\.([A-Za-z]+)-meta\.xml$/.exec(base);
+  if (meta && !/Translation$|^translation$|^(object|field|staticresource|document|contentasset|resource|cls|trigger|page|component|js|html|css|svg)$/i.test(meta[2]) && !(meta[2] === 'app' && parent !== 'applications') && !/\.(cls|trigger|page|component|resource)-meta\.xml$/.test(base)) {
+    const objectAt = parts.lastIndexOf('objects');
+    const inObject = objectAt >= 0 && objectAt === parts.length - 4 ? parts[objectAt + 1] : null;
+    return { type: 'meta', where: META_LABEL[meta[2]] || meta[2], name: inObject ? `${inObject}.${meta[1]}` : meta[1] };
+  }
   return null;
 }
 
@@ -152,6 +176,7 @@ function parseFlow(meta, { name }) {
     reads: [...new Set(arr(f.recordLookups).map((l) => l.object).filter(Boolean))],
     apexActions: [...new Set(arr(f.actionCalls).filter((a) => a.actionType === 'apex').map((a) => a.actionName))],
     subflows: [...new Set(arr(f.subflows).map((s) => s.flowName).filter(Boolean))],
+    fieldUses: flowFieldRefs(f, object, meta),
   };
 }
 
@@ -195,13 +220,14 @@ function parsePermission(meta, key) {
 function parseLwcJs(source, { name }) {
   return {
     name,
+    screen: uiFieldRefs('LWC', source),
     apex: [...new Set([...source.matchAll(/@salesforce\/apex\/([\w.]+)/g)].map((m) => m[1]))],
     schema: [...new Set([...source.matchAll(/@salesforce\/schema\/([\w.]+)/g)].map((m) => m[1]))],
   };
 }
 
 function parseLwcHtml(source, { name }) {
-  return { name, children: [...new Set([...source.matchAll(/<c-([\w-]+)/g)].map((m) => m[1]))] };
+  return { name, children: [...new Set([...source.matchAll(/<c-([\w-]+)/g)].map((m) => m[1]))], screen: uiFieldRefs('LWC', source) };
 }
 
 const PARSERS = {
@@ -221,14 +247,19 @@ const PARSERS = {
   permission: parsePermission,
   lwcJs: parseLwcJs,
   lwcHtml: parseLwcHtml,
+  uiCode: (text, key) => ({ name: key.name, kind: key.kind, screen: uiFieldRefs(key.kind, text) }),
+  meta: (text, key) => ({ where: key.where, name: key.name, fieldUses: metaFieldRefs(key.file, text) }),
 };
 
 /** Parses one file. Returns { type, data } or null; never throws. */
 function parseFile(file, text) {
   const key = classify(file);
   if (!key) return null;
+  key.file = String(file).split(/[\\/]/).join('/');
   try {
-    return { type: key.type, data: PARSERS[key.type](text, key) };
+    const data = PARSERS[key.type](text, key);
+    if (/^(layout|listView|compactLayout|permission|recordType|customMetadataRecord|workflow)$/.test(key.type)) data.fieldUses = metaFieldRefs(key.file, text);
+    return { type: key.type, data };
   } catch (error) {
     return { type: key.type, error: `${path.basename(file)}: ${error.message}` };
   }

@@ -21,14 +21,17 @@ Para ver o que roda quando um registro é salvo, use o [explain](./explain.pt-BR
 
 ## Perguntas comuns
 
-**Por que "provável" e não "certo" para métodos?**
-Chamadas por variável (`service.calcularScore()`) não dizem o nome da classe. O Reldor liga pela interface da variável e pela fábrica `Application`: é uma evidência forte, não uma prova.
+**Campo com o mesmo nome em vários objetos (`Status__c`, `Contact__c`) se mistura?**
+Não. Cada uso é ligado ao objeto dono do campo pelo que o código diz: o tipo da variável (`List<Account> contas`), o `FROM` da query (subconsultas e semi-joins também), `new Account(...)`, o caminho `Pai__r.Campo__c`, o retorno de um método, a classe de dados com a propriedade, o elemento do flow ou o `$Record`, o formulário ou os imports da tela, a coluna do relatório, a lista relacionada do layout. O que é de outro objeto aparece separado em "Fora da lista", para nada sumir em silêncio.
 
-**Cobre layouts e permissões?**
-Sim: page layouts, list views, compact layouts e acesso a campo ou classe em permission sets e profiles. Registros de custom metadata que citam uma classe também contam. Para campos custom, uma segunda passada lê o resto do projeto: qualquer metadado que cite `Objeto.Campo` (reports, report types, dashboards, field sets, quick actions, Lightning pages, prompt templates) é **certo**; LWC, Aura e Visualforce que usam o campo pelo nome são **prováveis**; Apex que tem o nome do campo só dentro de texto (SOQL dinâmica) é **possível**.
+**E quando o código não diz o objeto?**
+Acontece com nome de campo em texto passado para código dinâmico, por exemplo `'Status__c'` numa lista de campos ou `prefix + 'Role__c'`. Aí o item vem como **possível**, com a linha, o motivo e os objetos que têm um campo com esse nome. Se só um objeto do projeto tem aquele campo, ele é certo.
+
+**Cobre layouts, permissões e outros metadados?**
+Sim: layouts (inclusive listas relacionadas), list views, compact layouts, record types, permission sets e profiles, reports, report types, dashboards, quick actions, páginas Lightning, field sets, sharing sets, regras, apps, registros de custom metadata, Apex, triggers, flows, LWC, Aura e Visualforce.
 
 **O que fica de fora?**
-Testes Jest (`__tests__`) e campos com o mesmo nome em outro objeto quando o código não diz qual objeto.
+Testes Jest (`__tests__`), comentários e frases (mensagens de erro e de assert que só citam o campo).
 
 ## Onde se encaixa
 

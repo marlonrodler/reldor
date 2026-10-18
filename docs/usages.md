@@ -21,14 +21,17 @@ To see what runs when a record is saved, use [explain](./explain.md) instead.
 
 ## Common questions
 
-**Why "likely" instead of "certain" for methods?**
-Calls through a variable (`service.calcularScore()`) don't say the class name. Reldor links them through the variable's interface and the `Application` factory, which is strong evidence, not proof.
+**Does a field with the same name on several objects (`Status__c`, `Contact__c`) get mixed up?**
+No. Every use is tied to the object that owns the field by what the code says: the variable's type (`List<Account> accounts`), the query's `FROM` (subqueries and semi-joins too), `new Account(...)`, a `Parent__r.Field__c` path, a method's return type, a data class property, the flow element or `$Record`, the screen's form or imports, the report column, the layout's related list. Uses on other objects are listed apart under "Fora da lista", so nothing disappears silently.
 
-**Does it cover layouts and permissions?**
-Yes: page layouts, list views, compact layouts, and field or class access in permission sets and profiles. Custom metadata records that name a class count too. For custom fields, a second pass reads the rest of the project: any metadata that names `Object.Field` (reports, report types, dashboards, field sets, quick actions, Lightning pages, prompt templates) is **certain**; LWC, Aura and Visualforce that use the field by name are **likely**; Apex that has the field name only inside a string (dynamic SOQL) is **possible**.
+**And when the code does not say the object?**
+That happens with a field name in a string handed to dynamic code, such as `'Status__c'` in a field list or `prefix + 'Role__c'`. The hit is then **possible**, with the line, the reason and the objects that have a field with that name. When only one object in the project has that field, it is certain.
+
+**Does it cover layouts, permissions and other metadata?**
+Yes: layouts (related lists included), list views, compact layouts, record types, permission sets and profiles, reports, report types, dashboards, quick actions, Lightning pages, field sets, sharing sets, rules, apps, custom metadata records, Apex, triggers, flows, LWC, Aura and Visualforce.
 
 **What does it leave out?**
-Jest tests (`__tests__`) and fields with the same name on another object when the code does not say which object.
+Jest tests (`__tests__`), comments and sentences (error and assert messages that only mention the field).
 
 ## Where it fits
 

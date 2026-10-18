@@ -89,7 +89,7 @@ test('usages finds fields, classes, methods and text-only references', () => {
   assert.ok(where('Account.Score__c').includes('Flow:Conta_Depois_Salvar:certo'));
   assert.ok(where('Account.Score__c').includes('LWC:contaScore:certo'));
   assert.ok(where('AccountsServiceImpl').includes('Apex:ContaController:possível'));
-  assert.ok(where('AccountsServiceImpl.calcularScore').includes('Apex:Accounts:provável'));
+  assert.ok(where('AccountsServiceImpl.calcularScore').includes('Apex:Accounts:certo'), 'the variable is typed with the interface');
   assert.deepEqual(where('Proposta__c'), ['Apex:ScoreJob:certo', 'Roll-up:Account.Total_Propostas__c:certo']);
 });
 
