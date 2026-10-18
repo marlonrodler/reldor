@@ -13,7 +13,7 @@ function readProject(root) {
   try {
     const json = JSON.parse(fs.readFileSync(file, 'utf8'));
     const dirs = (json.packageDirectories || []).map((d) => d.path).filter(Boolean);
-    return { packageDirectories: dirs.length ? dirs : ['force-app'], apiVersion: json.sourceApiVersion || null };
+    return { packageDirectories: dirs.length ? dirs : ['force-app'], apiVersion: json.sourceApiVersion || null, namespace: json.namespace || null };
   } catch {
     return { packageDirectories: ['force-app'], apiVersion: null, invalid: true };
   }

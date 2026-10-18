@@ -258,3 +258,35 @@ test('field references in metadata: console mappings, flow choice sets, and pros
   const fn = metaFieldRefs('force-app/main/default/genAiFunctions/X/X.genAiFunction-meta.xml', '<GenAiFunction><description\n>Shows details about an Experience__c record.</description><instruction>Look up the Experience__c the user wants to know about</instruction></GenAiFunction>');
   assert.ok(fn.every((r) => r.prose), 'sentences in metadata are not uses');
 });
+
+test('usages: dynamic fields — stores of field names, records in the project, a query for the org, texts in code', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-dyn-'));
+  const base = path.join(root, 'force-app', 'main', 'default');
+  const put = (rel, text) => {
+    fs.mkdirSync(path.dirname(path.join(base, rel)), { recursive: true });
+    fs.writeFileSync(path.join(base, rel), text);
+  };
+  fs.writeFileSync(path.join(root, 'sfdx-project.json'), JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }] }));
+  const field = (obj, name, type = 'Text', extra = '') => put(`objects/${obj}/fields/${name}.field-meta.xml`, `<CustomField><fullName>${name}</fullName><type>${type}</type>${extra}</CustomField>`);
+  field('Account', 'Nota__c', 'Number');
+  field('Lead', 'Nota__c', 'Number');
+  // custom metadata whose records name fields (records live in the project)
+  put('objects/Regra__mdt/Regra__mdt.object-meta.xml', '<CustomObject><label>Regra</label></CustomObject>');
+  field('Regra__mdt', 'Campo__c');
+  field('Regra__mdt', 'Objeto__c');
+  put('customMetadata/Regra.Pontuacao.md-meta.xml', '<CustomMetadata><values><field>Campo__c</field><value>Nota__c</value></values><values><field>Objeto__c</field><value>Account</value></values></CustomMetadata>');
+  // custom setting whose records name fields (records live in the org), read by code that uses the name
+  put('objects/Mapa__c/Mapa__c.object-meta.xml', '<CustomObject><customSettingsType>List</customSettingsType></CustomObject>');
+  field('Mapa__c', 'Field_API_Name__c');
+  put('classes/Motor.cls', `public with sharing class Motor {
+    public static Object ler(Account a) { Mapa__c m = Mapa__c.getInstance('x'); return a.get(m.Field_API_Name__c); } }`);
+  put('lwc/tela/tela.js', "export default class Tela { payload() { return JSON.stringify({ campos: ['Nota__c'] }); } }");
+  const r = JSON.parse(spawnSync(process.execPath, [path.join(__dirname, '..', 'core', 'cli', 'index.js'), 'usages', 'Account.Nota__c', '--json'], { cwd: root, encoding: 'utf8' }).stdout);
+  const regra = r.dynamic.stores.find((s) => s.object === 'Regra__mdt');
+  assert.deepEqual(regra.records, ['Pontuacao'], 'the record in the project that names the field');
+  const mapa = r.dynamic.stores.find((s) => s.object === 'Mapa__c');
+  assert.equal(mapa.checked, false);
+  assert.match(mapa.query, /SELECT Id, Field_API_Name__c FROM Mapa__c WHERE Field_API_Name__c LIKE '%Nota__c%'/);
+  assert.equal(mapa.engines[0].name, 'Motor');
+  assert.ok(r.dynamic.texts.some((t) => t.name === 'tela'), 'the JSON built in the LWC is pointed out');
+});

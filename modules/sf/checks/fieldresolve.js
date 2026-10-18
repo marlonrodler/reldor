@@ -55,13 +55,15 @@ function childObject(model, parent, rel) {
 }
 
 /** Follows path segments (all but the last) from an object. Returns the object of the last segment or null. */
-function walkPath(model, start, segments) {
+function walkPath(model, start, segments, preferChild = false) {
   let current = start;
   for (const seg of segments) {
     const o = model.objects[current];
     const lower = seg.toLowerCase();
     let next = null;
-    if (o) {
+    // Report type tables are joins to children: Program__c.Projects__r means the child relationship
+    if (preferChild) next = childObject(model, current, seg);
+    if (!next && o) {
       const lookup = Object.values(o.fields).find((f) => f.referenceTo && (f.name.toLowerCase() === lower.replace(/__r$/, '__c') || (f.relationshipName || '').toLowerCase() === lower || `${(f.relationshipName || '').toLowerCase()}__r` === lower));
       if (lookup) next = objectName(model, lookup.referenceTo) || lookup.referenceTo;
     }
@@ -221,7 +223,7 @@ function resolveFieldRef(model, ref, screen = null, owner = null) {
     const start = objectName(model, base);
     // SOQL lets a field be written with its object: ProgramEngagement__c.Program__r.Status__c
     const path = ref.path.length > 1 && start && ref.path[0].toLowerCase() === start.toLowerCase() && !/__r$/i.test(ref.path[0]) ? ref.path.slice(1) : ref.path;
-    if (start) object = walkPath(model, start, path.slice(0, -1));
+    if (start) object = walkPath(model, start, path.slice(0, -1), Boolean(ref.childPath));
     else if ((model.classes[base] || innerTypes(model).has(String(base).toLowerCase()) || (owner && owner.innerPropertyTypes && owner.innerPropertyTypes[String(base).toLowerCase()])) && ref.path.length > 1) {
       // A wrapper class: model.serviceSchedule.Field__c -> the type of the property serviceSchedule
       const typed = classPathObject(model, base, ref.path.slice(0, -1), owner);

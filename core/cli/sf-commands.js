@@ -93,8 +93,18 @@ function usagesCommand(root, flags, args) {
   const hits = findUsages(model, query);
   logAction(root, 'usages', { summary: `${query}: ${hits.length} uso(s)` });
   const elsewhere = findUsagesElsewhere(hits);
-  if (flags.json) printJson({ query, hits, elsewhere });
-  else print([...renderUsages(query, hits), ...renderElsewhere(query, elsewhere)]);
+  // Fields: the developer's second look at what code reaches only by name (stores of field names, texts in code).
+  let dynamic = null;
+  const [qLeft, qRight] = query.includes('.') ? query.split('.', 2) : [null, query];
+  if (/__c$/i.test(qRight) && !model.classes[qLeft || '']) {
+    const { analyzeDynamicField } = require('../../modules/sf/checks/dynamicfields');
+    dynamic = analyzeDynamicField(model, qLeft, qRight, hits.filter((h) => h.certainty !== 'certo'));
+  }
+  if (flags.json) printJson({ query, hits, elsewhere, dynamic });
+  else {
+    const { renderDynamicField } = require('../../modules/sf/checks/dynamicfields');
+    print([...renderUsages(query, hits), ...renderElsewhere(query, elsewhere), ...(dynamic ? renderDynamicField(qLeft, qRight, dynamic) : [])]);
+  }
   return 0;
 }
 

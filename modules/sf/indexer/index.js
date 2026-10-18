@@ -219,6 +219,7 @@ function buildIndex(root, options = {}) {
   const removed = Object.keys(prevFiles).filter((rel) => !results[rel]).length;
 
   const model = aggregate(results);
+  model.namespace = project.namespace || null;
   const stats = {
     files: Object.keys(results).length,
     parsed,

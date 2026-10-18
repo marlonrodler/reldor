@@ -273,6 +273,7 @@ function parseApexClass(name, source) {
   info.methodCalls = facts.calls;
   const uses = require('./fieldrefs').apexFieldRefs(source);
   info.fieldUses = uses.refs;
+  info.dynamicAccess = uses.dynamicAccess;
   info.propertyTypes = uses.propertyTypes;
   info.methodReturns = uses.methodReturns;
   info.methodSaves = uses.methodSaves;

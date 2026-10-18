@@ -27,6 +27,13 @@ Não. Cada uso é ligado ao objeto dono do campo pelo que o código diz: o tipo 
 **E quando o código não diz o objeto?**
 Acontece com nome de campo em texto passado para código dinâmico, por exemplo `'Status__c'` numa lista de campos ou `prefix + 'Role__c'`. Aí o item vem como **possível**, com a linha, o motivo e os objetos que têm um campo com esse nome. Se só um objeto do projeto tem aquele campo, ele é certo.
 
+**E campo usado de forma dinâmica (motor que recebe o nome do campo)?**
+O `usages` faz a segunda olhada que um desenvolvedor faria, na seção "Campos dinâmicos":
+- acha os objetos que **guardam nomes de campo** (custom metadata, custom settings e objetos com campos como `Field__c`, `Field_API_Name__c`, `Source_Field__c`, ou relação com FieldDefinition) e as classes que **usam esse nome** para chegar no campo (`registro.get(nome)`, `fields.getMap()`, `Database.query(texto)`);
+- **custom metadata**: os registros estão no projeto, então ele confere e diz quais registros citam o campo;
+- **custom setting e objeto**: os registros ficam na org e o Reldor não lê dados; ele avisa "confira se há registro" e entrega a SOQL pronta;
+- **texto fixo no código** (JSON montado num LWC, lista de campos num Apex): mostra o arquivo e a linha, porque esses quebram em tempo de execução, não na compilação.
+
 **Cobre layouts, permissões e outros metadados?**
 Sim: layouts (inclusive listas relacionadas), list views, compact layouts, record types, permission sets e profiles, reports, report types, dashboards, quick actions, páginas Lightning, field sets, sharing sets, regras, apps, registros de custom metadata, Apex, triggers, flows, LWC, Aura e Visualforce.
 

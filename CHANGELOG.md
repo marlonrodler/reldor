@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.0
+
+- `usages` for a field adds "Campos dinâmicos", the developer's second look at what code reaches only by name:
+  objects that keep field names (custom metadata, custom settings, config objects, FieldDefinition relationships)
+  and the classes that use those names (`record.get(name)`, describe maps, `Database.query(text)`); for custom
+  metadata, the records in the project that name the field; for custom settings and objects, a ready SOQL to check
+  the org (Reldor reads no data); and every text in code that names the field without its object.
+- The project's own namespace prefix is understood (`npsp__Amount__c` is `Amount__c` in an `npsp` project).
+- Report type tables follow child relationships even when a lookup has the same relationship name.
+
 ## 0.14.0
 
 - `usages` knows which object each field belongs to. A field with the same name on several objects (`Status__c`,

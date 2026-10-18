@@ -60,7 +60,7 @@ function findUsages(model, query) {
       const mine = [];
       const unsure = [];
       for (const r of refs || []) {
-        if (r.field.toLowerCase() !== field.toLowerCase()) continue;
+        if (!require('./dynamicfields').sameField(model, r.field, field)) continue;
         const res = resolveFieldRef(model, r, screen, owner);
         if (res.objectMention) {
           elsewhere.push({ where, name, object: res.prose ? 'mensagem de texto' : `${r.field} (o objeto)`, how: res.prose ? 'o campo só aparece numa frase (mensagem), não é um uso' : 'o texto é o nome do objeto, não um campo', line: r.line });

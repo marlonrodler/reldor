@@ -452,7 +452,28 @@ function apexFieldRefs(source, { triggerObject = null } = {}) {
     }
     refs.push({ field, base, path: [...rest, field], how: how || 'expressão que o Reldor não consegue tipar', line });
   }
-  return { refs: dedupe(refs), propertyTypes: classTypes, methodReturns: returns, innerPropertyTypes: innerClassTypes(code, blocks), ...dmlByMethod(code, blocks, typesAt, returns) };
+  return { refs: dedupe(refs), dynamicAccess: dynamicAccess(code, typesAt), propertyTypes: classTypes, methodReturns: returns, innerPropertyTypes: innerClassTypes(code, blocks), ...dmlByMethod(code, blocks, typesAt, returns) };
+}
+
+const NOT_SOBJECT = /^(map|list|set|string|object|integer|decimal|double|long|boolean|id|date|datetime|time|blob|schema\.\w+|jsonparser|httprequest|httpresponse)$/i;
+
+/**
+ * Places where code reaches a field by a name it only knows at run time: record.get(name), describe maps,
+ * Database.query(text), JSON. These are the "engines" fed by field names kept in data or built elsewhere.
+ */
+function dynamicAccess(code, typesAt) {
+  const out = [];
+  const add = (kind, index, what) => out.push({ kind, line: lineAt(code, index), what });
+  for (const m of code.matchAll(/\b([A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*\.\s*(get|put|getSObject|getSObjects|putSObject)\s*\(\s*(?!'|\d|\))([A-Za-z_][\w.]*)/g)) {
+    const t = typesAt(m.index)[m[1].toLowerCase()];
+    const el = t ? elementType(t) : null;
+    if (!el || NOT_SOBJECT.test(el) || /^(map|list|set)\b/i.test(String(t).trim()) && !/\[/.test(m[0])) continue;
+    add('campo por nome', m.index, `${m[1]}.${m[2]}(${m[3]})`);
+  }
+  for (const m of code.matchAll(/Schema\s*\.\s*getGlobalDescribe\s*\(|\.\s*fields\s*\.\s*getMap\s*\(|Schema\s*\.\s*describeSObjects\s*\(|SObjectType\s*\.\s*newSObject\s*\(|Type\s*\.\s*forName\s*\(\s*[A-Za-z_]/g)) add('describe', m.index, m[0].replace(/\s+/g, ''));
+  for (const m of code.matchAll(/Database\s*\.\s*(query|countQuery|queryWithBinds|getQueryLocator)\s*\(\s*(?!')([A-Za-z_][\w.]*)/g)) add('SOQL montada', m.index, `Database.${m[1]}(${m[2]})`);
+  for (const m of code.matchAll(/JSON\s*\.\s*(deserializeUntyped|deserialize)\s*\(/g)) add('JSON', m.index, `JSON.${m[1]}`);
+  return out.slice(0, 40);
 }
 
 /** Properties of inner classes (class Wrapper { public Account conta; }), by inner class name (lower case). */
@@ -889,7 +910,7 @@ function metaFieldRefs(file, raw) {
         const table = col ? strip(childText(col, 'table')) : null;
         if (table) {
           const tp = table.split('.');
-          refs.push({ field, base: tp[0], path: [...tp.slice(1), field], how: `coluna da tabela ${table}`, line });
+          refs.push({ field, base: tp[0], path: [...tp.slice(1), field], how: `coluna da tabela ${table}`, line, childPath: true });
           continue;
         }
       } else if (type === 'report') {
