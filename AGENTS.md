@@ -13,10 +13,11 @@ this repository: not in code, docs, tests, fixtures or commit messages. Client s
 
 ## Layout
 - `core/`: generic, knows nothing about Salesforce. Modules plug in through `core/modules/index.js`
-  (contract: `name`, `label`, `matches`, `detect`, `statusLines`, `profileLines`).
+  (contract: `name`, `label`, `matches`, `detect`, `statusLines`, `profileLines`, and the optional `doctorChecks`).
 - `modules/sf/`: everything Salesforce. Advisors are skills in `modules/sf/advisors/<name>/SKILL.md`.
 - `skills/`: core skills. `skills/reldor` is the router.
-- `.claude-plugin/plugin.json` lists every shipped skill. `adapters/kiro/plugin.json` is the Kiro manifest.
+- `.claude-plugin/plugin.json` lists every shipped skill. `adapters/kiro/plugin.json` is the Kiro manifest;
+  `npm run build:adapters` writes the ready Kiro plugin to `plugins/kiro/reldor` (committed; a test checks it is current).
 
 ## Every new or changed feature
 1. Code plus tests (`npm test` must pass; the sample project lives in `test/fixtures/sample-sf`).

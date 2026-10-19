@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "reldor",
+  "description": "Reldor — o guardião do desenvolvimento Salesforce: contexto da org, conselheiros, testes e promoção entre ambientes.",
+  "author": {
+    "name": "Marlon Rodler"
+  },
+  "keywords": [
+    "salesforce",
+    "apex",
+    "lwc",
+    "git",
+    "deploy"
+  ],
+  "license": "UNLICENSED",
+  "version": "0.17.0"
+}

@@ -6,6 +6,7 @@ const { run } = require('../../core/util/exec');
 
 const name = 'sf';
 const label = 'Salesforce';
+const projectMarker = 'sfdx-project.json';
 
 function readProject(root) {
   const file = path.join(root, 'sfdx-project.json');
@@ -173,5 +174,50 @@ function alerts(root, config, status) {
   return out;
 }
 
+/**
+ * reldor doctor: what Salesforce work needs on this machine. The sf CLI is required inside a Salesforce project
+ * (retrieve, running tests); the Code Analyzer is optional (official rules in the review).
+ */
+function doctorChecks(root, { inProject } = {}) {
+  const checks = [];
+  // One sf call (each one takes seconds on Windows): the version and the installed plugins together.
+  const res = run('sf', ['version', '--verbose', '--json'], { timeout: 60000 });
+  let info = null;
+  try {
+    info = res.ok ? JSON.parse(res.stdout) : null;
+  } catch {
+    info = null;
+  }
+  if (!info) {
+    checks.push({ id: 'sf', label: 'Salesforce CLI', state: inProject ? 'missing' : 'optional', required: Boolean(inProject), detail: 'não encontrado', fix: 'npm install --global @salesforce/cli' });
+    return checks;
+  }
+  checks.push({ id: 'sf', label: 'Salesforce CLI', state: 'ok', required: Boolean(inProject), detail: String(info.cliVersion || '').replace(/^@salesforce\/cli\//, '') });
+  const analyzer = (info.pluginVersions || []).some((v) => /^(@salesforce\/(plugin-)?)?code-analyzer\s/i.test(String(v)));
+  checks.push(analyzer
+    ? { id: 'code-analyzer', label: 'Code Analyzer (opcional)', state: 'ok', required: false, detail: 'instalado' }
+    : { id: 'code-analyzer', label: 'Code Analyzer (opcional)', state: 'optional', required: false, detail: 'não instalado: o review roda sem as regras oficiais do PMD', fix: 'sf plugins install code-analyzer (precisa de Java 11+)' });
+  if (inProject) {
+    const org = configuredOrg(root);
+    checks.push(org
+      ? { id: 'org', label: 'Org padrão do projeto', state: 'ok', required: false, detail: org }
+      : { id: 'org', label: 'Org padrão do projeto', state: 'optional', required: false, detail: 'nenhuma: só precisa para retrieve e para rodar testes', fix: 'sf org login web --alias <apelido> --set-default' });
+  }
+  return checks;
+}
+
+/** The default org read from the sf config files (project first, then global), without calling the sf CLI. */
+function configuredOrg(root, home = require('node:os').homedir()) {
+  const read = (file, key) => {
+    try {
+      return JSON.parse(fs.readFileSync(file, 'utf8'))[key] || null;
+    } catch {
+      return null;
+    }
+  };
+  return read(path.join(root, '.sf', 'config.json'), 'target-org') || read(path.join(root, '.sfdx', 'sfdx-config.json'), 'defaultusername')
+    || read(path.join(home, '.sf', 'config.json'), 'target-org') || read(path.join(home, '.sfdx', 'sfdx-config.json'), 'defaultusername');
+}
+
 module.exports = {
-  alerts, name, label, matches, detect, statusLines, profileLines, readProject };
+  alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, doctorChecks, configuredOrg, readProject };
