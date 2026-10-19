@@ -12,9 +12,21 @@ Reldor fixes this with one rule: **scripts do the heavy, reliable work; the AI o
 
 ## Installation (5-minute setup)
 
+Two things, done **once** on your computer: the `reldor` command and the plugin in your AI. After that, in each project, you just talk.
+
+```text
+Your computer
+├─ reldor command ............ step 2: installed by npm, works in any folder
+├─ plugin in your AI ......... step 3: Kiro or Claude Code
+└─ C:\...\salesforce-project . the team's project (has sfdx-project.json)
+   └─ .reldor\ ............... step 5: created here, with the project's settings
+```
+
+Reldor **does not live inside the project**: nothing of it goes into the team's repository, except the `.reldor/` folder.
+
 ### 1. What you need first
 
-Reldor runs on your machine and uses three tools. Check what you already have in a terminal (PowerShell on Windows):
+Open a terminal (on Windows, **PowerShell**; the VS Code terminal works too) and check:
 
 ```bash
 node --version   # Node.js 18 or newer
@@ -22,7 +34,7 @@ git --version    # Git
 sf --version     # Salesforce CLI (sf v2)
 ```
 
-Install what is missing:
+Install what is missing, then **close and open the terminal** so the new commands are found:
 
 | Tool | Windows (PowerShell) | Mac | Other ways |
 |---|---|---|---|
@@ -30,76 +42,89 @@ Install what is missing:
 | **Git** | `winget install Git.Git` | `brew install git` | [git-scm.com](https://git-scm.com/downloads) |
 | **Salesforce CLI** | `npm install --global @salesforce/cli` | `npm install --global @salesforce/cli` | [installer](https://developer.salesforce.com/tools/salesforcecli) |
 
-Close and open the terminal after installing, so the new commands are found.
-
 > The Salesforce CLI installer brings its own Node.js, but it does not put `node` on your PATH. Reldor needs Node.js installed on its own.
 
-Optional, but recommended:
+Optional: the **Salesforce Code Analyzer** adds the official rules (PMD, CPD, security) to `review` (`sf plugins install code-analyzer`, needs Java 11+), and the **GitHub CLI** lets Reldor read open pull requests (`winget install GitHub.cli`, then `gh auth login`).
 
-| Tool | What it adds | Install |
-|---|---|---|
-| **Salesforce Code Analyzer** | PMD, CPD and the official security rules in `review` | `sf plugins install code-analyzer` (needs Java 11+) |
-| **GitHub CLI (`gh`)** | Reading open pull requests | `winget install GitHub.cli` (then `gh auth login`) |
+### 2. Install the `reldor` command
 
-### 2. Get Reldor
-
-Reldor lives in **its own folder, outside your Salesforce projects**. It is installed once and then works in every project.
-
-- **Where:** a tools folder of yours, for example `C:\Users\<you>\tools\reldor` on Windows or `~/tools/reldor` on Mac. Avoid folders synced by OneDrive: `node_modules` makes syncing slow.
-- **Not inside** the Salesforce project: its files would mix with the project's and could end up in a commit.
+In the same terminal, **in any folder**:
 
 ```bash
-cd C:\Users\<you>\tools        # or ~/tools
+npm install -g github:marlonrodler/reldor
+reldor --version
+```
+
+If the version number shows, it worked. You don't pick a folder: npm keeps Reldor with your other global commands, outside your projects.
+
+- **Update:** run the same `npm install -g github:marlonrodler/reldor`.
+- **Uninstall:** `npm uninstall -g reldor`.
+
+<details>
+<summary>Prefer a cloned folder (to contribute to Reldor)?</summary>
+
+Clone it into a tools folder of yours, **outside your projects and outside OneDrive** (`node_modules` makes syncing slow):
+
+```bash
+cd C:\Users\<you>\tools
 git clone https://github.com/marlonrodler/reldor.git
 cd reldor
 npm install
-npm install -g .                 # creates the `reldor` command, usable from any folder
-reldor --version                 # shows the version: it worked
+npm install -g .
 ```
 
-`npm install -g .` links the command to this folder, so **do not move or delete the folder** afterwards. To update: `git pull` and `npm install` inside it.
+`npm install -g .` links the command to that folder: don't move or delete it. To update: `git pull` and `npm install` inside it.
 
-### 3. Add it to your AI
+</details>
 
-<details>
-<summary><strong>Claude Code</strong></summary>
+### 3. Add Reldor to your AI
+
+**Kiro**
+1. Open the **Powers** panel (icon on the left bar) and click **Add Custom Power**.
+2. Choose **Import power from GitHub** and paste this link:
+   `https://github.com/marlonrodler/reldor/tree/main/plugins/kiro/reldor`
+3. Click **Install**.
+
+When a new version comes out, import it again from the same link.
+
+**Claude Code**, in a terminal:
 
 ```bash
 claude plugin marketplace add marlonrodler/reldor
 claude plugin install reldor@reldor
 ```
 
-The repository is private: your GitHub login needs access to it.
+**No AI:** everything works as a terminal command. `reldor help` lists them.
 
-</details>
+### 4. Check, from inside the project
 
-<details>
-<summary><strong>Kiro</strong></summary>
-
-In the Reldor folder:
+1. In VS Code, **File → Open Folder** and pick the Salesforce project folder (the one with `sfdx-project.json`).
+2. **Terminal → New Terminal**. The terminal opens in the project folder.
+3. Run:
 
 ```bash
-npm run build:adapters   # creates dist/kiro/reldor
+reldor doctor
 ```
 
-Then install the `dist/kiro/reldor` folder as a local plugin from the Powers panel.
+It checks what is installed, whether the terminal is in the right folder and whether the plugin is in your AI, and ends with **one** next step. If something is missing, it gives the command that fixes it. See [`doctor`](./docs/doctor.md).
 
-</details>
+### 5. Say hello to your AI, in that project
 
-<details>
-<summary><strong>Just the terminal</strong></summary>
-
-Every feature is a plain command. Run `reldor help` to list them.
-
-</details>
-
-### 4. Say hello, inside the Salesforce project
-
-Open **the Salesforce project folder** (the one with `sfdx-project.json`) in your IDE and tell your AI:
+With the project open, open your AI's chat and say:
 
 > I want to use Reldor
 
-It detects the project, asks only what it cannot detect (environment branches, reference org, design system, whether you already have a tool that commits and opens PRs) and tells you the next step. This creates a `.reldor/` folder **in that project**, with the project's settings. Do it once per project. The environment chain (names, branches, order, which one is production) is yours to set and change later with [`reldor env`](./docs/env.md).
+From here on **you don't run commands**: the AI runs them for you and explains the result. It detects the project, asks only what it cannot detect (environment branches, reference org, design system, whether you already have a tool that commits and opens PRs) and tells you the next step. This creates a `.reldor/` folder **in that project**, with its settings: commit it, it is for the whole team. Do it once per project. The environment chain (names, branches, order, which one is production) is yours to set and change later with [`reldor env`](./docs/env.md).
+
+<details>
+<summary><b>Something went wrong?</b></summary>
+
+- **"reldor is not recognized as a command"**: close and open the terminal (or all of VS Code). If it persists, run `npm prefix -g` and check that this folder is on your PATH.
+- **"running scripts is disabled on this system"** (PowerShell): use `reldor.cmd doctor` instead of `reldor doctor`, or run it in Command Prompt (cmd). Changing PowerShell's execution policy is your IT team's call.
+- **`doctor` says it is Reldor's own folder, or that it found no project**: the terminal is in the wrong folder. Open the project folder in VS Code and open a new terminal.
+- **The AI says it doesn't know Reldor**: the plugin isn't installed (step 3), or the chat was opened before installing. Open a new chat.
+
+</details>
 
 ## Why Reldor exists
 
@@ -170,6 +195,7 @@ A pre-commit guard also runs by itself on every commit, even the ones made by ot
 |---|---|---|
 | [`reldor env`](./docs/env.md) | The environment chain and branch names: show and change, nothing fixed in the code | ✅ |
 | [`reldor review`](./docs/review.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
+| [`reldor doctor`](./docs/doctor.md) | Checks the installation and the terminal's folder, and gives the next step | ✅ |
 | [`reldor init`](./docs/init.md) | Sets Reldor up in a project, asking only what it can't detect | ✅ |
 | [`reldor status`](./docs/status.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |
 | [`reldor index`](./docs/index-command.md) | Builds the project index; reads again only what changed | ✅ |

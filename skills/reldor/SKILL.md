@@ -15,6 +15,11 @@ Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você de
 5. Peça confirmação antes de: retrieve, deploy, commit, merge e rollback.
 6. Veja `git.actions` no `reldor status --json`. Se for `off` (o padrão), **o Reldor só confere e avisa**: nunca crie branch, commite, faça merge, push ou PR. Isso fica com a ferramenta da pessoa (ex.: o plugin de fluxo do time). Rode as checagens antes de a ferramenta agir e diga se está tudo certo.
 
+## Se o comando falhar
+- `reldor` não reconhecido: o Reldor não está instalado neste computador. Explique e, com a confirmação da pessoa, rode `npm install -g github:marlonrodler/reldor`; depois peça para ela abrir um terminal novo.
+- "execução de scripts desabilitada" (PowerShell): use `reldor.cmd` no lugar de `reldor`. Não mude a política de execução do PowerShell.
+- Qualquer outro problema de instalação ou de pasta: rode `reldor doctor --json` e siga o `next`. Se `folder.reldorFolder` for verdadeiro ou `folder.project` estiver vazio, a pessoa abriu a pasta errada: peça para abrir a pasta do projeto (a que tem o `sfdx-project.json`).
+
 ## Primeira vez no projeto
 Se `reldor status` disser que o Reldor não está configurado, conduza a configuração **pela conversa**:
 1. Use o que `reldor status --json` já detectou (projeto, org padrão, specs).
@@ -27,7 +32,7 @@ Se `reldor status` disser que o Reldor não está configurado, conduza a configu
 4. Lembre a pessoa de revisar e commitar `.reldor/reldor.config.yaml` e `.reldor/profile.md`.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor clean`, `reldor rollback`.
+`reldor status`, `reldor doctor`, `reldor init`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor clean`, `reldor rollback`.
 Se a pessoa pedir algo de uma fase futura (veja `guide.md`),
 diga que ainda está em construção e ajude do jeito tradicional, sem inventar resultados.
 

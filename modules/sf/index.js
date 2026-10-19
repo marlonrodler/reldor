@@ -6,6 +6,7 @@ const { run } = require('../../core/util/exec');
 
 const name = 'sf';
 const label = 'Salesforce';
+const projectMarker = 'sfdx-project.json';
 
 function readProject(root) {
   const file = path.join(root, 'sfdx-project.json');
@@ -173,5 +174,29 @@ function alerts(root, config, status) {
   return out;
 }
 
+/**
+ * reldor doctor: what Salesforce work needs on this machine. The sf CLI is required inside a Salesforce project
+ * (retrieve, running tests); the Code Analyzer is optional (official rules in the review).
+ */
+function doctorChecks(root, { inProject } = {}) {
+  const checks = [];
+  const cli = sfCli();
+  checks.push(cli.installed
+    ? { id: 'sf', label: 'Salesforce CLI', state: 'ok', required: Boolean(inProject), detail: cli.version }
+    : { id: 'sf', label: 'Salesforce CLI', state: inProject ? 'missing' : 'optional', required: Boolean(inProject), detail: 'não encontrado', fix: 'npm install --global @salesforce/cli' });
+  if (!cli.installed) return checks;
+  const analyzer = require('./security/analyzer').available(root);
+  checks.push(analyzer
+    ? { id: 'code-analyzer', label: 'Code Analyzer (opcional)', state: 'ok', required: false, detail: 'instalado' }
+    : { id: 'code-analyzer', label: 'Code Analyzer (opcional)', state: 'optional', required: false, detail: 'não instalado: o review roda sem as regras oficiais do PMD', fix: 'sf plugins install code-analyzer (precisa de Java 11+)' });
+  if (inProject) {
+    const org = defaultOrg(root);
+    checks.push(org
+      ? { id: 'org', label: 'Org padrão do projeto', state: 'ok', required: false, detail: org }
+      : { id: 'org', label: 'Org padrão do projeto', state: 'optional', required: false, detail: 'nenhuma: só precisa para retrieve e para rodar testes', fix: 'sf org login web --alias <apelido> --set-default' });
+  }
+  return checks;
+}
+
 module.exports = {
-  alerts, name, label, matches, detect, statusLines, profileLines, readProject };
+  alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, doctorChecks, readProject };

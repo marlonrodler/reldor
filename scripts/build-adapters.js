@@ -6,7 +6,7 @@
  *   skills/*                 -> every plugin
  *   modules/<mod>/advisors/* -> every plugin
  *   .claude-plugin/plugin.json (Claude Code) or adapters/kiro/plugin.json + version from package.json
- * Output: dist/<ide>/reldor/
+ * Output: dist/<ide>/reldor/, and plugins/kiro/reldor/ (committed, so Kiro installs straight from the GitHub link).
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -14,6 +14,7 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const pkg = require(path.join(ROOT, 'package.json'));
+const KIRO_COMMITTED = path.join(ROOT, 'plugins', 'kiro', 'reldor');
 
 const TARGETS = {
   claude: { manifestDir: '.claude-plugin', source: path.join(ROOT, '.claude-plugin', 'plugin.json') },
@@ -35,9 +36,9 @@ function skillSources() {
   return sources;
 }
 
-function build(target) {
+/** Builds one IDE plugin into `out` (default dist/<ide>/reldor). */
+function build(target, out = path.join(DIST, target, 'reldor')) {
   const { manifestDir, source } = TARGETS[target];
-  const out = path.join(DIST, target, 'reldor');
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(path.join(out, manifestDir), { recursive: true });
 
@@ -59,6 +60,8 @@ if (require.main === module) {
     const { out, skills } = build(target);
     process.stdout.write(`✅ ${target}: ${skills} skill(s) em ${path.relative(ROOT, out)}\n`);
   }
+  const { out } = build('kiro', KIRO_COMMITTED);
+  process.stdout.write(`✅ kiro (para o link do GitHub): ${path.relative(ROOT, out)}\n`);
 }
 
-module.exports = { build, skillSources };
+module.exports = { build, skillSources, KIRO_COMMITTED };

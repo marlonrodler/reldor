@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.17.0
+
+- Installation in one line, no folder to choose: `npm install -g github:marlonrodler/reldor` (the same line updates).
+- Kiro installs from a link: the ready plugin is committed in `plugins/kiro/reldor` (Powers → Import power from
+  GitHub). `npm run build:adapters` keeps it current and a test checks it.
+- `reldor doctor`: checks Node.js, Git, the sf CLI, the optional tools, how Reldor was installed, the AI plugin and the
+  terminal's folder (a project, Git, set up, or Reldor's own folder by mistake), and gives one next step.
+- README: installation rewritten step by step (where it lives, which terminal, which folder, the first command, common
+  problems such as the PowerShell script policy).
+
 ## 0.16.1
 
 - The task-refine advisor shows how the request was understood (`detected.why`), asks for confirmation only when a

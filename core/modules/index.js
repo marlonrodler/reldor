@@ -2,7 +2,8 @@
 
 /**
  * Loads technology modules by name. The core only calls the module contract:
- *   name, label, detect(root) -> facts, statusLines(facts) -> string[], profileLines(facts) -> string[]
+ *   name, label, detect(root) -> facts, statusLines(facts) -> string[], profileLines(facts) -> string[],
+ *   and optionally doctorChecks(root, { inProject }) -> checks for `reldor doctor`
  * so a new module (mobile, web) plugs in without changing the core.
  */
 const REGISTRY = {

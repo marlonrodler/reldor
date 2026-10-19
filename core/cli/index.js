@@ -11,6 +11,7 @@ const { promoteCommand, collisionsCommand } = require('./promote');
 const { rollbackCommand } = require('./rollback');
 const { reviewCommand } = require('./review');
 const { envCommand } = require('./env');
+const { doctorCommand } = require('./doctor');
 const pkg = require('../../package.json');
 
 // main: the moments people use (shown first). detail: the pieces behind them, still available.
@@ -24,6 +25,7 @@ const COMMANDS = {
   merge: { run: mergeCommand, main: true, help: 'Merge assistido na branch de merge: reldor merge <sua-branch> (--check, --continue, --abort)' },
   promote: { run: promoteCommand, main: true, help: 'Subir: ensaio para um ambiente (ordem dos commits, dependências)' },
   rollback: { run: rollbackCommand, main: true, help: 'Desfazer: plano de rollback de uma PR (não altera nada)' },
+  doctor: { run: doctorCommand, help: 'Confere a instalação e a pasta do terminal, e diz o próximo passo (--json)' },
   env: { run: envCommand, help: 'Cadeia de ambientes e branches: ver e mudar (set "nome:branch, ...", --base, --merge-branch, --production)' },
   init: { run: initCommand, help: 'Configura o Reldor neste projeto (--yes, --envs, --org, --design-system, --git-actions on|off)' },
   log: { run: logCommand, help: 'Histórico de ações do Reldor (--json)' },

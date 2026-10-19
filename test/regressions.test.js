@@ -311,3 +311,53 @@ test('refine: reads a Portuguese request against English labels, longer names fi
   const c = refineBrief(model, { text: 'ao criar a entrega, preencher o cronograma' });
   assert.ok(c.objects.some((o) => o.name === 'ServiceSchedule__c'), '"o cronograma": the only object named ... Schedule');
 });
+
+test('doctor: how Reldor was installed, the AI plugin, and one next step from the first thing missing', () => {
+  const { installInfo, pluginCheck, nextStep, nodeCheck } = require('../core/doctor');
+  const p = require('node:path');
+  const npmHome = p.join('C:', 'Users', 'ana', 'AppData', 'Roaming', 'npm', 'node_modules', 'reldor');
+  assert.equal(installInfo(npmHome).mode, 'npm');
+  assert.match(installInfo(npmHome).update, /npm install -g github:marlonrodler\/reldor/);
+  const synced = installInfo(p.join('C:', 'Users', 'ana', 'OneDrive', 'Documentos', 'reldor'));
+  assert.equal(synced.mode, 'clone');
+  assert.equal(synced.synced, true);
+  assert.equal(nodeCheck('16.20.0').state, 'missing');
+  assert.equal(nodeCheck('20.1.0').state, 'ok');
+
+  // A Kiro power folder under the home is found; an empty home is "unknown", never an error.
+  const fs2 = require('node:fs');
+  const os2 = require('node:os');
+  const home = fs2.mkdtempSync(p.join(os2.tmpdir(), 'reldor-home-'));
+  assert.equal(pluginCheck(home).state, 'unknown');
+  const power = p.join(home, '.kiro', 'powers', 'installed', 'reldor');
+  fs2.mkdirSync(power, { recursive: true });
+  fs2.writeFileSync(p.join(power, 'plugin.json'), '{"name":"reldor"}');
+  assert.equal(pluginCheck(home).state, 'ok');
+  assert.match(pluginCheck(home).detail, /Kiro/);
+  fs2.rmSync(home, { recursive: true, force: true });
+
+  const ok = [{ required: true, state: 'ok' }];
+  const plugin = { state: 'ok' };
+  const folder = { reldorFolder: false, project: ['Salesforce'], configured: false };
+  assert.match(nextStep([{ required: true, state: 'missing', label: 'Git', fix: 'winget install Git.Git' }], folder, plugin), /Instale Git/);
+  assert.match(nextStep(ok, { ...folder, reldorFolder: true }, plugin), /pasta do próprio Reldor/);
+  assert.match(nextStep(ok, { ...folder, project: [], markers: ['um projeto Salesforce tem o sfdx-project.json'] }, plugin), /sfdx-project\.json/);
+  assert.match(nextStep(ok, folder, { state: 'unknown', fix: 'Kiro: ...' }), /Ligue o Reldor na sua IA/);
+  assert.match(nextStep(ok, folder, plugin), /quero usar o Reldor/);
+  assert.match(nextStep(ok, { ...folder, configured: true }, plugin), /Tudo pronto/);
+});
+
+test('reldor doctor: in Reldor\'s own folder it says to open the project; in a project it finds it', () => {
+  const p = require('node:path');
+  const { spawnSync } = require('node:child_process');
+  const cli = p.join(__dirname, '..', 'core', 'cli', 'index.js');
+  const own = spawnSync(process.execPath, [cli, 'doctor', '--json'], { cwd: p.join(__dirname, '..'), encoding: 'utf8' });
+  const a = JSON.parse(own.stdout);
+  assert.equal(a.folder.reldorFolder, true);
+  assert.match(a.next, /pasta do próprio Reldor|Instale/);
+  const proj = spawnSync(process.execPath, [cli, 'doctor', '--json'], { cwd: p.join(__dirname, 'fixtures', 'sample-sf'), encoding: 'utf8' });
+  const b = JSON.parse(proj.stdout);
+  assert.deepEqual(b.folder.project, ['Salesforce']);
+  assert.equal(b.folder.reldorFolder, false);
+  assert.ok(b.checks.some((c) => c.id === 'sf'));
+});
