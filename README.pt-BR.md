@@ -60,23 +60,6 @@ Se aparecer o número da versão, deu certo. Você não escolhe pasta: o npm gua
 - **Atualizar:** rode o mesmo `npm install -g github:marlonrodler/reldor`.
 - **Desinstalar:** `npm uninstall -g reldor`.
 
-<details>
-<summary>Prefere uma pasta clonada (para contribuir com o Reldor)?</summary>
-
-Clone numa pasta de ferramentas sua, **fora dos projetos e fora do OneDrive** (a `node_modules` deixa a sincronização lenta):
-
-```bash
-cd C:\Users\<você>\ferramentas
-git clone https://github.com/marlonrodler/reldor.git
-cd reldor
-npm install
-npm install -g .
-```
-
-O `npm install -g .` liga o comando a essa pasta: não mova nem apague a pasta. Para atualizar: `git pull` e `npm install` dentro dela.
-
-</details>
-
 ### 3. Ligue o Reldor na sua IA
 
 **Kiro**
@@ -248,9 +231,9 @@ skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```
 
-## Contribuindo
+## Sugestões e problemas
 
-Leia o [AGENTS.md](./AGENTS.md) primeiro. Rode `npm test` antes de cada commit.
+Abra uma [issue](https://github.com/marlonrodler/reldor/issues): ideia, dúvida ou algo que não funcionou. O código é mantido pelo autor; pull requests de fora não são aceitas.
 
 ## Licença
 

@@ -60,23 +60,6 @@ If the version number shows, it worked. You don't pick a folder: npm keeps Reldo
 - **Update:** run the same `npm install -g github:marlonrodler/reldor`.
 - **Uninstall:** `npm uninstall -g reldor`.
 
-<details>
-<summary>Prefer a cloned folder (to contribute to Reldor)?</summary>
-
-Clone it into a tools folder of yours, **outside your projects and outside OneDrive** (`node_modules` makes syncing slow):
-
-```bash
-cd C:\Users\<you>\tools
-git clone https://github.com/marlonrodler/reldor.git
-cd reldor
-npm install
-npm install -g .
-```
-
-`npm install -g .` links the command to that folder: don't move or delete it. To update: `git pull` and `npm install` inside it.
-
-</details>
-
 ### 3. Add Reldor to your AI
 
 **Kiro**
@@ -248,9 +231,9 @@ skills/      the AI's instructions, shared by Kiro and Claude Code
 adapters/    thin per-IDE manifests
 ```
 
-## Contributing
+## Suggestions and problems
 
-Read [AGENTS.md](./AGENTS.md) first. Run `npm test` before every commit.
+Open an [issue](https://github.com/marlonrodler/reldor/issues): an idea, a question or something that did not work. The code is maintained by the author; outside pull requests are not accepted.
 
 ## License
 
