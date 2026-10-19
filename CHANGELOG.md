@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.1
+
+- Security: `fast-xml-parser` 4 → 5.11 and `yaml` 2.5 → 2.9, closing the advisories `npm audit` reported (1
+  critical, 1 moderate). The parsed result is the same as before on 9,716 metadata files from 16 public projects.
+
 ## 0.17.0
 
 - Installation in one line, no folder to choose: `npm install -g github:marlonrodler/reldor` (the same line updates).

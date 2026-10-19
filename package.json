@@ -1,6 +1,6 @@
 {
   "name": "reldor",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "Reldor — o guardião do desenvolvimento Salesforce",
   "private": true,
   "bin": {
@@ -11,8 +11,8 @@
   },
   "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
   "dependencies": {
-    "fast-xml-parser": "^4.5.0",
-    "yaml": "^2.5.1"
+    "fast-xml-parser": "^5.11.2",
+    "yaml": "^2.9.1"
   },
   "scripts": {
     "test": "node --test test/*.test.js",
