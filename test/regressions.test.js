@@ -377,3 +377,8 @@ test('reldor doctor: in Reldor\'s own folder it says to open the project; in a p
   fs2.rmSync(proj2, { recursive: true, force: true });
   fs2.rmSync(home, { recursive: true, force: true });
 });
+
+test('XML: numeric entities such as &#39; are read as the character', () => {
+  const { parseXml } = require('../modules/sf/indexer/xml');
+  assert.equal(parseXml("<a><b>that&#39;s &amp; &#x41;</b></a>").a.b, "that's & A");
+});

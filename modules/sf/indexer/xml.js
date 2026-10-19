@@ -6,6 +6,7 @@ const parser = new XMLParser({
   ignoreAttributes: true,
   parseTagValue: false,
   trimValues: true,
+  htmlEntities: true, // numeric entities such as &#39; come back as the character (v4 did this by default)
   isArray: (name) => ARRAY_TAGS.has(name),
 });
 
