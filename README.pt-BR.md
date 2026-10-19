@@ -63,12 +63,11 @@ Se aparecer o número da versão, deu certo. Você não escolhe pasta: o npm gua
 ### 3. Ligue o Reldor na sua IA
 
 **Kiro**
-1. Abra o painel **Powers** (ícone na barra da esquerda) e clique em **Add Custom Power**.
-2. Escolha **Import power from GitHub** e cole este link:
-   `https://github.com/marlonrodler/reldor/tree/main/plugins/kiro/reldor`
-3. Clique em **Install**.
+1. Clique no ícone do **fantasminha com raio** ⚡ na barra da esquerda (painel **Powers**).
+2. Clique em **Add Custom Power** → **Import power from GitHub**.
+3. Cole o link `https://github.com/marlonrodler/reldor/tree/main/plugins/kiro/reldor` e clique em **Install**.
 
-Quando sair uma versão nova, importe de novo pelo mesmo link.
+👉 Passo a passo com cada clique, o jeito por pasta (repositório privado), como atualizar e como conferir: [Ligar o Reldor no Kiro](./docs/kiro.pt-BR.md).
 
 **Claude Code**, num terminal:
 

@@ -63,12 +63,11 @@ If the version number shows, it worked. You don't pick a folder: npm keeps Reldo
 ### 3. Add Reldor to your AI
 
 **Kiro**
-1. Open the **Powers** panel (icon on the left bar) and click **Add Custom Power**.
-2. Choose **Import power from GitHub** and paste this link:
-   `https://github.com/marlonrodler/reldor/tree/main/plugins/kiro/reldor`
-3. Click **Install**.
+1. Click the **ghost icon with a lightning bolt** ⚡ on the left bar (**Powers** panel).
+2. Click **Add Custom Power** → **Import power from GitHub**.
+3. Paste the link `https://github.com/marlonrodler/reldor/tree/main/plugins/kiro/reldor` and click **Install**.
 
-When a new version comes out, import it again from the same link.
+👉 Step by step with every click, the folder way (private repository), how to update and how to check: [Adding Reldor to Kiro](./docs/kiro.md).
 
 **Claude Code**, in a terminal:
 
