@@ -1,32 +1,32 @@
-<p align="center"><strong>English</strong> · <a href="./doctor.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./doctor.en.md">English</a></p>
 
 # doctor
 
-## What it does
+## O que faz
 
-`doctor` checks that everything is ready to use Reldor **in the folder the terminal is in**, and gives one next step. It changes nothing, it only looks:
+O `doctor` confere se está tudo pronto para usar o Reldor **na pasta em que o terminal está** e diz um único próximo passo. Ele não muda nada, só olha:
 
-- **On the computer:** Node.js (18 or newer), Git, Salesforce CLI, and the optional tools (Code Analyzer, GitHub CLI). It also shows where Reldor is installed and the command to update it.
-- **In the AI:** whether it found the Reldor plugin in Kiro or Claude Code.
-- **In this folder:** whether it is a Salesforce project, a Git repository, and whether Reldor is already set up. It warns when the terminal is in Reldor's own folder instead of the project's.
+- **No computador:** Node.js (18 ou mais novo), Git, Salesforce CLI, e os opcionais (Code Analyzer, GitHub CLI). Também mostra onde o Reldor está instalado e o comando para atualizar.
+- **Na IA:** se achou o plugin do Reldor no Kiro ou no Claude Code.
+- **Nesta pasta:** se é um projeto Salesforce, se é um repositório Git e se o Reldor já foi configurado. Avisa quando o terminal está na pasta do próprio Reldor em vez da pasta do projeto.
 
-## When to reach for it
+## Quando usar
 
-Right after installing, and whenever something does not work. Open the project folder in VS Code, open the terminal (**Terminal → New Terminal**) and run `reldor doctor`. The AI can also run `reldor doctor --json` when a command fails.
+Logo depois de instalar, e sempre que algo não funcionar. Abra a pasta do projeto no VS Code, abra o terminal (**Terminal → New Terminal**) e rode `reldor doctor`. A IA também pode rodar `reldor doctor --json` quando um comando falhar.
 
-## It's working if
+## Está funcionando se
 
-- It ends with "Tudo pronto" or with a step you can follow without looking anything up.
-- Every missing item comes with the command that fixes it.
+- Termina com "Tudo pronto" ou com um passo que você consegue seguir sem procurar mais nada.
+- Cada item que falta vem com o comando que resolve.
 
-## Common questions
+## Perguntas comuns
 
-**It says it didn't find the plugin, but I installed it.**
-It looks in the known Kiro and Claude Code folders. If your AI already knows Reldor (it answers "I want to use Reldor"), you can ignore it.
+**Ele diz que não achou o plugin, mas eu instalei.**
+A procura é por pastas conhecidas do Kiro e do Claude Code. Se a sua IA já conhece o Reldor (responde a "quero usar o Reldor"), pode ignorar esse aviso.
 
-**It says the folder is synced (OneDrive).**
-Reldor was cloned into a OneDrive folder, and syncing slows everything down. Install it with npm (`npm install -g github:marlonrodler/reldor`) and delete the cloned folder.
+**Ele diz que a pasta é sincronizada (OneDrive).**
+O Reldor foi clonado numa pasta do OneDrive, e a sincronização deixa tudo mais lento. Instale pelo npm (`npm install -g github:marlonrodler/reldor`) e apague a pasta clonada.
 
-## Where it fits
+## Onde se encaixa
 
-It is the first command after installing. When it says everything is installed, the next step is to talk to the AI: "I want to use Reldor", which runs [`init`](./init.md).
+É o primeiro comando depois da instalação. Quando ele disser "tudo instalado", o próximo é conversar com a IA: "quero usar o Reldor", que roda o [`init`](./init.md).

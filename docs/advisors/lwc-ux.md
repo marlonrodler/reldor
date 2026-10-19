@@ -1,22 +1,22 @@
-<p align="center"><strong>English</strong> · <a href="./lwc-ux.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./lwc-ux.en.md">English</a></p>
 
 # lwc-ux
 
-## What it does
+## O que faz
 
-`lwc-ux` stops before a Lightning Web Component is written and proposes two or three screen options, from the simplest to the most modern, with pros and cons. It checks for existing components to reuse and offers a throwaway visual POC in `.reldor/work/<task>/poc/`, outside `force-app`, so nothing reaches the repository before you choose.
+O `lwc-ux` para antes de um Lightning Web Component ser escrito e propõe dois ou três caminhos de tela, do mais simples ao mais moderno, com prós e contras. Ele procura componentes que já existem para reaproveitar e oferece uma POC visual descartável em `.reldor/work/<task>/poc/`, fora do `force-app`, para nada chegar ao repositório antes da sua escolha.
 
-Every option follows a quality checklist: base components and SLDS, Lightning Data Service when Apex is not needed, cached reads, loading, empty and error states, accessibility, mobile, and pagination for long lists. SLDS is the default; if the project has no `design_system` set, it asks once and records the answer.
+Todo caminho segue um checklist de qualidade: componentes base e SLDS, Lightning Data Service quando dá para evitar Apex, leitura com cache, estados de carregando, vazio e erro, acessibilidade, celular e paginação em listas longas. O SLDS é o padrão; se o projeto não tiver `design_system` definido, ele pergunta uma vez e grava a resposta.
 
-## When to reach for it
+## Quando usar
 
-The AI reaches for it when someone is about to create or change an LWC. You can ask "how should this screen look?".
+A IA usa quando alguém vai criar ou alterar um LWC. Você pode perguntar "como deveria ser essa tela?".
 
-## It's working if
+## Está funcionando se
 
-- You see options before code.
-- Screens stop shipping without loading and error states.
+- Você vê opções antes do código.
+- As telas param de sair sem estados de carregando e de erro.
 
-## Where it fits
+## Onde se encaixa
 
-It is the screen counterpart of [automation-design](./automation-design.md).
+É o par de tela do [automation-design](./automation-design.md).

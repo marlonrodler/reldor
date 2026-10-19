@@ -1,37 +1,37 @@
-<p align="center"><strong>English</strong> · <a href="./collisions.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./collisions.en.md">English</a></p>
 
 # collisions
 
-## What it does
+## O que faz
 
-`collisions` looks at your colleagues' work **that is moving forward** and lists what changes the same files as your branch. Moving forward means:
+O `collisions` olha o trabalho dos colegas **que está andando** e lista o que mexe nos mesmos arquivos que a sua branch. Conta como "andando":
 
-- an **open pull request** on GitHub (read with `gh`, with your login). For a merge branch, only what the PR adds to the environment counts;
-- a branch that **already reached an environment** (pre-UAT, UAT).
+- uma **PR aberta** no GitHub (lida pelo `gh`, com o seu login). Para a branch de merge, conta só o que a PR acrescenta ao ambiente;
+- uma branch que **já entrou em algum ambiente** (pré-UAT, UAT).
 
-Branches without a PR and outside the environments are ignored, since they may be stalled or abandoned. `--all` shows them all. For each item, the risk:
+Branches sem PR e fora dos ambientes são ignoradas, porque podem estar paradas ou abandonadas. `--all` mostra todas. Para cada item, o risco:
 
-| Risk | When |
+| Risco | Quando |
 |---|---|
-| 🔴 High | The same lines were changed in both branches: a conflict is almost certain |
-| 🟡 Medium | Same file, different parts |
-| ⚪ Low | Profiles, permission sets, labels and similar: the [smart merge](./promote.md#smart-merge) joins them item by item |
+| 🔴 Alto | As mesmas linhas foram mudadas nas duas branches: o conflito é quase certo |
+| 🟡 Médio | Mesmo arquivo, partes diferentes |
+| ⚪ Baixo | Profiles, permission sets, labels e parecidos: o [merge inteligente](./promote.md#merge-inteligente) junta item a item |
 
-For each branch it shows the author, the date of the last commit and the environments it already reached. Environment branches, your own branch and branches already in production are skipped.
+Para cada branch mostra o autor, a data do último commit e os ambientes aonde ela já chegou. Branches de ambiente, a sua própria branch e as que já estão em produção ficam de fora.
 
-## When to reach for it
+## Quando usar
 
-When you start a task on a shared class, and before promoting. Say "is anyone else changing these files?". `--fetch` updates the remote branches first; `--days 60` looks further back.
+Ao começar uma task numa classe compartilhada, e antes de promover. Diga "mais alguém está mexendo nesses arquivos?". O `--fetch` atualiza as branches remotas antes; o `--days 60` olha mais para trás.
 
-## It's working if
+## Está funcionando se
 
-- You hear about the other branch before the conflict, not during the merge.
+- Você fica sabendo da outra branch antes do conflito, e não no meio do merge.
 
-## Common questions
+## Perguntas comuns
 
-**Does it read branches from the server?**
-Branches: only what Git already has locally (use `--fetch` to update). Pull requests come from GitHub through `gh`; without `gh` installed and logged in, it checks only the branches already in environments.
+**Ele lê as branches do servidor?**
+As branches, só o que o Git já tem localmente (use `--fetch` para atualizar). As PRs vêm do GitHub pelo `gh`; sem o `gh` instalado e logado, ele confere só as branches que já estão em ambientes.
 
-## Where it fits
+## Onde se encaixa
 
-Next to [promote](./promote.md): collisions warns early, the rehearsal shows the real conflict.
+Junto com o [promote](./promote.md): o collisions avisa cedo, o ensaio mostra o conflito de verdade.

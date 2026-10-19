@@ -1,12 +1,12 @@
-<p align="center"><strong>English</strong> · <a href="./status.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./status.en.md">English</a></p>
 
 # status
 
-## What it does
+## O que faz
 
-`status` tells you where you are and what to do next: current branch, files not committed yet, the Salesforce project facts, the spec linked to the branch, and **which environments already have your feature** (for example ✅ develop · ⬜ uat · ⬜ production). It ends with one suggested next step.
+O `status` diz onde você está e o que fazer agora: a branch atual, os arquivos ainda não commitados, os dados do projeto Salesforce, a spec ligada à branch e **em quais ambientes a sua feature já está** (por exemplo ✅ develop · ⬜ uat · ⬜ produção). No fim, sugere um próximo passo.
 
-**Automatic warnings.** If your branch is not in the next environment yet, `status` runs the [promotion rehearsal](./promote.md) and the [collision radar](./collisions.md) by itself and shows **only the problems**, for example:
+**Avisos automáticos.** Se a sua branch ainda não está no próximo ambiente, o `status` faz sozinho o [ensaio de promoção](./promote.md) e o [radar de colisão](./collisions.md) e mostra **só os problemas**, por exemplo:
 
 ```
 🛡️  Avisos (se subir agora):
@@ -14,24 +14,24 @@
 🟡 ana (feature/x, PR #45 para develop) mudou as mesmas linhas que você em ContaController.cls.
 ```
 
-With no problems, nothing shows. The result is kept for 30 minutes for the same commit; `--quick` skips the warnings.
+Sem problemas, não aparece nada. O resultado fica guardado por 30 minutos para o mesmo commit; `--quick` pula os avisos.
 
-It compares your branch's own commits (the ones not in production yet) with each environment branch, preferring the remote branch (`origin/...`).
+Ele compara os commits próprios da sua branch (os que ainda não estão em produção) com cada branch de ambiente, dando preferência à branch remota (`origin/...`).
 
-## When to reach for it
+## Quando usar
 
-It is the first thing the AI runs when you say "I want to use Reldor". In the terminal: `reldor status`, `reldor status --fetch` to refresh the remote branches first, or `--json` for scripts.
+É a primeira coisa que a IA roda quando você diz "quero usar o Reldor". No terminal: `reldor status`, `reldor status --fetch` para atualizar as branches remotas antes, ou `--json` para scripts.
 
-## It's working if
+## Está funcionando se
 
-- You stop asking "did this go to UAT already?".
-- The suggested next step matches what you would have done.
+- Você para de perguntar "isso já foi pra UAT?".
+- O próximo passo sugerido é o que você faria.
 
-## Common questions
+## Perguntas comuns
 
-**It says a commit is missing in UAT, but I merged it.**
-Run with `--fetch`: your local copy of `origin/...` may be old.
+**Ele diz que falta um commit em UAT, mas eu já fiz o merge.**
+Rode com `--fetch`: a sua cópia local de `origin/...` pode estar desatualizada.
 
-## Where it fits
+## Onde se encaixa
 
-`status` is the router's eyes. The `reldor` skill reads it to decide which step to lead you to.
+O `status` é os olhos do roteador. A skill `reldor` lê o resultado para decidir o próximo passo.

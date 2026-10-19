@@ -1,29 +1,29 @@
-<p align="center"><strong>English</strong> · <a href="./xml.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./xml.en.md">English</a></p>
 
 # xml
 
-## What it does
+## O que faz
 
-`xml` organizes metadata XML the way Salesforce retrieves it: entries sorted by their key, and exact duplicates removed. It covers profiles, permission sets, muting permission sets, custom labels, translations, sharing rules, global and standard value sets, object translations and `package.xml`. Picklist values keep their order, because the order is what users see.
+O `xml` organiza os XMLs de metadado do jeito que o Salesforce faz no retrieve: entradas ordenadas pela chave e duplicados idênticos removidos. Ele cobre profiles, permission sets, muting permission sets, custom labels, traduções, sharing rules, global e standard value sets, traduções de objeto e `package.xml`. Os valores de picklist mantêm a ordem, porque a ordem é o que o usuário vê.
 
-It only touches the sections it knows and keeps the exact text of everything else, so the diff shows only what really changed. Two entries with the same key and **different** values (for example the same field, once readable and once editable) are a **conflict**: Reldor leaves both and asks you to decide, because guessing a permission is not safe.
+Ele só mexe nas seções que conhece e mantém o texto exato do resto, então o diff mostra só o que mudou de verdade. Duas entradas com a mesma chave e valores **diferentes** (por exemplo, o mesmo campo uma vez só leitura e outra editável) são um **conflito**: o Reldor deixa as duas e pede para você decidir, porque adivinhar uma permissão não é seguro.
 
-Sorted files also make merges between environments calmer: fewer lines move, so Git finds fewer false conflicts.
+Arquivos ordenados também deixam os merges entre ambientes mais tranquilos: menos linhas mudam de lugar, então o Git acha menos conflitos falsos.
 
-## When to reach for it
+## Quando usar
 
-Before a commit (the AI runs it on the files you changed), or once with `reldor xml --all` to clean a project. `reldor xml --check` only reports; the pre-commit guard uses it.
+Antes de um commit (a IA roda nos arquivos que você mudou), ou uma vez com `reldor xml --all` para limpar um projeto. O `reldor xml --check` só aponta; o gancho pre-commit usa ele.
 
-## It's working if
+## Está funcionando se
 
-- Deploys stop failing with "Duplicate value found".
-- Diffs of profiles and permission sets show only real changes.
+- Os deploys param de falhar com "Duplicate value found".
+- Os diffs de profiles e permission sets mostram só as mudanças reais.
 
-## Common questions
+## Perguntas comuns
 
-**Does it change layouts or flows?**
-No. Their order is meaningful, so they are left alone.
+**Ele mexe em layouts ou flows?**
+Não. A ordem deles tem significado, então ficam como estão.
 
-## Where it fits
+## Onde se encaixa
 
-It runs before [commit](./commit.md) and inside the pre-commit guard.
+Roda antes do [commit](./commit.md) e dentro do gancho pre-commit.

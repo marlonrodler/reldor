@@ -1,58 +1,58 @@
-<p align="center"><strong>English</strong> · <a href="./promote.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./promote.en.md">English</a></p>
 
 # promote
 
-## What it does
+## O que faz
 
-`promote <environment>` is a **rehearsal**: it shows what happens if your branch is merged into the branch of that environment, before you create the merge branch and the pull request. Nothing in your repository changes.
+O `promote <ambiente>` é um **ensaio**: mostra o que acontece se a sua branch for juntada na branch daquele ambiente, antes de você criar a branch de merge e a pull request. Nada muda no seu repositório.
 
-| Check | What it tells you |
+| Checagem | O que mostra |
 |---|---|
-| Commits that go along | Exactly what the merge takes to the environment |
-| Order | Commits that have not gone through the previous environment yet. The pipeline blocks these |
-| Other people's commits | Commits by someone else that would go along, usually because develop was merged or pulled into your branch |
-| Conflicts | Each conflicting file. Profiles, permission sets, labels and similar files are tried item by item: most of them are not real conflicts |
-| Missing dependencies | Fields, objects and classes your changes use that will not exist in the environment after the merge, and where they do exist ("only in develop") |
+| Commits que vão junto | Exatamente o que o merge leva para o ambiente |
+| Ordem | Commits que ainda não passaram pelo ambiente anterior. A esteira bloqueia esses |
+| Commits de outras pessoas | Commits de outra pessoa que iriam junto, normalmente porque a develop foi juntada (merge ou pull) na sua branch |
+| Conflitos | Cada arquivo em conflito. Profiles, permission sets, labels e parecidos são testados item a item: a maioria não é conflito de verdade |
+| Dependências faltando | Campos, objetos e classes que as suas mudanças usam e que não vão existir no ambiente depois do merge, e onde eles existem ("só na develop") |
 
-At the end it shows the next step in the team's flow: create the merge branch from the environment, `git merge` your branch, open the PR.
+No fim, mostra o próximo passo no fluxo do time: criar a branch de merge a partir do ambiente, fazer `git merge` da sua branch e abrir a PR.
 
-Without an environment name, it picks the first environment your branch has not reached yet. The environments and their order come from `.reldor/reldor.config.yaml`.
+Sem o nome do ambiente, ele escolhe o primeiro ambiente aonde a sua branch ainda não chegou. Os ambientes e a ordem vêm do `.reldor/reldor.config.yaml`.
 
-## Smart merge
+## Merge inteligente
 
-`reldor merge install` turns on, for this repository and only on your machine, a Git merge driver for profiles, permission sets, muting permission sets, labels, translations, sharing rules, value sets and `package.xml`. It runs inside the normal `git merge` (also from VS Code):
+O `reldor merge install` liga, neste repositório e só na sua máquina, um driver de merge do Git para profiles, permission sets, muting permission sets, labels, traduções, sharing rules, value sets e `package.xml`. Ele roda dentro do `git merge` normal (inclusive pelo VS Code):
 
-- items changed on only one side are joined;
-- a real conflict happens only when both sides changed **the same item** differently, and only that item gets conflict markers;
-- the result comes out sorted, as Salesforce retrieves it.
+- itens mudados por um lado só são juntados;
+- só existe conflito de verdade quando os dois lados mudaram **o mesmo item** de jeitos diferentes, e só esse item recebe as marcações de conflito;
+- o resultado sai ordenado, como o Salesforce faz no retrieve.
 
-It also turns on `git rerere`: Git remembers how you resolved a conflict and repeats it in the next environment. Useful because the conflict is resolved in each environment's merge branch, so it shows up again in UAT and in master.
+Ele também liga o `git rerere`: o Git lembra como você resolveu um conflito e repete a resolução no próximo ambiente. Isso ajuda porque o conflito é resolvido na branch de merge de cada ambiente, então o mesmo conflito volta na UAT e na master.
 
-Nothing goes to the shared repository: the settings live in `.git/info/attributes` and `.git/config`. `reldor merge uninstall` removes them.
+Nada vai para o repositório compartilhado: as configurações ficam em `.git/info/attributes` e `.git/config`. O `reldor merge uninstall` remove tudo.
 
-## When to reach for it
+## Quando usar
 
-Say "I want to take this to UAT". The AI runs the rehearsal, explains each problem and offers the next step.
+Diga "quero subir para UAT". A IA roda o ensaio, explica cada problema e oferece o próximo passo.
 
-## It's working if
+## Está funcionando se
 
-- The pipeline stops failing because of commit order or a field that only exists in develop.
-- Profile conflicts stop taking time.
+- A esteira para de falhar por ordem de commit ou por campo que só existe na develop.
+- Conflito de profile para de tomar tempo.
 
-## Common questions
+## Perguntas comuns
 
-**Does it need a recent Git?**
-With Git 2.38 or newer it simulates the merge in memory. Older Git works too, using a temporary worktree outside your folder.
+**Precisa de Git recente?**
+Com Git 2.38 ou mais novo, ele simula o merge em memória. Git mais antigo também funciona, usando uma worktree temporária fora da sua pasta.
 
-**It says "other people's commits", but we are a pair.**
-Then everything is fine. The check compares the commit author with your `user.email`.
+**Aparece "commits de outras pessoas", mas trabalhamos em par.**
+Então está tudo certo. A checagem compara o autor do commit com o seu `user.email`.
 
-**Should I fix the conflict in my branch before?**
-No. Conflicts are resolved in the merge branch, as usual: fixing them in your development branch would pull in other people's work. The rehearsal only tells you in advance, so it is not a surprise.
+**Devo resolver o conflito na minha branch antes?**
+Não. Conflito se resolve na branch de merge, como sempre: resolver na sua branch de desenvolvimento puxaria o trabalho de outras pessoas. O ensaio só avisa antes, para não ser surpresa.
 
-**Does it replace the pipeline?**
-No. It runs the same kind of checks earlier, on your machine, so the pipeline does not fail.
+**Substitui a esteira?**
+Não. Ele faz o mesmo tipo de checagem antes, na sua máquina, para a esteira não falhar.
 
-## Where it fits
+## Onde se encaixa
 
-After [commit](./commit.md) and [test-radar](./test-radar.md), before the pull request. It uses the same item rules as the [XML organizer](./xml.md).
+Depois do [commit](./commit.md) e do [test-radar](./test-radar.md), antes da pull request. Usa as mesmas regras de item do [organizador de XML](./xml.md).

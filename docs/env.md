@@ -1,12 +1,12 @@
-<p align="center"><strong>English</strong> · <a href="./env.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./env.en.md">English</a></p>
 
 # env
 
-## What it does
+## O que faz
 
-The environment chain is **configuration, not code**. Each project says, in `.reldor/reldor.config.yaml`, which environments it has, in which order, and which branch each one uses. Any names, any branches, any number of environments.
+A cadeia de ambientes é **configuração, não código**. Cada projeto diz, no `.reldor/reldor.config.yaml`, quais ambientes tem, em que ordem e qual branch cada um usa. Qualquer nome, qualquer branch, qualquer quantidade de ambientes.
 
-`reldor env` shows the chain and lets you change it:
+O `reldor env` mostra a cadeia e deixa mudar:
 
 ```
 1. pre-uat → develop/time-a
@@ -17,24 +17,24 @@ The environment chain is **configuration, not code**. Each project says, in `.re
 • Nome sugerido da branch de merge: merge/{feature}-{env}
 ```
 
-| To change | Command |
+| Para mudar | Comando |
 |---|---|
-| The chain (order = promotion order) | `reldor env set "pre-uat:develop/x, uat:rc/uat, prod:master"` |
-| Which environment is production (deploy blocked) | `reldor env --production prod` (default: the last one) |
-| Where development branches start | `reldor env --base master` (default: the production branch) |
-| Merge branch name pattern | `reldor env --merge-branch "merge/{env}/{feature}"` |
-| Rollback branch name pattern | `reldor env --rollback-branch "rollback/{id}"` |
+| A cadeia (a ordem é a ordem de promoção) | `reldor env set "pre-uat:develop/x, uat:rc/uat, prod:master"` |
+| Qual ambiente é produção (deploy bloqueado) | `reldor env --production prod` (padrão: o último) |
+| De onde nascem as branches de desenvolvimento | `reldor env --base master` (padrão: a branch de produção) |
+| Padrão do nome da branch de merge | `reldor env --merge-branch "merge/{env}/{feature}"` |
+| Padrão do nome da branch de rollback | `reldor env --rollback-branch "rollback/{id}"` |
 
-Orgs (`org:`) of environments with the same name are kept when you change the chain.
+As orgs (`org:`) dos ambientes com o mesmo nome são mantidas quando você muda a cadeia.
 
-## When to reach for it
+## Quando usar
 
-Once per project, and whenever the team's branches change. Say "change the environments to ...". Commit `.reldor/reldor.config.yaml` so the whole team uses the same chain.
+Uma vez por projeto, e sempre que as branches do time mudarem. Diga "muda os ambientes para ...". Commite o `.reldor/reldor.config.yaml` para o time inteiro usar a mesma cadeia.
 
-## It's working if
+## Está funcionando se
 
-- `status`, `promote`, `merge` and `rollback` speak your team's environment names and branches.
+- `status`, `promote`, `merge` e `rollback` falam os nomes de ambiente e as branches do seu time.
 
-## Where it fits
+## Onde se encaixa
 
-[init](./init.md) asks for the chain the first time; `env` changes it later.
+O [init](./init.md) pergunta a cadeia na primeira vez; o `env` muda depois.

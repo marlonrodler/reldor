@@ -1,20 +1,20 @@
-<p align="center"><strong>English</strong> · <a href="./spec-review.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./spec-review.en.md">English</a></p>
 
 # spec-review
 
-## What it does
+## O que faz
 
-`spec-review` reads a spec (requirements, design, tasks) before it runs and points out only the gaps that exist: expected volume, what happens to existing records, measurable acceptance criteria, who uses it and with which permissions, error behaviour, record types, and conflicts with automations already on the object. For each gap it explains why it matters and suggests the missing text. If nothing relevant is missing, it stays quiet.
+O `spec-review` lê uma spec (requisitos, design, tarefas) antes de ela rodar e aponta só as lacunas que existem: volume esperado, o que acontece com registros que já existem, critérios de aceite mensuráveis, quem usa e com quais permissões, comportamento em erro, record types e conflito com automações que já estão no objeto. Para cada lacuna, explica por que importa e sugere o texto que falta. Se não falta nada relevante, fica quieto.
 
-## When to reach for it
+## Quando usar
 
-The AI reaches for it when a spec is created or changed, or right before the tasks of a spec run (by your spec generator or by the AI itself). You can also ask "review this spec".
+A IA usa quando uma spec é criada ou alterada, ou logo antes de as tarefas de uma spec rodarem (pelo seu gerador de specs ou pela própria IA). Você também pode pedir "revisa esta spec".
 
-## It's working if
+## Está funcionando se
 
-- Questions show up in refinement, not in the middle of development.
-- It sometimes says nothing, because the spec was already good.
+- As perguntas aparecem no refinamento, e não no meio do desenvolvimento.
+- Às vezes ele não diz nada, porque a spec já estava boa.
 
-## Where it fits
+## Onde se encaixa
 
-It works with any spec generator, or with none. Pair it with [automation-design](./automation-design.md) when the spec adds business rules.
+Funciona com qualquer gerador de specs, ou sem nenhum. Combine com o [automation-design](./automation-design.md) quando a spec trouxer regra de negócio.
