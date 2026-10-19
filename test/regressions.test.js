@@ -360,4 +360,20 @@ test('reldor doctor: in Reldor\'s own folder it says to open the project; in a p
   assert.deepEqual(b.folder.project, ['Salesforce']);
   assert.equal(b.folder.reldorFolder, false);
   assert.ok(b.checks.some((c) => c.id === 'sf'));
+
+  // The default org comes from the sf config files, without calling the sf CLI.
+  const { configuredOrg } = require('../modules/sf');
+  const fs2 = require('node:fs');
+  const os2 = require('node:os');
+  const proj2 = fs2.mkdtempSync(p.join(os2.tmpdir(), 'reldor-org-'));
+  const home = fs2.mkdtempSync(p.join(os2.tmpdir(), 'reldor-home-'));
+  assert.equal(configuredOrg(proj2, home), null);
+  fs2.mkdirSync(p.join(home, '.sf'));
+  fs2.writeFileSync(p.join(home, '.sf', 'config.json'), '{"target-org":"global-dev"}');
+  assert.equal(configuredOrg(proj2, home), 'global-dev');
+  fs2.mkdirSync(p.join(proj2, '.sf'));
+  fs2.writeFileSync(p.join(proj2, '.sf', 'config.json'), '{"target-org":"uat"}');
+  assert.equal(configuredOrg(proj2, home), 'uat');
+  fs2.rmSync(proj2, { recursive: true, force: true });
+  fs2.rmSync(home, { recursive: true, force: true });
 });
