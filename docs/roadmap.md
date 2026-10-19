@@ -1,19 +1,19 @@
-<p align="center"><strong>English</strong> · <a href="./roadmap.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./roadmap.en.md">English</a></p>
 
 # Roadmap
 
-Each phase starts only when the previous one meets its exit criterion.
+Cada fase só começa quando a anterior passa no critério.
 
-| Phase | Delivers | Done when | |
+| Fase | Entrega | Passa quando | |
 |---|---|---|---|
-| **0 · Foundation** | `init`, `status`, `log`, skills and the Kiro and Claude Code plugins | The AI describes your current situation without mistakes | ✅ |
-| **1 · Knowledge and advisors (MVP 1)** ✅ in code | Index ✅, reverse engineering (`explain`) ✅, where it is used (`usages`) ✅, advisors ✅, test radar ✅, query check ✅, task refinement ✅ | A senior dev validates the chain of 3 real processes | 🚧 |
-| **2 · Development and Git (MVP 2)** | Query check ✅, security review ✅, quality review ✅, org confirmation ✅, clean commit ✅, XML organizer ✅, pre-commit guard ✅, smart merge ✅, `rerere` ✅, promotion rehearsal ✅, assisted merge ✅, clean before commit ✅, rollback plan ✅, AI context | 2 weeks without a wrong merge or commit | |
-| **3 · Pilot and measurement** | Real use by one developer, with the client's permission | Gains measured and the developer wants to keep it | |
-| **4 · Broaden and expand** | Test data factory, executed rollback, error analysis, deploy checklist, Quick Deploy, drift, automatic docs, connectors, shared index, other clients | | |
+| **0 · Fundação** | `init`, `status`, `log`, skills e plugins do Kiro e do Claude Code | A IA explica sua situação atual sem erro | ✅ |
+| **1 · Conhecimento e conselheiros (MVP 1)** ✅ no código | Índice ✅, engenharia reversa (`explain`) ✅, onde é usado (`usages`) ✅, conselheiros ✅, radar de testes ✅, checagem de queries ✅, refinador de task ✅ | A cadeia de 3 processos reais é validada por um dev sênior | 🚧 |
+| **2 · Desenvolvimento e Git (MVP 2)** | Checagem de queries ✅, revisão de segurança ✅, revisão de qualidade ✅, org confirmada ✅, commit limpo ✅, organizador de XML ✅, gancho pre-commit ✅, merge inteligente ✅, `rerere` ✅, ensaio de promoção ✅, merge assistido ✅, limpar antes do commit ✅, plano de rollback ✅, contexto para a IA | 2 semanas sem nenhum merge ou commit errado | |
+| **3 · Piloto e medição** | Uso real com um desenvolvedor, com autorização do cliente | Ganho medido e o dev quer continuar | |
+| **4 · Ampliação e expansão** | Massa de teste, rollback executado, análise de erro, checklist de deploy, Quick Deploy, drift, documentação automática, conectores, índice compartilhado, outros clientes | | |
 
-## Quick win (today)
-Turn on `git rerere` to replay repeated conflicts across environments:
+## Ganho rápido (já)
+Ligue o `git rerere` para reaplicar conflitos repetidos entre ambientes:
 
 ```bash
 git config --global rerere.enabled true

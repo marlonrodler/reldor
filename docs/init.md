@@ -1,30 +1,30 @@
-<p align="center"><strong>English</strong> · <a href="./init.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./init.en.md">English</a></p>
 
 # init
 
-## What it does
+## O que faz
 
-`init` sets Reldor up in a project in one step. It detects what it can on its own (the Salesforce project, the `sf` CLI, the default org, fflib, existing specs and branches) and asks only three things: the environment branches in promotion order, the reference org, and whether the team follows SLDS. It writes `.reldor/reldor.config.yaml` and `.reldor/profile.md`, and adds Reldor's local folders to `.gitignore`.
+O `init` configura o Reldor num projeto de uma vez. Ele descobre sozinho o que consegue (o projeto Salesforce, o `sf` CLI, a org padrão, o fflib, as specs e as branches) e pergunta só três coisas: as branches dos ambientes na ordem de promoção, a org de referência e se o time segue o SLDS. Ele grava `.reldor/reldor.config.yaml` e `.reldor/profile.md`, e coloca as pastas locais do Reldor no `.gitignore`.
 
-The last environment (production) is always marked as blocked for deploys.
+O último ambiente (produção) sempre fica com deploy bloqueado.
 
-## When to reach for it
+## Quando usar
 
-Say "I want to use Reldor" in a new project and the AI runs it for you, asking the questions in the chat (environments, reference org, design system, and whether you already have a tool that creates branches, commits and opens PRs: if yes, Reldor's Git actions stay off). In the terminal: `reldor init`, or `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds --git-actions off`.
+Diga "quero usar o Reldor" num projeto novo e a IA roda por você, fazendo as perguntas no chat (ambientes, org de referência, design system e se vocês já têm uma ferramenta que cria branch, commita e abre PR: se sim, as ações de Git do Reldor ficam desligadas). No terminal: `reldor init`, ou `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds --git-actions off`.
 
-## It's working if
+## Está funcionando se
 
-- A new developer is ready in a few minutes.
-- `reldor status` shows the right environments and spec right after.
+- Um dev novo fica pronto em poucos minutos.
+- O `reldor status` mostra os ambientes e a spec certos logo depois.
 
-## Common questions
+## Perguntas comuns
 
-**Do I commit `.reldor/`?**
-Commit `reldor.config.yaml` and `profile.md`: they belong to the whole team. The cache, work and log folders stay out of Git.
+**Eu commito a `.reldor/`?**
+Commite `reldor.config.yaml` e `profile.md`: são do time todo. As pastas de cache, trabalho e log ficam fora do Git.
 
-**How do I change the answers?**
-Edit the YAML, or run `reldor init --force`.
+**Como mudo as respostas?**
+Edite o YAML ou rode `reldor init --force`.
 
-## Where it fits
+## Onde se encaixa
 
-It runs once per project. Everything else reads what it writes.
+Roda uma vez por projeto. Todo o resto lê o que ele grava.

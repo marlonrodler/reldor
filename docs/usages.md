@@ -1,45 +1,45 @@
-<p align="center"><strong>English</strong> · <a href="./usages.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./usages.en.md">English</a></p>
 
 # usages
 
-## What it does
+## O que faz
 
-`usages` lists every place something is used: a field (`Account.CPF__c` or just `CPF__c`), a class, a method (`AccountsService.calcularScore`), a flow or an object. It looks in Apex, selectors, triggers, flows, validation rules, formulas, roll-ups, workflow field updates and LWC imports.
+O `usages` lista todos os lugares onde algo é usado: um campo (`Account.CPF__c` ou só `CPF__c`), uma classe, um método (`AccountsService.calcularScore`), um flow ou um objeto. Ele procura em Apex, selectors, triggers, flows, validation rules, fórmulas, roll-ups, atualizações de campo de workflow e imports de LWC.
 
-Every hit has a certainty. **Certain**: the name is used directly. **Likely**: the code uses the class or its fflib interface and calls a method with that name. **Possible**: the name only appears inside a text string, such as `Type.forName('...')`, so a search by name would miss it.
+Cada resultado vem com um grau de certeza. **Certo**: o nome é usado diretamente. **Provável**: o código usa a classe ou a interface dela no fflib e chama um método com esse nome. **Possível**: o nome só aparece dentro de um texto, como em `Type.forName('...')`, que uma busca comum deixaria passar.
 
-## When to reach for it
+## Quando usar
 
-Ask "where is this used?" or "I'm going to delete X", or run `reldor usages <item>`. Reach for it before deleting or renaming anything, before changing a field's type, and during a rollback.
+Pergunte "onde isso é usado?" ou "vou apagar X", ou rode `reldor usages <item>`. Use antes de apagar ou renomear qualquer coisa, antes de mudar o tipo de um campo e durante um rollback.
 
-To see what runs when a record is saved, use [explain](./explain.md) instead.
+Para ver o que roda quando um registro é salvo, use o [explain](./explain.md).
 
-## It's working if
+## Está funcionando se
 
-- Your deploys stop failing with "referenced by" errors after a delete.
-- "Likely" and "possible" hits make you look twice, and sometimes they matter.
+- Seus deploys param de falhar com erro de "referenciado por" depois de apagar algo.
+- Os itens "provável" e "possível" fazem você olhar duas vezes, e às vezes eles importam.
 
-## Common questions
+## Perguntas comuns
 
-**Does a field with the same name on several objects (`Status__c`, `Contact__c`) get mixed up?**
-No. Every use is tied to the object that owns the field by what the code says: the variable's type (`List<Account> accounts`), the query's `FROM` (subqueries and semi-joins too), `new Account(...)`, a `Parent__r.Field__c` path, a method's return type, a data class property, the flow element or `$Record`, the screen's form or imports, the report column, the layout's related list. Uses on other objects are listed apart under "Fora da lista", so nothing disappears silently.
+**Campo com o mesmo nome em vários objetos (`Status__c`, `Contact__c`) se mistura?**
+Não. Cada uso é ligado ao objeto dono do campo pelo que o código diz: o tipo da variável (`List<Account> contas`), o `FROM` da query (subconsultas e semi-joins também), `new Account(...)`, o caminho `Pai__r.Campo__c`, o retorno de um método, a classe de dados com a propriedade, o elemento do flow ou o `$Record`, o formulário ou os imports da tela, a coluna do relatório, a lista relacionada do layout. O que é de outro objeto aparece separado em "Fora da lista", para nada sumir em silêncio.
 
-**And when the code does not say the object?**
-That happens with a field name in a string handed to dynamic code, such as `'Status__c'` in a field list or `prefix + 'Role__c'`. The hit is then **possible**, with the line, the reason and the objects that have a field with that name. When only one object in the project has that field, it is certain.
+**E quando o código não diz o objeto?**
+Acontece com nome de campo em texto passado para código dinâmico, por exemplo `'Status__c'` numa lista de campos ou `prefix + 'Role__c'`. Aí o item vem como **possível**, com a linha, o motivo e os objetos que têm um campo com esse nome. Se só um objeto do projeto tem aquele campo, ele é certo.
 
-**And a field used dynamically (an engine that receives the field name)?**
-`usages` takes the second look a developer would, in the "Campos dinâmicos" section:
-- it finds the objects that **keep field names** (custom metadata, custom settings and objects with fields such as `Field__c`, `Field_API_Name__c`, `Source_Field__c`, or a relationship to FieldDefinition) and the classes that **use that name** to reach the field (`record.get(name)`, `fields.getMap()`, `Database.query(text)`);
-- **custom metadata**: the records are in the project, so it checks them and says which records name the field;
-- **custom settings and objects**: the records live in the org and Reldor does not read data; it says "check for records" and hands over the SOQL to run;
-- **text in code** (a JSON built in an LWC, a field list in Apex): it shows the file and line, because these break at run time, not at compile time.
+**E campo usado de forma dinâmica (motor que recebe o nome do campo)?**
+O `usages` faz a segunda olhada que um desenvolvedor faria, na seção "Campos dinâmicos":
+- acha os objetos que **guardam nomes de campo** (custom metadata, custom settings e objetos com campos como `Field__c`, `Field_API_Name__c`, `Source_Field__c`, ou relação com FieldDefinition) e as classes que **usam esse nome** para chegar no campo (`registro.get(nome)`, `fields.getMap()`, `Database.query(texto)`);
+- **custom metadata**: os registros estão no projeto, então ele confere e diz quais registros citam o campo;
+- **custom setting e objeto**: os registros ficam na org e o Reldor não lê dados; ele avisa "confira se há registro" e entrega a SOQL pronta;
+- **texto fixo no código** (JSON montado num LWC, lista de campos num Apex): mostra o arquivo e a linha, porque esses quebram em tempo de execução, não na compilação.
 
-**Does it cover layouts, permissions and other metadata?**
-Yes: layouts (related lists included), list views, compact layouts, record types, permission sets and profiles, reports, report types, dashboards, quick actions, Lightning pages, field sets, sharing sets, rules, apps, custom metadata records, Apex, triggers, flows, LWC, Aura and Visualforce.
+**Cobre layouts, permissões e outros metadados?**
+Sim: layouts (inclusive listas relacionadas), list views, compact layouts, record types, permission sets e profiles, reports, report types, dashboards, quick actions, páginas Lightning, field sets, sharing sets, regras, apps, registros de custom metadata, Apex, triggers, flows, LWC, Aura e Visualforce.
 
-**What does it leave out?**
-Jest tests (`__tests__`), comments and sentences (error and assert messages that only mention the field).
+**O que fica de fora?**
+Testes Jest (`__tests__`), comentários e frases (mensagens de erro e de assert que só citam o campo).
 
-## Where it fits
+## Onde se encaixa
 
-`usages` powers safe delete today, and the rollback plan and query checks in Phase 2.
+O `usages` já faz a exclusão segura hoje e vai alimentar o plano de rollback e a checagem de queries na Fase 2.

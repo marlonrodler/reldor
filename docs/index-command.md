@@ -1,30 +1,30 @@
-<p align="center"><strong>English</strong> · <a href="./index-command.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./index-command.en.md">English</a></p>
 
 # index
 
-## What it does
+## O que faz
 
-`index` reads the project's metadata and builds a summary of the org: objects, fields, validation rules, record types, triggers, Apex classes (kind, SOQL, DML, fields used, fflib selectors and domains), flows, workflow rules and LWC. It never stores records and never keeps code bodies, only names and links.
+O `index` lê os metadados do projeto e monta um sumário da org: objetos, campos, validation rules, record types, triggers, classes Apex (tipo, SOQL, DML, campos usados, selectors e domains do fflib), flows, workflow rules e LWC. Ele nunca guarda registros e nunca guarda o código em si, só nomes e ligações.
 
-It is incremental: the next run reads again only the files whose size or date changed, so it stays fast on large projects.
+É incremental: na próxima vez, só relê os arquivos que mudaram de tamanho ou data, então continua rápido em projetos grandes.
 
-## When to reach for it
+## Quando usar
 
-You rarely need it: `explain` and `usages` refresh the index on their own. Run `reldor index` to see the totals, or `reldor index --full` to rebuild from scratch.
+Quase nunca é preciso: o `explain` e o `usages` atualizam o índice sozinhos. Rode `reldor index` para ver os totais, ou `reldor index --full` para refazer do zero.
 
-## It's working if
+## Está funcionando se
 
-- The second run reads almost nothing.
-- The totals match your project.
+- A segunda execução quase não lê nada.
+- Os totais batem com o seu projeto.
 
-## Common questions
+## Perguntas comuns
 
-**Where does it live?**
-In `.reldor/cache/`, outside Git. Each developer has their own.
+**Onde ele fica?**
+Em `.reldor/cache/`, fora do Git. Cada dev tem o seu.
 
-**A file could not be read. Is that a problem?**
-The rest of the index still works. The message names the file so you can check it.
+**Um arquivo não pôde ser lido. Isso é um problema?**
+O resto do índice continua funcionando. A mensagem diz qual arquivo foi, para você conferir.
 
-## Where it fits
+## Onde se encaixa
 
-It is the engine under every Reldor answer.
+É o motor por trás de todas as respostas do Reldor.

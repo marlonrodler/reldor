@@ -1,11 +1,13 @@
-# Adapters
+<p align="center"><strong>Português</strong> · <a href="./README.en.md">English</a></p>
 
-Skills are written once (`skills/` and `modules/*/advisors/`). Each IDE only needs its manifest.
+# Adaptadores
 
-- **Claude Code** installs straight from this repository: `.claude-plugin/plugin.json` lists the skills and
-  `.claude-plugin/marketplace.json` makes the repo its own marketplace.
-- **Kiro** uses `adapters/kiro/plugin.json`. `npm run build:adapters` writes the ready plugin to `plugins/kiro/reldor`,
-  which is committed so Kiro installs it from the GitHub link (Powers → Add Custom Power → Import power from GitHub).
-  Run it after changing any skill: a test fails while the committed copy is out of date.
+As skills são escritas uma vez só (`skills/` e `modules/*/advisors/`). Cada IDE só precisa do seu manifesto.
 
-`npm run build:adapters` also writes `dist/claude/reldor`, a self-contained copy for offline installs.
+- **Claude Code** instala direto deste repositório: `.claude-plugin/plugin.json` lista as skills e
+  `.claude-plugin/marketplace.json` faz do repositório o próprio marketplace.
+- **Kiro** usa `adapters/kiro/plugin.json`. O `npm run build:adapters` grava o plugin pronto em `plugins/kiro/reldor`,
+  que vai no commit para o Kiro instalar pelo link do GitHub (Powers → Add Custom Power → Import power from GitHub).
+  Rode depois de mudar qualquer skill: um teste falha enquanto a cópia estiver desatualizada.
+
+O `npm run build:adapters` também grava `dist/claude/reldor`, uma cópia completa para instalar sem internet.

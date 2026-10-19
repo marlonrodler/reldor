@@ -1,42 +1,42 @@
-<p align="center"><strong>English</strong> · <a href="./commit.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./commit.en.md">English</a></p>
 
 # commit
 
-## What it does
+## O que faz
 
-`commit` makes a **clean commit**: only what you changed, never what a retrieve brought from the org. It works with a **snapshot** taken right after the retrieve. Everything in the folder at that moment counts as "from the org"; only what you change afterwards counts as yours.
+O `commit` faz um **commit limpo**: só o que você mudou, nunca o que um retrieve trouxe da org. Ele trabalha com uma **foto** tirada logo depois do retrieve. Tudo o que está na pasta nesse momento conta como "veio da org"; só o que você mudar depois conta como seu.
 
-It works **line by line**. If the retrieve changed a class and you changed other lines of the same class, only your lines go into the commit; the org's lines stay in the folder, uncommitted. If your lines touch the org's lines, that file stays out and Reldor tells you, so you decide.
+Ele trabalha **linha a linha**. Se o retrieve mudou uma classe e você mudou outras linhas da mesma classe, só as suas linhas entram no commit; as linhas da org ficam na pasta, fora do commit. Se as suas linhas encostarem nas linhas da org, o arquivo fica de fora e o Reldor avisa, para você decidir.
 
-`retrieve` takes the snapshot for you: it confirms the org, warns when you have uncommitted work that the retrieve could overwrite, and runs `sf project retrieve start`. A retrieve of **specific** metadata (`--metadata`) counts as yours, because you asked for it.
+O `retrieve` tira a foto por você: ele confirma a org, avisa quando há trabalho não commitado que o retrieve poderia sobrescrever, e roda o `sf project retrieve start`. Um retrieve de metadados **específicos** (`--metadata`) conta como seu, porque foi você quem pediu.
 
-`hook install` adds a pre-commit guard to `.git/hooks`. It runs on **every** commit, including the ones you make by hand, and blocks two things: duplicated entries in profiles, permission sets and other XML, and files that only came from the org.
+O `hook install` coloca um gancho pre-commit em `.git/hooks`. Ele roda em **todo** commit, inclusive nos feitos na mão, e barra duas coisas: entradas duplicadas em profiles, permission sets e outros XMLs, e arquivos que só vieram da org.
 
-**When Git actions are off** (the default, when another tool commits for you), `reldor commit` only shows the plan. `reldor commit --stage` leaves only your lines in the stage, without committing, for your tool to commit. A `git add -A` by that tool joins everything again.
+**Com as ações de Git desligadas** (o padrão, quando outra ferramenta commita por você), o `reldor commit` só mostra o plano. O `reldor commit --stage` deixa só as suas linhas no stage, sem commitar, para a sua ferramenta fazer o commit. Um `git add -A` dessa ferramenta junta tudo de novo.
 
-## When to reach for it
+## Quando usar
 
-Say "I want to commit" and the AI runs it for you: first `--dry-run` to show you "yours / only your lines / from the org", then the commit. In the terminal: `reldor retrieve`, then `reldor commit -m "message"`. Install the guard once per project with `reldor hook install`.
+Diga "quero commitar" e a IA roda por você: primeiro o `--dry-run` para mostrar "seus / só suas linhas / da org", depois o commit. No terminal: `reldor retrieve`, depois `reldor commit -m "mensagem"`. Instale o gancho uma vez por projeto com `reldor hook install`.
 
-## It's working if
+## Está funcionando se
 
-- Pull requests stop carrying metadata nobody on the task touched.
-- You never again lose an afternoon cleaning a retrieve out of a commit.
+- Os pull requests param de levar metadados que ninguém da task mexeu.
+- Você nunca mais perde uma tarde tirando um retrieve de dentro de um commit.
 
-## Common questions
+## Perguntas comuns
 
-**I retrieved with the sf CLI directly.**
-Run `reldor snapshot` right after. Everything in the folder at that moment counts as from the org.
+**Eu fiz o retrieve direto pelo sf CLI.**
+Rode `reldor snapshot` logo depois. Tudo o que estiver na pasta nesse momento conta como da org.
 
-**I need a whole file that came from the org.**
-`reldor commit -m "..." --include path/to/file`.
+**Preciso de um arquivo inteiro que veio da org.**
+`reldor commit -m "..." --include caminho/do/arquivo`.
 
-**The hook blocked something I really want to commit.**
-Fix what it says, or commit with `git commit --no-verify` when it is intentional.
+**O gancho barrou algo que eu quero mesmo commitar.**
+Corrija o que ele aponta, ou use `git commit --no-verify` quando for intencional.
 
-**What happens to the org's changes after the commit?**
-They stay in your folder, outside Git. Discard them with `git restore <file>` if you don't need them.
+**O que acontece com as mudanças da org depois do commit?**
+Ficam na sua pasta, fora do Git. Descarte com `git restore <arquivo>` se não precisar delas.
 
-## Where it fits
+## Onde se encaixa
 
-It sits between development and promotion: retrieve → develop → [test-radar](./test-radar.md) → [xml](./xml.md) → commit.
+Fica entre o desenvolvimento e a promoção: retrieve → desenvolver → [test-radar](./test-radar.md) → [xml](./xml.md) → commit.

@@ -1,9 +1,7 @@
-# 0003 · Generic product, client profile · Produto genérico, perfil do cliente
+<p align="center"><strong>Português</strong> · <a href="./0003-generic-product-client-profile.en.md">English</a></p>
 
-**EN.** Reldor holds nothing about any client. Teams, prefixes, branch names, orgs and standards live in `.reldor/` in the
-client's own repository (`reldor.config.yaml` and `profile.md`). This lets the same Reldor serve any company and keeps
-client information out of this repository.
+# 0003 · Produto genérico, perfil do cliente
 
-**PT.** O Reldor não guarda nada de nenhum cliente. Times, prefixos, nomes de branch, orgs e padrões ficam em `.reldor/`
+O Reldor não guarda nada de nenhum cliente. Times, prefixos, nomes de branch, orgs e padrões ficam em `.reldor/`
 no repositório do próprio cliente (`reldor.config.yaml` e `profile.md`). Assim o mesmo Reldor serve qualquer empresa e as
 informações do cliente ficam fora deste repositório.

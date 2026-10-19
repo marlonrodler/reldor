@@ -1,37 +1,37 @@
-<p align="center"><strong>English</strong> · <a href="./rollback.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./rollback.en.md">English</a></p>
 
 # rollback
 
-## What it does
+## O que faz
 
-`rollback <PR number | commit | branch>` builds the full plan to undo a change, **without changing anything**:
+O `rollback <número da PR | commit | branch>` monta o plano completo para desfazer uma mudança, **sem alterar nada**:
 
-- the commits to undo and the environments where they are;
-- what **goes back** to its old version (the `git revert` handles it);
-- what the PR **created** and has to be deleted from the org, with a ready `destructiveChanges.xml` and an empty `package.xml` in `.reldor/work/rollback-<id>/`;
-- the **risks**: an item to delete that something else started using after the PR (the deploy would fail), files that changed again after the PR (the revert may conflict or undo someone else's work), and what deleting each type means (a field takes its data with it, a flow must be deactivated first, a record type in use cannot be deleted).
+- os commits a desfazer e os ambientes onde eles estão;
+- o que **volta** à versão anterior (o `git revert` cuida disso);
+- o que a PR **criou** e precisa ser apagado da org, com um `destructiveChanges.xml` pronto e um `package.xml` vazio em `.reldor/work/rollback-<id>/`;
+- os **riscos**: um item a apagar que outra coisa passou a usar depois da PR (o deploy falharia), arquivos que mudaram de novo depois da PR (o revert pode dar conflito ou desfazer trabalho de outra pessoa), e o que significa apagar cada tipo (um campo leva os dados junto, um flow precisa ser desativado antes, um record type em uso não pode ser apagado).
 
-The steps follow the team's flow: a `rollback/...` branch from production, a `git revert` of **the feature's commits** (not of the merge), so the rollback goes through the pipeline in order, like any feature, with [promote](./promote.md) at each environment.
+Os passos seguem o fluxo do time: uma branch `rollback/...` a partir da produção e um `git revert` **dos commits da feature** (e não do merge), para o rollback passar pela esteira em ordem, como qualquer feature, com o [promote](./promote.md) em cada ambiente.
 
-The PR number is found in the merge commit messages ("Merge pull request #123", "Merged PR 123").
+O número da PR é achado na mensagem do commit de merge ("Merge pull request #123", "Merged PR 123").
 
-## When to reach for it
+## Quando usar
 
-Say "I need to roll back PR 123". The AI shows the plan and the risks, and only runs a step after you confirm.
+Diga "preciso fazer rollback da PR 123". A IA mostra o plano e os riscos, e só roda um passo depois da sua confirmação.
 
-## It's working if
+## Está funcionando se
 
-- A rollback does not break the deploy because of a field someone started using.
-- Nobody discovers in production that a destructive change was missing.
+- Um rollback não quebra o deploy por causa de um campo que alguém passou a usar.
+- Ninguém descobre em produção que faltava um destructive change.
 
-## Common questions
+## Perguntas comuns
 
-**Does it run the deploy?**
-No. It gives you the command for a validation without saving (`--dry-run`). Deploying stays with the pipeline.
+**Ele faz o deploy?**
+Não. Ele dá o comando de uma validação sem salvar (`--dry-run`). O deploy continua com a esteira.
 
-**And record data?**
-Data loaded or changed by the feature does not come back with a metadata rollback. The plan reminds you.
+**E os dados dos registros?**
+Dados carregados ou mudados pela feature não voltam com um rollback de metadados. O plano lembra disso.
 
-## Where it fits
+## Onde se encaixa
 
-After a problem in an environment. Then [promote](./promote.md) takes the rollback branch through the environments.
+Depois de um problema num ambiente. Em seguida, o [promote](./promote.md) leva a branch de rollback pelos ambientes.

@@ -1,43 +1,43 @@
-<p align="center"><strong>English</strong> · <a href="./security.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./security.en.md">English</a></p>
 
 # security
 
-## What it does
+## O que faz
 
-`security` reviews the files your feature changed (or the whole project with `--all`) and lists security problems by priority, each with the file, the line and how to fix it. It combines Reldor's own rules with the security rules of the official **Salesforce Code Analyzer**, when it is installed (`sf plugins install code-analyzer`).
+O `security` revisa os arquivos que a sua feature mudou (ou o projeto inteiro com `--all`) e lista os problemas de segurança por prioridade, cada um com o arquivo, a linha e como corrigir. Ele junta as regras do próprio Reldor com as regras de segurança do **Salesforce Code Analyzer** oficial, quando ele está instalado (`sf plugins install code-analyzer`).
 
-| Risk | What it looks for |
+| Risco | O que ele procura |
 |---|---|
-| SOQL injection | A dynamic query that concatenates a value coming from outside the method, without binds or `escapeSingleQuotes` |
-| CRUD/FLS | Methods called from screens, APIs or flows that read or write without `USER_MODE`, `as user` or `stripInaccessible` |
-| Sharing | Entry-point classes without a sharing declaration, or `without sharing` |
-| Sensitive data in logs | `System.debug` with CPF, account, balance, token... (the list is configurable) |
-| Secrets and endpoints | Tokens or passwords in the code, endpoints outside Named Credentials, `http://` callouts |
-| Weak crypto | MD5 and SHA1 |
-| Fixed IDs | Record IDs written in the code |
-| LWC and Visualforce | `innerHTML`, `eval`, `lwc:dom="manual"`, `escape="false"`, merge fields in scripts without `JSENCODE` |
-| Flows | Flows running in system mode without sharing, worse when they are screens |
-| Guest access | Guest user profiles that can edit, delete or see all records |
+| SOQL injection | Query dinâmica que concatena um valor vindo de fora do método, sem bind nem `escapeSingleQuotes` |
+| CRUD/FLS | Métodos chamados por tela, API ou flow que leem ou gravam sem `USER_MODE`, `as user` ou `stripInaccessible` |
+| Sharing | Classes de entrada sem declaração de sharing, ou `without sharing` |
+| Dado sensível no log | `System.debug` com CPF, conta, saldo, token... (a lista é configurável) |
+| Segredos e endpoints | Token ou senha no código, endpoint fora de Named Credential, callout por `http://` |
+| Criptografia fraca | MD5 e SHA1 |
+| IDs fixos | IDs de registro escritos no código |
+| LWC e Visualforce | `innerHTML`, `eval`, `lwc:dom="manual"`, `escape="false"`, merge field em script sem `JSENCODE` |
+| Flows | Flows que rodam em modo sistema sem sharing, pior quando são telas |
+| Acesso de convidado | Profiles de usuário convidado que podem editar, apagar ou ver todos os registros |
 
-It also follows the **path**: a method called from outside that reaches, through the call chain, a `without sharing` class that reads or writes data. A file-by-file scanner does not see this, because each file looks fine on its own.
+Ele também segue o **caminho**: um método chamado de fora que chega, pela cadeia de chamadas, numa classe `without sharing` que lê ou grava dados. Um scanner arquivo por arquivo não enxerga isso, porque cada arquivo parece certo sozinho.
 
-## When to reach for it
+## Quando usar
 
-The AI runs it before committing Apex, LWC, Visualforce, flows or profiles. Say "is there any security problem?" or run `reldor security`. `--fail-on alta` makes it return an error when there is a high-priority finding, for scripts.
+A IA roda antes de commitar Apex, LWC, Visualforce, flows ou profiles. Diga "tem algum problema de segurança?" ou rode `reldor security`. O `--fail-on alta` faz o comando dar erro quando houver achado de prioridade alta, para scripts.
 
-## It's working if
+## Está funcionando se
 
-- High findings are fixed before the pull request, not found later by someone else.
-- Logs stop carrying customer data.
+- Os achados de prioridade alta são corrigidos antes do pull request, e não encontrados depois por outra pessoa.
+- Os logs param de carregar dado de cliente.
 
-## Common questions
+## Perguntas comuns
 
-**A finding is intentional.**
-Add `// reldor-ignore: <rule>` on the line or the line above, with a comment saying why. For CRUD, `@SuppressWarnings('PMD.ApexCRUDViolation')` is respected too.
+**Um achado é intencional.**
+Coloque `// reldor-ignore: <regra>` na linha ou na linha de cima, com um comentário dizendo por quê. Para CRUD, o `@SuppressWarnings('PMD.ApexCRUDViolation')` também é respeitado.
 
-**Does it replace a pentest or the security team?**
-No. It catches the common mistakes early, while the code is still on your machine.
+**Substitui pentest ou a equipe de segurança?**
+Não. Ele pega os erros comuns cedo, enquanto o código ainda está na sua máquina.
 
-## Where it fits
+## Onde se encaixa
 
-Before [commit](./commit.md), next to [test-radar](./test-radar.md). It uses the same index as [explain](./explain.md) to follow the path.
+Antes do [commit](./commit.md), ao lado do [test-radar](./test-radar.md). Usa o mesmo índice do [explain](./explain.md) para seguir o caminho.

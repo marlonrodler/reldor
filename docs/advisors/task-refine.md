@@ -1,20 +1,20 @@
-<p align="center"><strong>English</strong> · <a href="./task-refine.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./task-refine.en.md">English</a></p>
 
 # task-refine
 
-## What it does
+## O que faz
 
-`task-refine` writes a Salesforce task from an idea, using only the facts from [refine](../refine.md): a one-line summary, what changes (following [automation-design](./automation-design.md): the existing handler, a flow, Queueable...), the impact, open questions, acceptance criteria in *given / when / then*, test scenarios (happy path, the block and an existing record) and the size signal. It then asks whether you want to answer the open questions now.
+O `task-refine` escreve uma task Salesforce a partir de uma ideia, usando só os fatos do [refine](../refine.md): um resumo de uma linha, o que muda (seguindo o [automation-design](./automation-design.md): o handler existente, um flow, Queueable...), o impacto, as perguntas em aberto, os critérios de aceite em *dado / quando / então*, os cenários de teste (caminho feliz, o bloqueio e um registro já existente) e o sinal de tamanho. Depois, pergunta se você quer responder as perguntas em aberto agora.
 
-## When to reach for it
+## Quando usar
 
-The AI reaches for it when someone wants to create, write, refine or size a task, story or demand.
+A IA usa quando alguém quer criar, escrever, refinar ou dimensionar uma task, história ou demanda.
 
-## It's working if
+## Está funcionando se
 
-- The developer starts without a round of questions.
-- The acceptance criteria name the record types and the existing records.
+- O dev começa sem uma rodada de perguntas.
+- Os critérios de aceite citam os record types e os registros que já existem.
 
-## Where it fits
+## Onde se encaixa
 
-It is the writer on top of [refine](../refine.md). Pair it with [spec-review](./spec-review.md) once the spec exists.
+É o redator em cima do [refine](../refine.md). Combine com o [spec-review](./spec-review.md) quando a spec existir.

@@ -1,39 +1,38 @@
-<p align="center"><strong>English</strong> · <a href="./refine.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./refine.en.md">English</a></p>
 
 # refine
 
-## What it does
+## O que faz
 
-`refine` takes a task idea in plain words ("block closing an opportunity without an approved proposal") and returns the facts around it. It finds the objects and fields the idea mentions, by API name, label, picklist value or a common word in Portuguese or English (*conta*, *oportunidade*, *caso*...). For each object it lists triggers and their handler chain, active flows, validation rules, record types, legacy workflow rules, the roll-up cascade, screens (LWC), bypass switches and how many tests touch it. For each field: whether it exists, its type and where it is used.
+O `refine` recebe a ideia de uma task em palavras simples ("bloquear o fechamento da oportunidade sem proposta aprovada") e devolve os fatos em volta dela. Ele acha os objetos e campos que a ideia cita, pelo nome de API, pelo rótulo, por um valor de picklist ou por uma palavra comum em português ou inglês (*conta*, *oportunidade*, *caso*...). Para cada objeto, lista as triggers e a cadeia dos handlers, os flows ativos, as validation rules, os record types, as workflow rules legadas, a cascata de roll-up, as telas (LWC), os bypasses e quantos testes tocam nele. Para cada campo: se existe, o tipo e onde é usado.
 
-From those facts only, it adds **attention points** (the object already has a trigger, so the logic goes into its handler), **open questions** (which record types? what about existing records? what volume?) and a **size signal** (small, medium or large, from the number of pieces involved; not an hour estimate).
+Só a partir desses fatos, ele acrescenta **pontos de atenção** (o objeto já tem trigger, então a lógica entra no handler), **perguntas em aberto** (quais record types? e os registros que já existem? qual o volume?) e um **sinal de tamanho** (pequeno, médio ou grande, pelo número de peças envolvidas; não é estimativa de horas).
 
-The [task-refine](./advisors/task-refine.md) advisor turns this into the written task.
+O conselheiro [task-refine](./advisors/task-refine.md) transforma isso na task escrita.
 
-## When to reach for it
+## Quando usar
 
-Say "I want to create a task to..." or "refine this task", or run `reldor refine "<idea>"`. Reach for it **before** the task goes to the board, especially when someone who does not code writes it.
+Diga "quero criar uma task para..." ou "refina essa task", ou rode `reldor refine "<ideia>"`. Use **antes** de a task ir para o quadro, principalmente quando quem escreve não programa.
 
-## It's working if
+## Está funcionando se
 
-- Questions are answered in refinement, not in the middle of development.
-- Tasks stop needing a second round because of an automation nobody mentioned.
+- As perguntas são respondidas no refinamento, e não no meio do desenvolvimento.
+- As tasks param de voltar por causa de uma automação que ninguém citou.
 
-## Common questions
+## Perguntas comuns
 
-**I write in Portuguese and the project's labels are in English. Does it work?**
-Yes. It translates common business words ("entrega de serviço" → Service Delivery, "matrícula no programa" → Program Enrollment), understands plurals and reversed word order, and reads API names (`ServiceDelivery__c` → service delivery). The longer name wins: in "entrega de serviço" the object is Service Delivery, and Service shows only as "named inside another name". When only the last word appears ("o cronograma") and a single object ends that way, it uses it and asks you to confirm. The answer starts with "Entendi assim", the word that led to each object.
+**Escrevo em português e os rótulos do projeto estão em inglês. Funciona?**
+Sim. Ele traduz o vocabulário comum de negócio ("entrega de serviço" → Service Delivery, "matrícula no programa" → Program Enrollment, "crédito leve" → Soft Credit), entende plural e ordem invertida das palavras, e lê o nome de API (`ServiceDelivery__c` → service delivery). O nome mais longo ganha: em "entrega de serviço" o objeto é Service Delivery, e Service aparece só como "citado dentro de outro nome". Quando só a última palavra aparece ("o cronograma") e um único objeto termina assim, ele usa e pede para você confirmar. No começo da resposta ele mostra "Entendi assim", com a palavra que levou a cada objeto.
 
-**What if a similar rule already exists?**
-It says so: when an active validation rule or flow of the same objects talks about the same things as the request, "Já existe algo parecido" shows, so you can check whether the task is to adjust that rule instead of creating another one.
+**E se já existir uma regra parecida?**
+Ele avisa: se uma validation rule ou um flow ativo dos mesmos objetos fala das mesmas coisas que o pedido, aparece "Já existe algo parecido", para você ver se a task é ajustar essa regra em vez de criar outra.
 
+**Ele não achou o meu objeto.**
+Informe com `--objects Opportunity` ou `--fields Opportunity.Etapa__c`.
 
-**It didn't find my object.**
-Labels of standard objects in other languages are not in the repository. Pass them with `--objects Opportunity` or `--fields Opportunity.Stage__c`.
+**O tamanho é uma estimativa?**
+Não. Ele conta as peças que a task toca. Use para pegar uma task "pequena" que, na verdade, é grande.
 
-**Is the size an estimate?**
-No. It counts the pieces the task touches. Use it to spot a "small" task that is actually large.
+## Onde se encaixa
 
-## Where it fits
-
-It is the first step of the flow: refine → [explain](./explain.md) → develop → [test-radar](./test-radar.md).
+É o primeiro passo do fluxo: refine → [explain](./explain.md) → desenvolver → [test-radar](./test-radar.md).

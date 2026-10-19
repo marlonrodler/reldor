@@ -18,7 +18,7 @@ test('the Claude Code plugin ships every skill, and versions match', () => {
 });
 
 test('both READMEs link every skill', () => {
-  for (const readme of ['README.md', 'README.pt-BR.md']) {
+  for (const readme of ['README.md', 'README.en.md']) {
     const text = read(readme);
     for (const dir of skillSources()) {
       const rel = `./${path.relative(ROOT, dir).split(path.sep).join('/')}/SKILL.md`;
@@ -27,21 +27,46 @@ test('both READMEs link every skill', () => {
   }
 });
 
-test('every docs page exists in both languages, with the language switcher', () => {
+// Every document of the repository: Markdown outside code folders, except the AI's own instructions.
+function documents() {
+  const SKIP = new Set(['node_modules', '.git', 'dist', 'plugins', 'fixtures', 'skills', 'modules', '.claude-plugin']);
+  const KEEP_ONE = new Set(['CLAUDE.md']);
   const pages = [];
   const walk = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, e.name);
-      if (e.isDirectory() && e.name !== 'adr') walk(full);
-      else if (e.name.endsWith('.md')) pages.push(full);
+      if (e.isDirectory()) {
+        if (!SKIP.has(e.name)) walk(full);
+      } else if (e.name.endsWith('.md') && !KEEP_ONE.has(e.name)) pages.push(full);
     }
   };
-  walk(path.join(ROOT, 'docs'));
-  for (const page of pages.filter((p) => !p.endsWith('.pt-BR.md'))) {
-    const pt = page.replace(/\.md$/, '.pt-BR.md');
-    assert.ok(fs.existsSync(pt), `missing ${path.relative(ROOT, pt)}`);
-    assert.match(fs.readFileSync(page, 'utf8'), /<strong>English<\/strong>/);
-    assert.match(fs.readFileSync(pt, 'utf8'), /<strong>Português<\/strong>/);
+  walk(ROOT);
+  return pages;
+}
+
+test('every document has a Portuguese version (<name>.md) and an English one (<name>.en.md), Portuguese first', () => {
+  const pages = documents();
+  assert.ok(pages.length > 40);
+  for (const page of pages) {
+    const rel = path.relative(ROOT, page);
+    const isEn = page.endsWith('.en.md');
+    const other = isEn ? page.replace(/\.en\.md$/, '.md') : page.replace(/\.md$/, '.en.md');
+    assert.ok(fs.existsSync(other), `${rel} has no ${isEn ? 'Portuguese' : 'English'} version`);
+    const first = fs.readFileSync(page, 'utf8').split(/\r?\n/)[0];
+    assert.match(first, isEn ? /^<p align="center"><a href="[^"]+">Português<\/a> · <strong>English<\/strong><\/p>$/ : /^<p align="center"><strong>Português<\/strong> · <a href="[^"]+">English<\/a><\/p>$/, `${rel}: language switcher`);
+  }
+});
+
+test('relative links between documents point to files that exist', () => {
+  for (const page of documents()) {
+    const text = fs.readFileSync(page, 'utf8');
+    for (const m of text.matchAll(/\]\((?!https?:|#|mailto:)([^)\s#]+)(#[^)\s]*)?\)/g)) {
+      const target = path.resolve(path.dirname(page), m[1]);
+      assert.ok(fs.existsSync(target), `${path.relative(ROOT, page)} links to ${m[1]}, which does not exist`);
+    }
+    for (const m of text.matchAll(/href="(?!https?:)([^"#]+)"/g)) {
+      assert.ok(fs.existsSync(path.resolve(path.dirname(page), m[1])), `${path.relative(ROOT, page)} links to ${m[1]}`);
+    }
   }
 });
 

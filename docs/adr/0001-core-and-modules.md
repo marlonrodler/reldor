@@ -1,9 +1,7 @@
-# 0001 · Core plus modules · Núcleo mais módulos
+<p align="center"><strong>Português</strong> · <a href="./0001-core-and-modules.en.md">English</a></p>
 
-**EN.** Reldor is split into a generic core and one module per technology. The core only calls a small contract
-(`matches`, `detect`, `statusLines`, `profileLines`) so new technologies plug in without changing it. Salesforce is the
-first module.
+# 0001 · Núcleo mais módulos
 
-**PT.** O Reldor é dividido num núcleo genérico e um módulo por tecnologia. O núcleo só chama um contrato pequeno
+O Reldor é dividido num núcleo genérico e um módulo por tecnologia. O núcleo só chama um contrato pequeno
 (`matches`, `detect`, `statusLines`, `profileLines`), então novas tecnologias entram sem mudar o núcleo. Salesforce é o
 primeiro módulo.

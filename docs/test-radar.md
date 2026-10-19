@@ -1,46 +1,46 @@
-<p align="center"><strong>English</strong> · <a href="./test-radar.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./test-radar.en.md">English</a></p>
 
 # test-radar
 
-## What it does
+## O que faz
 
-`test-radar` looks at what your feature changed (commits since production plus what is not committed yet) and lists the Apex tests that can break, each with the reason and a priority. A validation rule, a required field, a record type, a permission, a flow or a trigger on an object points to every test that creates or changes that object, including through test data factories. A changed class points to the tests that use it, and to the tests one step further away.
+O `test-radar` olha o que a sua feature mudou (commits desde produção e o que ainda não foi commitado) e lista os testes Apex que podem quebrar, cada um com o motivo e uma prioridade. Uma validation rule, um campo obrigatório, um record type, uma permissão, um flow ou uma trigger num objeto apontam para todo teste que cria ou altera aquele objeto, inclusive por factories de dados de teste. Uma classe alterada aponta para os testes que a usam, e para os testes um passo mais longe.
 
-It also checks the queries of the changed classes: a custom field read from a record that the class queried, but that is not in the SOQL or in the selector. That is the "SObject row was retrieved via SOQL without querying the requested field" error, caught before it reaches UAT.
+Ele também confere as queries das classes alteradas: um campo customizado lido de um registro que a classe consultou, mas que não está na SOQL nem no selector. É o erro "SObject row was retrieved via SOQL without querying the requested field", pego antes de chegar em UAT.
 
-With `--run`, it runs those tests **without saving anything**: a check-only deploy (`--dry-run`) of your changed files with `RunSpecifiedTests`, so the tests see your local changes. It confirms the org first and refuses production.
+Com `--run`, ele roda esses testes **sem salvar nada**: um deploy de validação (`--dry-run`) dos seus arquivos alterados com `RunSpecifiedTests`, então os testes enxergam as suas mudanças locais. Ele confirma a org antes e recusa produção.
 
-## When to reach for it
+## Quando usar
 
-The AI reaches for it after you change metadata or Apex, and before any deploy. Say "which tests can break?" or run `reldor test-radar`. Then `reldor test-radar --run --org <sandbox>`.
+A IA usa depois que você muda metadado ou Apex, e antes de qualquer deploy. Diga "quais testes podem quebrar?" ou rode `reldor test-radar`. Depois, `reldor test-radar --run --org <sandbox>`.
 
-It does not change your pipeline: the pipeline still runs its own tests. The radar only tells you earlier.
+Ele não muda a sua esteira: a esteira continua rodando os testes dela. O radar só avisa antes.
 
-## It's working if
+## Está funcionando se
 
-- The pipeline stops failing on tests you could have run before.
-- When it says a test can break, it usually does.
+- A esteira para de falhar em testes que você poderia ter rodado antes.
+- Quando ele diz que um teste pode quebrar, geralmente quebra.
 
-## Common questions
+## Perguntas comuns
 
-**What if my local files and the org are different?**
-That is why `--run` sends your changed files in a check-only deploy. Use `--org-code` to run the tests against what is already in the org instead.
+**E se os meus arquivos locais forem diferentes da org?**
+Por isso o `--run` manda os arquivos alterados num deploy de validação. Use `--org-code` para rodar contra o que já está na org.
 
-**Can it miss a test?**
-Yes, when a test builds the object name in a string, or when the impact goes through code the index cannot follow. Treat the list as the minimum to run, not the maximum.
+**Ele pode deixar um teste de fora?**
+Pode, quando um teste monta o nome do objeto em texto, ou quando o impacto passa por código que o índice não consegue seguir. Trate a lista como o mínimo a rodar, não o máximo.
 
-**How does it handle test data factories?**
-Method by method, at any depth. A test that calls a method that saves the object (directly or through another method) is high priority. A test that only builds the record in memory, without saving, is medium. The factory itself (`@isTest` with no test methods) is never listed as a test. A `delete` does not count for validation rules.
+**Como ele trata as factories de dados de teste?**
+Método a método, em qualquer profundidade. Um teste que chama um método que salva o objeto (direto ou por outro método) tem prioridade alta. Um teste que só monta o registro em memória, sem salvar, tem prioridade média. A própria factory (`@isTest` sem métodos de teste) nunca aparece como teste. `delete` não conta para validation rule.
 
-**And when another object saves the changed one?**
-If the test saves Contact and a trigger, flow or roll-up of Contact writes Account, a change in Account brings that test as medium priority with the reason ("salva Contact, e a trigger X de Contact grava Account"). Custom settings and custom metadata are left out of that cascade.
+**E quando outro objeto salva o objeto alterado?**
+Se o teste salva Contact e a trigger, o flow ou o roll-up de Contact grava Account, uma mudança em Account traz esse teste com prioridade média e o motivo ("salva Contact, e a trigger X de Contact grava Account"). Custom settings e custom metadata não entram nessa cascata.
 
-**And for fields, record types and classes?**
-Field: tests that use the field in code are high priority, tests that use a class that uses it are medium. Saving the object is high only when the field is required, unique or new. Record type: the tests that use its name. Class: also the tests that name it in a string (`Type.forName`, handler tables).
+**E para campo, record type e classe?**
+Campo: os testes que usam o campo no código vêm com prioridade alta, e os que usam uma classe que usa o campo, média. Salvar o objeto só é alta quando o campo é obrigatório, único ou novo. Record type: os testes que usam o nome dele. Classe: também os testes que citam o nome dela em texto (`Type.forName`, tabelas de handlers).
 
-**Salesforce has RunRelevantTests. Why not use it?**
-It is a good option for the pipeline. The radar explains *why* each test is on the list and runs before you push.
+**O Salesforce tem RunRelevantTests. Por que não usar?**
+É uma boa opção para a esteira. O radar explica *por que* cada teste está na lista e roda antes do push.
 
-## Where it fits
+## Onde se encaixa
 
-It sits between development and promotion. It uses the same index as [explain](./explain.md) and [usages](./usages.md).
+Fica entre o desenvolvimento e a promoção. Usa o mesmo índice do [explain](./explain.md) e do [usages](./usages.md).

@@ -1,40 +1,40 @@
-<p align="center"><strong>English</strong> · <a href="./explain.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./explain.en.md">English</a></p>
 
 # explain
 
-## What it does
+## O que faz
 
-`explain` answers "what happens when a record is saved?" for one object and one event (insert, update or delete). It lists every automation in Salesforce's order of execution: before-save flows, before triggers, validation rules, after triggers, legacy workflow rules and processes, after-save flows, the roll-up cascade to parent records, and what runs asynchronously after the commit.
+O `explain` responde "o que acontece quando um registro é salvo?" para um objeto e um evento (insert, update ou delete). Ele lista cada automação na ordem de execução do Salesforce: flows before-save, triggers before, validation rules, triggers after, workflow rules e processos legados, flows after-save, a cascata de roll-up para os registros pai e o que roda de forma assíncrona depois do commit.
 
-The chain is built by scripts from the index, not guessed by the AI. Triggers are followed into their classes, through the fflib `Application` factory, up to two levels deep. An fflib domain that does not override the handler for a phase (for example `onAfterUpdate`) is shown as idle, so you don't chase logic that never runs.
+A cadeia é montada por scripts a partir do índice, não adivinhada pela IA. As triggers são seguidas até as classes, passando pela fábrica `Application` do fflib, até dois níveis. Um domain do fflib que não implementa o handler daquela fase (por exemplo `onAfterUpdate`) aparece como sem lógica, para você não procurar código que nunca roda.
 
-## When to reach for it
+## Quando usar
 
-Ask your AI "what happens when an Opportunity is closed?", or run `reldor explain Opportunity --event update`. Reach for it before you touch an object you don't know well, when writing a task, when documenting a process, when building a test script, or when a bug in UAT makes no sense.
+Pergunte à IA "o que acontece quando uma Oportunidade é fechada?", ou rode `reldor explain Opportunity --event update`. Use antes de mexer num objeto que você não conhece bem, ao escrever uma task, ao documentar um processo, ao montar um roteiro de teste, ou quando um bug em UAT não faz sentido.
 
-For "where is this field or class used?", use [usages](./usages.md) instead.
+Para "onde este campo ou classe é usado?", use o [usages](./usages.md).
 
-## It's working if
+## Está funcionando se
 
-- Nothing in UAT surprises you that `explain` didn't list.
-- Conditional flows show their entry criteria, so you know when they run.
-- You spot a bypass switch (custom setting or custom metadata) before you test.
-- The related test classes it lists are the ones that break when you change the object.
+- Nada te surpreende em UAT que o `explain` não tenha listado.
+- Os flows condicionais mostram o critério de entrada, então você sabe quando rodam.
+- Você enxerga um bypass (custom setting ou custom metadata) antes de testar.
+- As classes de teste que ele lista são as que quebram quando você muda o objeto.
 
-## Common questions
+## Perguntas comuns
 
-**Does it see everything in the org?**
-No. It reads the repository. Managed packages and anything created directly in the org without being retrieved do not appear. The output says so every time.
+**Ele vê tudo da org?**
+Não. Ele lê o repositório. Pacotes gerenciados e o que foi criado direto na org sem retrieve não aparecem. A saída avisa isso sempre.
 
-**Why is the order "simplified"?**
-Salesforce's full order has more steps (assignment rules, escalation, entitlement, sharing). `explain` shows the ones that come from your code and metadata.
+**Por que a ordem é "simplificada"?**
+A ordem completa do Salesforce tem mais etapas (assignment rules, escalation, entitlement, compartilhamento). O `explain` mostra as que vêm do seu código e metadados.
 
-**Which trigger frameworks does it understand?**
-fflib domains (`onBeforeUpdate`, `onValidate`, `onApplyDefaults`...), TriggerHandler-style classes (`beforeUpdate`, `afterInsert`...) and metadata-driven triggers, where handlers are listed in custom metadata records. For each phase it follows only the methods that run in that phase, including the private helpers they call.
+**Quais frameworks de trigger ele entende?**
+Domains do fflib (`onBeforeUpdate`, `onValidate`, `onApplyDefaults`...), classes no estilo TriggerHandler (`beforeUpdate`, `afterInsert`...) e triggers dirigidas por metadata, em que os handlers ficam em registros de custom metadata. Em cada fase, ele segue só os métodos que rodam nela, incluindo os métodos privados que eles chamam.
 
-**Can it write a test script?**
-Yes. Ask the AI for one: it turns each step into action → what fires → what to check.
+**Ele monta roteiro de teste?**
+Sim. Peça à IA: ela transforma cada passo em ação → o que dispara → o que validar.
 
-## Where it fits
+## Onde se encaixa
 
-`explain` is the heart of Phase 1. The same index feeds [usages](./usages.md), the advisors and, next, the test radar and task refinement.
+O `explain` é o coração da Fase 1. O mesmo índice alimenta o [usages](./usages.md), os conselheiros e, em seguida, o radar de testes e o refinador de task.

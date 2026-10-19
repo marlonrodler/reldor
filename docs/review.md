@@ -1,35 +1,35 @@
-<p align="center"><strong>English</strong> · <a href="./review.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./review.en.md">English</a></p>
 
 # review
 
-## What it does
+## O que faz
 
-`review` is everything worth checking before a commit, in one run and one summary, for the files your branch changed:
+O `review` é tudo que vale conferir antes de um commit, numa rodada só e num resumo só, para os arquivos que a sua branch mudou:
 
-| Part | What it looks for |
+| Parte | O que procura |
 |---|---|
-| [Security](./security.md) | SOQL injection, CRUD/FLS, sharing, sensitive data in logs, secrets, XSS, flows, guest access |
-| [Quality](./quality.md) | Copied blocks, repeated queries, queries outside the Selector, methods that already exist, PMD |
-| [Queries](./check.md) | Fields read but missing in the SOQL or Selector (an error in production) |
-| [Tests](./test-radar.md) | The test classes your change can break |
-| [XML](./xml.md) | Profiles, permission sets and labels out of order or with conflicting duplicates |
-| [Org files](./clean.md) | Changes that came from the org in a retrieve and are not yours |
+| [Segurança](./security.md) | SOQL injection, CRUD/FLS, sharing, dado sensível em log, segredos, XSS, flows, acesso de convidado |
+| [Qualidade](./quality.md) | Blocos copiados, queries repetidas, query fora do Selector, método que já existe, PMD |
+| [Queries](./check.md) | Campo lido mas que falta na SOQL ou no Selector (erro em produção) |
+| [Testes](./test-radar.md) | As classes de teste que a sua mudança pode quebrar |
+| [XML](./xml.md) | Profiles, permission sets e labels fora de ordem ou com duplicado em conflito |
+| [Arquivos da org](./clean.md) | Mudanças que vieram da org num retrieve e não são suas |
 
-The summary has two groups: 🔴 **fix before the commit** and 🟡 **attention**, each item with the file, the line and how to fix it. Then the tests to run. The Salesforce Code Analyzer runs once for security and quality when installed; `--no-analyzer` skips it.
+O resumo tem dois grupos: 🔴 **corrija antes do commit** e 🟡 **atenção**, cada item com o arquivo, a linha e como corrigir. Depois, os testes para rodar. O Salesforce Code Analyzer roda uma vez só para segurança e qualidade, quando instalado; o `--no-analyzer` pula.
 
-## When to reach for it
+## Quando usar
 
-Say "can I commit?". The AI runs it and goes through the 🔴 items first.
+Diga "posso commitar?". A IA roda e passa primeiro pelos itens 🔴.
 
-## It's working if
+## Está funcionando se
 
-- You stop running four checks by hand, or forgetting one.
+- Você para de rodar quatro checagens na mão, ou de esquecer uma.
 
-## Common questions
+## Perguntas comuns
 
-**Do the separate commands still exist?**
-Yes (`security`, `quality`, `check`, `test-radar`, `xml`), for when you want only one part. `review` is the one to use day to day.
+**Os comandos separados continuam existindo?**
+Sim (`security`, `quality`, `check`, `test-radar`, `xml`), para quando você quer só uma parte. O `review` é o do dia a dia.
 
-## Where it fits
+## Onde se encaixa
 
-Right before [clean](./clean.md) and the commit.
+Logo antes do [clean](./clean.md) e do commit.

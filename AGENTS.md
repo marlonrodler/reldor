@@ -1,37 +1,46 @@
-# Working on Reldor
+<p align="center"><strong>Português</strong> · <a href="./AGENTS.en.md">English</a></p>
 
-Rules for any agent (or person) changing this repository.
+# Trabalhando no Reldor
 
-## The product rule
-Scripts do the heavy, reliable work; the AI only interprets and explains. A feature that needs facts about the org
-(automations, references, conflicts) computes them in `core/` or `modules/`, never in a `SKILL.md`.
+Regras para qualquer agente (ou pessoa) que mude este repositório.
 
-## Never put a client in Reldor
-No client names, internal tool names, team names, branch names, org aliases or code samples from a real client in
-this repository: not in code, docs, tests, fixtures or commit messages. Client specifics live in the client's own
-`.reldor/` folder. Fixtures use invented names.
+## A regra do produto
+Scripts fazem o trabalho pesado e confiável; a IA só interpreta e explica. Uma funcionalidade que precisa de fatos sobre
+a org (automações, referências, conflitos) calcula esses fatos em `core/` ou `modules/`, nunca num `SKILL.md`.
 
-## Layout
-- `core/`: generic, knows nothing about Salesforce. Modules plug in through `core/modules/index.js`
-  (contract: `name`, `label`, `matches`, `detect`, `statusLines`, `profileLines`, and the optional `doctorChecks`).
-- `modules/sf/`: everything Salesforce. Advisors are skills in `modules/sf/advisors/<name>/SKILL.md`.
-- `skills/`: core skills. `skills/reldor` is the router.
-- `.claude-plugin/plugin.json` lists every shipped skill. `adapters/kiro/plugin.json` is the Kiro manifest;
-  `npm run build:adapters` writes the ready Kiro plugin to `plugins/kiro/reldor` (committed; a test checks it is current).
+## Nunca coloque um cliente no Reldor
+Nada de nomes de cliente, nomes de ferramentas internas, nomes de times, nomes de branch, apelidos de org ou trechos de
+código de um cliente real neste repositório: nem no código, nem na documentação, nos testes, nos exemplos ou nas mensagens
+de commit. O que é do cliente fica na pasta `.reldor/` do próprio cliente. Os exemplos usam nomes inventados.
 
-## Every new or changed feature
-1. Code plus tests (`npm test` must pass; the sample project lives in `test/fixtures/sample-sf`).
-2. A docs page in **both languages**: `docs/<name>.md` (English) and `docs/<name>.pt-BR.md` (Português), each opening
-   with the language switcher. Sections: What it does, When to reach for it, It's working if, Common questions
-   (when there are real ones), Where it fits.
-3. An entry in the Reference section of **both** `README.md` and `README.pt-BR.md`.
-4. A new skill also goes into `.claude-plugin/plugin.json` (`test/repo.test.js` checks this).
-5. If a command was added, update `skills/reldor/SKILL.md` ("Commands available today") and `skills/reldor/guide.md`.
-6. A line in `CHANGELOG.md`. Bump `package.json` and `.claude-plugin/plugin.json` versions together.
+## Organização
+- `core/`: genérico, não sabe nada de Salesforce. Os módulos entram por `core/modules/index.js`
+  (contrato: `name`, `label`, `matches`, `detect`, `statusLines`, `profileLines` e o opcional `doctorChecks`).
+- `modules/sf/`: tudo de Salesforce. Os conselheiros são skills em `modules/sf/advisors/<nome>/SKILL.md`.
+- `skills/`: skills do núcleo. `skills/reldor` é o roteador.
+- `.claude-plugin/plugin.json` lista todas as skills publicadas. `adapters/kiro/plugin.json` é o manifesto do Kiro;
+  `npm run build:adapters` grava o plugin pronto do Kiro em `plugins/kiro/reldor` (vai no commit; um teste confere se está
+  atualizado).
 
-## Writing
-- Skills answer in the language of the conversation (or `language` in the client's config), short and didactic:
-  summary first, details after.
-- Terms follow [GLOSSARY.md](./GLOSSARY.md).
-- Code: English identifiers, a short comment before each function, Windows-friendly (use `core/util/exec.js`).
-- Big decisions get an ADR in `docs/adr/`.
+## Documentação: sempre em português e em inglês
+Todo documento tem duas versões: `<nome>.md` em **português** (a principal) e `<nome>.en.md` em **inglês**. As duas abrem
+com o seletor de idioma, Português primeiro. Vale para o README, o CHANGELOG, o glossário, este arquivo, `docs/`, as ADRs
+e os conselheiros. As skills (`SKILL.md`) são instruções para a IA e ficam numa versão só.
+
+## Toda funcionalidade nova ou alterada
+1. Código e testes (`npm test` precisa passar; o projeto de exemplo fica em `test/fixtures/sample-sf`).
+2. Uma página em `docs/<nome>.md` e `docs/<nome>.en.md`. Seções: O que faz, Quando usar, Está funcionando se, Perguntas
+   comuns (quando houver de verdade), Onde se encaixa.
+3. Uma linha na Referência do `README.md` e do `README.en.md`.
+4. Uma skill nova também entra em `.claude-plugin/plugin.json` (`test/repo.test.js` confere).
+5. Se entrou um comando, atualize `skills/reldor/SKILL.md` ("Comandos disponíveis hoje") e `skills/reldor/guide.md`.
+6. Uma linha no `CHANGELOG.md` e no `CHANGELOG.en.md`. Suba a versão do `package.json` e do `.claude-plugin/plugin.json`
+   juntas, e rode `npm run build:adapters`.
+
+## Escrita
+- As skills respondem no idioma da conversa (ou no `language` da configuração do cliente), curtas e didáticas: resumo
+  primeiro, detalhes depois.
+- Os termos seguem o [GLOSSÁRIO](./GLOSSARY.md).
+- Código: identificadores em inglês, um comentário curto antes de cada função, compatível com Windows (use
+  `core/util/exec.js`).
+- Decisões grandes ganham uma ADR em `docs/adr/`.

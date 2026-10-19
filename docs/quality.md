@@ -1,42 +1,42 @@
-<p align="center"><strong>English</strong> · <a href="./quality.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./quality.en.md">English</a></p>
 
 # quality
 
-## What it does
+## O que faz
 
-`quality` reviews the Apex classes your feature changed and reports **the repetition your change creates**, plus the code quality rules of the official **Salesforce Code Analyzer** when it is installed (`sf plugins install code-analyzer`).
+O `quality` revisa as classes Apex que a sua feature mudou e aponta **a repetição que a sua mudança cria**, junto com as regras de qualidade do **Salesforce Code Analyzer** oficial, quando ele está instalado (`sf plugins install code-analyzer`).
 
-| Finding | What it means |
+| Apontamento | O que significa |
 |---|---|
-| Copied block | Lines you added are the same as lines somewhere else in the project (literals and messages ignored, like PMD's CPD) |
-| Repeated query | The same SOQL already exists in another class (binds, literals and spacing ignored) |
-| Query outside the Selector | In an fflib project, a query on an object that has a Selector, written outside it |
-| Method that already exists | Same name, same parameters and a similar body in another class |
-| Similar method | A different name, but 80% or more of the body is the same |
-| Repeated text | The same message in three or more classes: a Custom Label candidate |
-| Code Analyzer | PMD `Recommended` rules (complexity, naming, best practices, performance) and CPD |
+| Bloco copiado | Linhas que você adicionou são iguais a linhas de outro lugar do projeto (textos e números ignorados, como o CPD do PMD) |
+| Query repetida | A mesma SOQL já existe em outra classe (binds, textos e espaços ignorados) |
+| Query fora do Selector | Num projeto fflib, query de um objeto que tem Selector, escrita fora dele |
+| Método que já existe | Mesmo nome, mesmos parâmetros e corpo parecido em outra classe |
+| Método parecido | Nome diferente, mas 80% ou mais do corpo é igual |
+| Texto repetido | A mesma mensagem em três ou mais classes: candidata a Custom Label |
+| Code Analyzer | Regras `Recommended` do PMD (complexidade, nomes, boas práticas, desempenho) e o CPD |
 
-Only what **your change** touches is reported. Old duplication in files you did not touch, or in parts of a file you did not edit, stays out, so the list fits in one pull request. `--all` reviews the whole project as if it were new, for a one-time cleanup. Each repetition is reported once: one finding per repeated text, per repeated query, per pair of similar methods and per pair of files with copied blocks (a generated class with hundreds of equal blocks is one line).
+Só entra o que **a sua mudança** toca. Repetição antiga em arquivos que você não mexeu, ou em partes do arquivo que você não editou, fica de fora, para a lista caber numa pull request. O `--all` revisa o projeto inteiro como se fosse novo, para uma limpeza pontual. Cada repetição aparece uma vez: um achado por texto repetido, por query repetida, por par de métodos parecidos e por par de arquivos com blocos copiados (uma classe gerada com centenas de blocos iguais vira uma linha).
 
-Classes that share a contract are left out of "method that already exists": two Selectors with `selectById`, two classes implementing the same interface. That is the pattern, not a copy.
+Classes que seguem o mesmo contrato ficam de fora de "método que já existe": dois Selectors com `selectById`, duas classes que implementam a mesma interface. Isso é o padrão, não cópia.
 
-## When to reach for it
+## Quando usar
 
-The AI runs it before committing Apex, next to [security](./security.md). Say "did I repeat any code?" or run `reldor quality`. Use `--no-analyzer` to skip the Code Analyzer (faster) and `--fail-on média` to return an error in scripts.
+A IA roda antes de commitar Apex, junto com o [security](./security.md). Diga "repeti algum código?" ou rode `reldor quality`. Use `--no-analyzer` para pular o Code Analyzer (mais rápido) e `--fail-on média` para devolver erro em scripts.
 
-## It's working if
+## Está funcionando se
 
-- A new class reuses the Service or Selector that already exists instead of copying it.
-- Messages move to Custom Labels before they spread.
+- Uma classe nova reaproveita o Service ou o Selector que já existe em vez de copiar.
+- As mensagens viram Custom Labels antes de se espalhar.
 
-## Common questions
+## Perguntas comuns
 
-**Does it replace PMD?**
-No, it runs it. Reldor's own checks find what PMD does not: a query that already lives in a Selector, a method that already exists under the same name.
+**Substitui o PMD?**
+Não, ele roda o PMD. As checagens do próprio Reldor acham o que o PMD não acha: uma query que já mora num Selector, um método que já existe com o mesmo nome.
 
-**Can I tune the sizes?**
-Yes, in `.reldor/reldor.config.yaml` under `quality`: `min_tokens` (default 60), `min_lines` (6), `min_literal_files` (3).
+**Dá para ajustar os tamanhos?**
+Sim, em `.reldor/reldor.config.yaml`, na seção `quality`: `min_tokens` (padrão 60), `min_lines` (6), `min_literal_files` (3).
 
-## Where it fits
+## Onde se encaixa
 
-Before [commit](./commit.md), with [security](./security.md) and [test-radar](./test-radar.md). It reads the same index as [explain](./explain.md) to know which classes are Selectors.
+Antes do [commit](./commit.md), junto com [security](./security.md) e [test-radar](./test-radar.md). Usa o mesmo índice do [explain](./explain.md) para saber quais classes são Selectors.

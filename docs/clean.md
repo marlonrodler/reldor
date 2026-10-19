@@ -1,32 +1,32 @@
-<p align="center"><strong>English</strong> · <a href="./clean.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./clean.en.md">English</a></p>
 
 # clean
 
-## What it does
+## O que faz
 
-After a retrieve, the folder mixes your work with what came from the org. `reldor clean` leaves in the folder **only what is yours**, before any tool commits:
+Depois de um retrieve, a pasta mistura o seu trabalho com o que veio da org. O `reldor clean` deixa na pasta **só o que é seu**, antes de qualquer ferramenta commitar:
 
-- files only the org changed leave the folder;
-- in files both changed, only your lines stay;
-- your files stay as they are.
+- arquivos que só a org mudou saem da pasta;
+- em arquivos que os dois mudaram, ficam só as suas linhas;
+- os seus arquivos ficam como estão.
 
-What came from the org goes into a Git stash named "reldor clean", so nothing is lost. `reldor clean --undo` brings it back (skipping files you changed after the cleaning). `--dry-run` shows the plan; `--include <file>` keeps a file from the org whole.
+O que veio da org vai para um stash do Git chamado "reldor clean", então nada se perde. O `reldor clean --undo` traz de volta (pulando arquivos que você mudou depois da limpeza). O `--dry-run` mostra o plano; o `--include <arquivo>` mantém inteiro um arquivo da org.
 
-It needs the snapshot taken by [`reldor retrieve`](./commit.md) (or `reldor snapshot` right after a retrieve made outside Reldor).
+Precisa da foto tirada pelo [`reldor retrieve`](./commit.md) (ou do `reldor snapshot` logo depois de um retrieve feito fora do Reldor).
 
-## When to reach for it
+## Quando usar
 
-When you are about to commit: say "I'm going to commit, clean what is not mine". Then commit with your team's workflow tool, another tool or [`reldor commit`](./commit.md).
+Na hora de commitar: diga "vou commitar, limpa o que não é meu". Depois commite pela ferramenta de fluxo do time, por outra ferramenta ou pelo [`reldor commit`](./commit.md).
 
-## It's working if
+## Está funcionando se
 
-- Commits stop carrying org files and lines nobody wrote.
+- Os commits param de levar arquivos e linhas da org que ninguém escreveu.
 
-## Common questions
+## Perguntas comuns
 
-**Why not only the clean commit?**
-Because the commit is often made by another tool that runs `git add -A`. Cleaning the folder makes any tool commit only your work.
+**Por que não só o commit limpo?**
+Porque muitas vezes o commit é feito por outra ferramenta, que roda `git add -A`. Limpando a pasta, qualquer ferramenta commita só o seu.
 
-## Where it fits
+## Onde se encaixa
 
-Between the retrieve and the commit, next to [commit](./commit.md).
+Entre o retrieve e o commit, junto com o [commit](./commit.md).

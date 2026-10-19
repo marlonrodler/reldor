@@ -1,17 +1,17 @@
-<p align="center"><strong>English</strong> · <a href="./check.pt-BR.md">Português</a></p>
+<p align="center"><strong>Português</strong> · <a href="./check.en.md">English</a></p>
 
 # check
 
-## What it does
+## O que faz
 
-`check` runs the query check on the whole project, or on the classes you name: custom fields read from records that the class queried, but missing from its SOQL or from the selector it uses. Each finding is **likely**, or **possible** when the class also builds queries at runtime (`Database.query`).
+O `check` roda a checagem de queries no projeto inteiro, ou nas classes que você informar: campos customizados lidos de registros que a classe consultou, mas que faltam na SOQL ou no selector que ela usa. Cada achado é **provável**, ou **possível** quando a classe também monta queries em tempo de execução (`Database.query`).
 
-Classes that receive records as parameters or from `Trigger.new` are skipped, because their fields cannot be judged from the code.
+Classes que recebem registros por parâmetro ou do `Trigger.new` ficam de fora, porque os campos delas não podem ser julgados pelo código.
 
-## When to reach for it
+## Quando usar
 
-Run `reldor check` once on a project to find old problems, or `reldor check MyClass` while you work. `test-radar` already runs it on the classes you changed.
+Rode `reldor check` uma vez num projeto para achar problemas antigos, ou `reldor check MinhaClasse` enquanto trabalha. O `test-radar` já roda essa checagem nas classes que você alterou.
 
-## Where it fits
+## Onde se encaixa
 
-It is the static half of [test-radar](./test-radar.md).
+É a metade estática do [test-radar](./test-radar.md).
