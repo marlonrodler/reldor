@@ -1,6 +1,6 @@
 {
   "name": "reldor",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "Reldor — o guardião do desenvolvimento Salesforce",
   "private": true,
   "bin": {
@@ -22,7 +22,6 @@
     "core",
     "modules",
     "skills",
-    "steering",
     "adapters",
     "scripts",
     "docs",

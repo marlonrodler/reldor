@@ -1,7 +1,7 @@
-# Exemplo de configuração do Reldor (fica em .reldor/reldor.config.yaml no projeto do cliente)
-# Tudo é opcional: sem este arquivo, o Reldor usa os valores padrão.
+# Exemplo de configuração do Reldor (fica em .reldor/reldor.config.yaml no projeto do cliente).
+# Tudo é opcional: sem este arquivo, o Reldor usa os valores padrão. Cada chave abaixo é lida pelo Reldor hoje.
 
-# language: pt-BR          # opcional: fixa o idioma; sem isso, a IA responde no idioma da conversa
+# language: pt-BR          # opcional: fixa o idioma das respostas da IA; sem isso, ela responde no idioma da conversa
 
 modules:
   - sf
@@ -18,41 +18,38 @@ environments:
   - name: producao
     branch: master
     org: production
-    production: true        # qual ambiente é produção (padrão: o último)
-    deploy: blocked         # o Reldor nunca faz deploy aqui
+    production: true        # qual ambiente é produção (padrão: o último); o test-radar --run recusa rodar ali
 
-# Org usada como referência para o índice e o retrieve
+# Org usada no retrieve e no test-radar --run quando nenhuma é informada
 reference_org: uat-sandbox
-index:
-  refresh_hours: 24
-  depth: 2                  # quantos níveis de relacionamento seguir
 
-# Origem da spec (detecção automática vem primeiro)
+index:
+  refresh_hours: 24         # idade máxima do índice salvo antes de reler o projeto
+
+# Onde ficam as specs (além de .kiro/specs, que o Reldor sempre procura)
 spec:
-  generator: null           # ex.: comando do gerador de specs da equipe
   path: .kiro/specs
 
-# Commit limpo e Git
 git:
+  actions: off              # off: o Reldor só confere e avisa (branch, commit, merge e PR ficam com a ferramenta do time)
+                            # on: o Reldor também pode fazer o commit limpo (reldor commit), sempre com confirmação
   base_branch: null         # de onde nascem as branches de desenvolvimento (padrão: a branch de produção)
-  merge_branch: merge/{feature}-{env}      # padrão sugerido para a branch de merge
-  rollback_branch: rollback/{id}
-  actions: off              # off: o Reldor só confere e avisa (branch, commit, merge e PR ficam com a sua ferramenta, ex.: o plugin de fluxo do time)
-                            # on: o Reldor também pode fazer o commit limpo, sempre com confirmação
-  clean_commit: true
-  pre_commit_hook: true
-  smart_merge: suggest      # off | suggest | auto
-  rerere: true
-
-# Organizador de XML
-xml:
-  types: [Profile, PermissionSet, SharingRules, CustomLabels, Translations, GlobalValueSet, Layout]
+  merge_branch: merge/{feature}-{env}      # nome sugerido para a branch de merge
+  rollback_branch: rollback/{id}           # nome sugerido para a branch de rollback
+  rerere: true              # o reldor merge install também liga o rerere do Git
 
 # Conselheiros
 advisors:
-  mode: ask                 # off | ask | auto
-  enabled: [spec-review, automation-design, lwc-ux]
-  design_system: slds       # perguntado uma vez no init
+  design_system: slds       # perguntado no init e anotado no profile.md para o conselheiro de telas
+
+# Ferramentas do time: o que outra ferramenta já faz, para o Reldor não repetir (reldor tools)
+#   run    o Reldor faz (padrão)
+#   verify o Reldor não faz de novo: só confere o resultado e, se não estiver certo, diz qual ferramenta rodar
+#   skip   o Reldor fica de fora: não faz nem confere, e diz quem cuida
+tools:
+  xml-duplicates: { mode: verify, owner: "plugin do time que organiza profiles" }
+  xml-order: { mode: verify, owner: "plugin do time que organiza profiles" }
+  code-analyzer: { mode: skip, owner: "esteira (CI)" }
 
 # Revisão de segurança
 security:
@@ -64,11 +61,8 @@ quality:
   min_tokens: 60            # tamanho mínimo de um bloco copiado
   min_lines: 6
   min_literal_files: 3      # texto em N classes vira sugestão de Custom Label
+  include_tests: false      # true: classes de teste também entram na busca por cópia
 
 # Radar de testes
 test_radar:
-  auto_run: ask             # ask | always | never
-
-# Automações e conectores (desligados por padrão)
-automations: []
-connectors: {}
+  coverage_target: 75       # cobertura mínima esperada das classes alteradas no test-radar --run

@@ -4,9 +4,9 @@
 
 ## O que faz
 
-O `init` configura o Reldor num projeto de uma vez. Ele descobre sozinho o que consegue (o projeto Salesforce, o `sf` CLI, a org padrão, o fflib, as specs e as branches) e pergunta só três coisas: as branches dos ambientes na ordem de promoção, a org de referência e se o time segue o SLDS. Ele grava `.reldor/reldor.config.yaml` e `.reldor/profile.md`, e coloca as pastas locais do Reldor no `.gitignore`.
+O `init` configura o Reldor num projeto de uma vez. Ele descobre sozinho o que consegue (o projeto Salesforce, o `sf` CLI, a org padrão, o fflib, as specs e as branches) e pergunta só quatro coisas: as branches dos ambientes na ordem de promoção, a org de referência, se o time segue o SLDS e se vocês já usam uma ferramenta que cria branch, commita e abre PR. Ele grava `.reldor/reldor.config.yaml` e `.reldor/profile.md`, e coloca as pastas locais do Reldor no `.gitignore`.
 
-O último ambiente (produção) sempre fica com deploy bloqueado.
+O último ambiente é produção e fica protegido: o Reldor nunca faz deploy, e os testes do `test-radar --run` recusam rodar ali (a não ser com `--allow-production`). Depois de gravar, ele procura sinais de ferramentas do time que já fazem parte do trabalho dele e sugere o [`tools`](./tools.md).
 
 ## Quando usar
 

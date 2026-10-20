@@ -137,8 +137,8 @@ async function initCommand(root, flags) {
       modules: modules.length ? modules.map((m) => m.mod.name) : DEFAULTS.modules,
       environments,
       reference_org: referenceOrg,
-      advisors: { ...DEFAULTS.advisors, design_system: designSystem },
-      git: { ...DEFAULTS.git, actions: gitActions },
+      advisors: { design_system: designSystem },
+      git: { actions: gitActions },
     };
     const file = saveConfig(root, config);
     writeProfile(root, { modules, designSystem, specs });
@@ -155,11 +155,17 @@ async function initCommand(root, flags) {
       `• ${path.relative(root, paths(root).profile)} (perfil do projeto, versionado; revise com o time)`,
     ];
     if (ignored) done.push('• Linhas no .gitignore para os arquivos locais do Reldor');
-    if (environments.length) done.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}; deploy em ${environments[environments.length - 1].name} bloqueado`);
+    if (environments.length) done.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}; ${environments[environments.length - 1].name} é produção e fica protegido (o test-radar --run recusa rodar ali)`);
     else done.push('⚠️ Nenhum ambiente configurado. Rode de novo com --envs quando souber as branches.');
     done.push(gitActions === 'on'
       ? '• Ações de Git ligadas: o Reldor pode fazer o commit limpo, sempre pedindo confirmação'
       : '• Ações de Git desligadas: o Reldor só confere e avisa; branch, commit, merge e PR ficam com a sua ferramenta');
+    const found = require('../tools').toolsReport(root, config).suggestions;
+    if (found.length) {
+      done.push('', `💡 Encontrei sinais de ferramentas do time que já fazem parte do que o Reldor faz (${found.length}):`);
+      for (const f of found.slice(0, 6)) done.push(`   • ${f.capability}: ${f.owner}`);
+      done.push('   Para o Reldor não repetir esse trabalho, confira e decida com: reldor tools');
+    }
     done.push('', '💡 Proteção nos commits (inclusive os feitos pela sua ferramenta): reldor hook install');
     done.push('💡 Conflito de profile resolvido item a item no git merge: reldor merge install');
     done.push('', '➡️  Próximo passo: rode "reldor status" ou peça à sua IA: "quero usar o Reldor".');

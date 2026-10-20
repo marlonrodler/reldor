@@ -41,6 +41,9 @@ Campo: os testes que usam o campo no código vêm com prioridade alta, e os que 
 **O Salesforce tem RunRelevantTests. Por que não usar?**
 É uma boa opção para a esteira. O radar explica *por que* cada teste está na lista e roda antes do push.
 
+**A esteira já roda os testes.**
+Grave `run-tests: skip` no [`tools`](./tools.md): o radar continua listando os testes, e o `--run` não roda nada (a não ser com `--force`). Com o mesmo conteúdo, a lista de testes não é calculada duas vezes.
+
 ## Onde se encaixa
 
 Fica entre o desenvolvimento e a promoção. Usa o mesmo índice do [explain](./explain.md) e do [usages](./usages.md).

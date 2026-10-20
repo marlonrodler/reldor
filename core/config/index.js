@@ -14,17 +14,17 @@ const DEFAULTS = Object.freeze({
   modules: ['sf'],
   environments: [],
   reference_org: null,
-  index: { refresh_hours: 24, depth: 2 },
-  spec: { generator: null, path: '.kiro/specs' },
+  index: { refresh_hours: 24 },
+  spec: { path: '.kiro/specs' },
   // actions: off = Reldor only checks and advises; your own flow (e.g. the team's workflow plugin) creates branches, commits,
   // merges and PRs. on = Reldor may also commit, with confirmation.
   // base_branch: where development branches start (default: the production environment's branch).
   // merge_branch / rollback_branch: name patterns Reldor suggests; {feature}, {env} and {id} are filled in.
-  git: { actions: 'off', base_branch: null, merge_branch: 'merge/{feature}-{env}', rollback_branch: 'rollback/{id}', clean_commit: true, pre_commit_hook: true, smart_merge: 'suggest', rerere: true },
-  advisors: { mode: 'ask', enabled: ['spec-review', 'automation-design', 'lwc-ux'], design_system: null },
-  test_radar: { auto_run: 'ask' },
-  automations: [],
-  connectors: {},
+  git: { actions: 'off', base_branch: null, merge_branch: 'merge/{feature}-{env}', rollback_branch: 'rollback/{id}', rerere: true },
+  advisors: { design_system: null },
+  test_radar: { coverage_target: 75 },
+  // tools: who takes care of each capability when another tool of the team already does it (see `reldor tools`).
+  tools: {},
 });
 
 function isPlainObject(value) {

@@ -30,6 +30,9 @@ Diga "posso commitar?". A IA roda e passa primeiro pelos itens 🔴.
 **Os comandos separados continuam existindo?**
 Sim (`security`, `quality`, `check`, `test-radar`, `xml`), para quando você quer só uma parte. O `review` é o do dia a dia.
 
+**Outra ferramenta do time já faz parte dessas checagens.**
+O `review` segue o [`tools`](./tools.md): uma parte que outra ferramenta faz é só conferida (`verify`) ou fica de fora (`skip`), e o resumo lista as duas com o nome da ferramenta, para nada sumir em silêncio. Com o mesmo conteúdo, nenhuma checagem roda duas vezes: rodar o `review` de novo, ou o gancho logo depois, reaproveita o resultado (♻️). `--fresh` refaz tudo.
+
 ## Onde se encaixa
 
 Logo antes do [clean](./clean.md) e do commit.

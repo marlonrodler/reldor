@@ -44,7 +44,7 @@ function securityReview(root, files, options = {}) {
   const all = [...findings, ...analyzer.findings].sort((a, b) => ORDER[a.severity] - ORDER[b.severity] || String(a.file).localeCompare(String(b.file)) || (a.line || 0) - (b.line || 0));
   const counts = { alta: 0, 'média': 0, baixa: 0 };
   for (const f of all) counts[f.severity] += 1;
-  return { files: files.length, findings: all, counts, analyzer: { ran: analyzer.ran, note: analyzer.note || null } };
+  return { files: files.length, findings: all, counts, analyzer: { ran: analyzer.ran, note: analyzer.note || null, reused: Boolean(analyzer.reused) } };
 }
 
 function allScannable(root, packageDirectories) {

@@ -62,7 +62,7 @@ const KIND_SEVERITY = { 'bloco-copiado': 'média' };
  * Code quality review. files: changed files (relative). all: review every class as if new.
  * Returns { findings, analyzer } with findings sorted by priority.
  */
-function qualityReview(root, files, { model, packageDirectories, base, all = false, analyzer = true, analyzerSelectors = ['Recommended', 'cpd'], options = {} }) {
+function qualityReview(root, files, { model, packageDirectories, base, all = false, rules = true, analyzer = true, analyzerSelectors = ['Recommended', 'cpd'], options = {} }) {
   const sources = loadSources(root, packageDirectories, model, options.include_tests);
   const changed = new Map();
   for (const f of all ? [...sources.keys()] : files.filter((x) => /\.cls$/i.test(x))) {
@@ -73,7 +73,7 @@ function qualityReview(root, files, { model, packageDirectories, base, all = fal
   const findings = [];
   // One finding per pair of files: a generated class can have hundreds of blocks equal to another file (or itself).
   const pairs = new Map();
-  for (const b of findDuplicateBlocks(sources, changed, { minTokens: options.min_tokens, minLines: options.min_lines })) {
+  for (const b of rules ? findDuplicateBlocks(sources, changed, { minTokens: options.min_tokens, minLines: options.min_lines }) : []) {
     const key = `${b.file}|${b.other}`;
     if (!pairs.has(key)) pairs.set(key, []);
     pairs.get(key).push(b);
@@ -105,7 +105,7 @@ function qualityReview(root, files, { model, packageDirectories, base, all = fal
       source: 'reldor',
     });
   }
-  for (const r of findRepetition(sources, changed, model, { minLiteralFiles: options.min_literal_files })) findings.push({ ...r, source: 'reldor' });
+  if (rules) for (const r of findRepetition(sources, changed, model, { minLiteralFiles: options.min_literal_files })) findings.push({ ...r, source: 'reldor' });
 
   let ca = { ran: false, findings: [] };
   if (analyzer) {
@@ -116,7 +116,7 @@ function qualityReview(root, files, { model, packageDirectories, base, all = fal
   const all_ = [...findings, ...ca.findings.map((f) => ({ ...f, kind: 'code-analyzer' }))].sort((a, b) => order[a.severity] - order[b.severity] || String(a.file).localeCompare(String(b.file)) || (a.line || 0) - (b.line || 0));
   const counts = { alta: 0, 'média': 0, baixa: 0 };
   for (const f of all_) counts[f.severity] += 1;
-  return { files: changed.size, findings: all_, counts, analyzer: { ran: ca.ran, note: ca.note || null } };
+  return { files: changed.size, findings: all_, counts, analyzer: { ran: ca.ran, note: ca.note || null, reused: Boolean(ca.reused) } };
 }
 
 module.exports = { qualityReview, loadSources, addedLines };

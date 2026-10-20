@@ -23,6 +23,7 @@ function render(d) {
   if (!d.folder.reldorFolder && d.folder.project.length) {
     out.push(d.folder.gitRepo ? '✅ Repositório Git' : '⚠️ Esta pasta não é um repositório Git: o Reldor precisa do Git para comparar as suas mudanças.');
     out.push(d.folder.configured ? '✅ Reldor configurado neste projeto (.reldor/)' : '➖ Reldor ainda não configurado neste projeto');
+    if (d.folder.toolSuggestions) out.push(`💡 ${d.folder.toolSuggestions} sinal(is) de ferramentas do time que fazem o mesmo que o Reldor (reldor tools)`);
   }
   out.push('', `➡️  Próximo passo: ${d.next}`);
   return out;

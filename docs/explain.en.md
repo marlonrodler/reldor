@@ -6,7 +6,7 @@
 
 `explain` answers "what happens when a record is saved?" for one object and one event (insert, update or delete). It lists every automation in Salesforce's order of execution: before-save flows, before triggers, validation rules, after triggers, legacy workflow rules and processes, after-save flows, the roll-up cascade to parent records, and what runs asynchronously after the commit.
 
-The chain is built by scripts from the index, not guessed by the AI. Triggers are followed into their classes, through the fflib `Application` factory, up to two levels deep. An fflib domain that does not override the handler for a phase (for example `onAfterUpdate`) is shown as idle, so you don't chase logic that never runs.
+The chain is built by scripts from the index, not guessed by the AI. Triggers are followed into their classes, through the fflib `Application` factory, up to three levels deep. An fflib domain that does not override the handler for a phase (for example `onAfterUpdate`) is shown as idle, so you don't chase logic that never runs.
 
 ## When to reach for it
 
@@ -37,4 +37,4 @@ Yes. Ask the AI for one: it turns each step into action → what fires → what 
 
 ## Where it fits
 
-`explain` is the heart of Phase 1. The same index feeds [usages](./usages.en.md), the advisors and, next, the test radar and task refinement.
+The same index behind `explain` feeds [usages](./usages.en.md), [refine](./refine.en.md), [test-radar](./test-radar.en.md) and the advisors.

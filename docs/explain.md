@@ -6,7 +6,7 @@
 
 O `explain` responde "o que acontece quando um registro é salvo?" para um objeto e um evento (insert, update ou delete). Ele lista cada automação na ordem de execução do Salesforce: flows before-save, triggers before, validation rules, triggers after, workflow rules e processos legados, flows after-save, a cascata de roll-up para os registros pai e o que roda de forma assíncrona depois do commit.
 
-A cadeia é montada por scripts a partir do índice, não adivinhada pela IA. As triggers são seguidas até as classes, passando pela fábrica `Application` do fflib, até dois níveis. Um domain do fflib que não implementa o handler daquela fase (por exemplo `onAfterUpdate`) aparece como sem lógica, para você não procurar código que nunca roda.
+A cadeia é montada por scripts a partir do índice, não adivinhada pela IA. As triggers são seguidas até as classes, passando pela fábrica `Application` do fflib, até três níveis. Um domain do fflib que não implementa o handler daquela fase (por exemplo `onAfterUpdate`) aparece como sem lógica, para você não procurar código que nunca roda.
 
 ## Quando usar
 
@@ -37,4 +37,4 @@ Sim. Peça à IA: ela transforma cada passo em ação → o que dispara → o qu
 
 ## Onde se encaixa
 
-O `explain` é o coração da Fase 1. O mesmo índice alimenta o [usages](./usages.md), os conselheiros e, em seguida, o radar de testes e o refinador de task.
+O mesmo índice do `explain` alimenta o [usages](./usages.md), o [refine](./refine.md), o [test-radar](./test-radar.md) e os conselheiros.

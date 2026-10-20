@@ -14,7 +14,8 @@ Objetivo: instigar uma tela melhor **antes** de codar.
 - Se não estiver definido, pergunte uma vez: "Seguimos com o SLDS, o padrão recomendado pela Salesforce?" e grave a resposta.
 
 ## Passos
-1. Procure componentes existentes que resolvam parte do problema (`reldor ask`).
+1. Procure telas que já existem para o mesmo objeto: `reldor usages <Objeto> --json` lista os LWC, Aura e Visualforce
+   que usam o objeto. Veja se algum já resolve parte do problema.
 2. Proponha **2 ou 3 caminhos**, do mais simples ao mais moderno, com prós e contras.
 3. Ofereça uma **POC visual** em `.reldor/work/<task>/poc/`, fora do `force-app`.
 4. Só implemente depois da escolha da pessoa.

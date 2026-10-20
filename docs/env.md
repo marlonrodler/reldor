@@ -11,7 +11,7 @@ O `reldor env` mostra a cadeia e deixa mudar:
 ```
 1. pre-uat → develop/time-a
 2. uat → release/uat
-3. producao → master  (produção, deploy bloqueado)
+3. producao → master  (produção, protegido: o test-radar --run recusa rodar ali)
 
 • As branches de desenvolvimento nascem de: master
 • Nome sugerido da branch de merge: merge/{feature}-{env}
@@ -20,7 +20,7 @@ O `reldor env` mostra a cadeia e deixa mudar:
 | Para mudar | Comando |
 |---|---|
 | A cadeia (a ordem é a ordem de promoção) | `reldor env set "pre-uat:develop/x, uat:rc/uat, prod:master"` |
-| Qual ambiente é produção (deploy bloqueado) | `reldor env --production prod` (padrão: o último) |
+| Qual ambiente é produção (protegido) | `reldor env --production prod` (padrão: o último) |
 | De onde nascem as branches de desenvolvimento | `reldor env --base master` (padrão: a branch de produção) |
 | Padrão do nome da branch de merge | `reldor env --merge-branch "merge/{env}/{feature}"` |
 | Padrão do nome da branch de rollback | `reldor env --rollback-branch "rollback/{id}"` |

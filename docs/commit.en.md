@@ -37,6 +37,9 @@ Fix what it says, or commit with `git commit --no-verify` when it is intentional
 **What happens to the org's changes after the commit?**
 They stay in your folder, outside Git. Discard them with `git restore <file>` if you don't need them.
 
+**The team already has a commit hook (husky, core.hooksPath).**
+`hook install` keeps a `pre-commit` that was already there and runs it first. With `core.hooksPath`, it does not touch the team's hooks and shows the line to add. If the team's hook already does the same work, save `pre-commit: skip` (or `xml-duplicates: verify`) in [`tools`](./tools.en.md).
+
 ## Where it fits
 
 It sits between development and promotion: retrieve → develop → [test-radar](./test-radar.en.md) → [xml](./xml.en.md) → commit.

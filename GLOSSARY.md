@@ -19,3 +19,6 @@ Os termos que o Reldor usa, sempre com o mesmo sentido.
 | **Commit limpo** | Clean commit | Commit só com as linhas do dev, não o que veio do retrieve. |
 | **Ensaio de promoção** | Promotion rehearsal | Merge simulado que mostra conflitos, dependências faltando e ordem dos commits antes do PR. |
 | **Perfil do projeto** | Profile (project) | `.reldor/profile.md`: framework, padrões e regras do time, versionado no repositório do cliente. |
+| **Capacidade** | Capability | Uma coisa que o Reldor sabe fazer (ordenar XML, rodar o Code Analyzer, rodar testes...), com um nome no `reldor tools`. |
+| **Ferramentas do time** | Team tools | O que outra ferramenta já faz no projeto; para cada capacidade, o Reldor faz (`run`), só confere (`verify`) ou fica de fora (`skip`). |
+| **Registro de execuções** | Run ledger | O resultado guardado de cada checagem pelo conteúdo que ela leu, para a mesma checagem não rodar duas vezes. |

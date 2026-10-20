@@ -17,7 +17,7 @@ function show(root) {
   }
   envs.forEach((e, i) => {
     const ok = gitApi.isRepo(root) ? Boolean(gitApi.resolveBranch(root, e.branch)) : true;
-    const tags = [e === prod ? 'produção' : null, e.deploy === 'blocked' ? 'deploy bloqueado' : null, e.org ? `org: ${e.org}` : null].filter(Boolean);
+    const tags = [e === prod ? 'produção' : null, e.deploy === 'blocked' ? 'protegido: o test-radar --run recusa rodar ali' : null, e.org ? `org: ${e.org}` : null].filter(Boolean);
     out.push(`${i + 1}. ${e.name} → ${e.branch}${tags.length ? `  (${tags.join(', ')})` : ''}${ok ? '' : '  ⚠️ branch não encontrada aqui'}`);
   });
   const mergeTpl = config.git?.merge_branch || 'merge/{feature}-{env}';

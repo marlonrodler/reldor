@@ -7,7 +7,6 @@ const { buildIndex } = require('../../modules/sf/indexer');
 const { explainObject, renderExplain, EVENTS } = require('../../modules/sf/explain');
 const { findUsages, renderUsages } = require('../../modules/sf/checks/usages');
 const { checkQueries } = require('../../modules/sf/checks/queries');
-const { buildRadar } = require('../../modules/sf/test-radar');
 const { refineBrief, renderBrief } = require('../../modules/sf/refine');
 const xmlOrganizer = require('../../modules/sf/xml');
 const security = require('../../modules/sf/security');
@@ -22,6 +21,12 @@ const { resolveOrg } = require('../../modules/sf/org/guard');
 const path = require('node:path');
 const fs = require('node:fs');
 const readline = require('node:readline/promises');
+
+/** Lines that say which of these capabilities another tool of the team takes care of (tools: in the config). */
+function toolNotes(config, ids) {
+  const tools = require('../tools');
+  return ids.map((id) => tools.ownerNote(config, id)).filter(Boolean).map((n) => `🔎 ${n}`);
+}
 
 function requireSfProject(root) {
   const { readProject } = require('../../modules/sf');
@@ -177,8 +182,10 @@ async function testRadarCommand(root, flags) {
   const { config } = loadConfig(root);
   const { model } = freshModel(root, flags);
   const changes = changedFiles(root, config, { base: flags.base, files: flags.files });
-  const radar = buildRadar(model, changes);
-  const issues = radar.classes.length ? checkQueries(model, radar.classes) : [];
+  const shared = require('./checks');
+  const tools = require('../tools');
+  const radar = shared.radarRun(root, changes, model).result;
+  const issues = radar.classes.length && tools.checks(config, 'queries') ? shared.queriesRun(root, radar.classes, model).result : [];
   const result = { ...radar, queryIssues: issues };
 
   const out = ['\n🛡️  Radar de testes', ''];
@@ -194,6 +201,7 @@ async function testRadarCommand(root, flags) {
   }
   out.push(...renderQueryIssues(issues));
   for (const n of radar.notes) out.push(`ℹ️  ${n}`);
+  out.push(...toolNotes(config, ['affected-tests', 'run-tests']));
 
   if (!flags.run) {
     if (radar.tests.length) out.push('', '➡️  Para rodar estes testes na sandbox, sem salvar nada: reldor test-radar --run --org <alias>');
@@ -206,6 +214,13 @@ async function testRadarCommand(root, flags) {
   if (!radar.tests.length) {
     if (flags.json) printJson(result);
     else print([...out, '', 'Nada para rodar.']);
+    return 0;
+  }
+  // Running tests in the org is an action: when another tool owns it (the pipeline), only --force runs it.
+  if (!tools.runs(config, 'run-tests') && !flags.force) {
+    const note = tools.ownerNote(config, 'run-tests');
+    if (flags.json) printJson({ ...result, run: null, skipped: note });
+    else print([...out, '', `➖ ${note}`, '   Não rodei nada. Para rodar mesmo assim: reldor test-radar --run --force']);
     return 0;
   }
   const { readProject } = require('../../modules/sf');
@@ -260,43 +275,72 @@ function renderXml(results, check) {
     for (const c of r.conflicts) out.push(`   ⚠️ conflito em ${c.section} "${c.key}": duas entradas com valores diferentes. Decida qual fica.`);
   }
   if (!touched.length && !results.some((r) => r.conflicts.length)) out.push(`✅ ${results.length} arquivo(s) já estão organizados.`);
-  if (check && touched.length) out.push('', '➡️  Para organizar: reldor xml');
+  if (check && touched.length) out.push('', '➡️  Para organizar: reldor xml (ou a ferramenta do time que cuida disso)');
   return out;
 }
 
 function xmlCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
+  const tools = require('../tools');
   const { config } = loadConfig(root);
   const { readProject } = require('../../modules/sf');
   let files = args;
   if (flags.all) files = xmlOrganizer.allOrganizable(root, readProject(root).packageDirectories);
   else if (!files.length) files = changedFiles(root, config, { base: flags.base }).filter((c) => c.status !== 'deleted').map((c) => c.file).filter((f) => xmlOrganizer.isOrganizable(f));
-  const results = xmlOrganizer.organizeFiles(root, files, { check: Boolean(flags.check) });
+  // Organizing changes files: only when the Reldor owns both sorting and duplicates here (or --force).
+  // When another tool owns them, the Reldor only checks, so the two tools never rewrite the same file.
+  const owned = tools.runs(config, 'xml-duplicates') && tools.runs(config, 'xml-order');
+  const check = Boolean(flags.check) || (!owned && !flags.force);
+  const notes = ['xml-duplicates', 'xml-order'].map((id) => tools.ownerNote(config, id)).filter(Boolean);
+  let results = xmlOrganizer.organizeFiles(root, files, { check });
+  // A part another tool owns and the Reldor does not even check (skip) does not count.
+  if (check) {
+    const dup = tools.checks(config, 'xml-duplicates');
+    const order = tools.checks(config, 'xml-order');
+    results = results.map((r) => ({ ...r, duplicates: dup ? r.duplicates : 0, sorted: order ? r.sorted : 0, conflicts: dup ? r.conflicts : [] })).map((r) => ({ ...r, changed: Boolean(r.duplicates || r.sorted) }));
+  }
   const changed = results.filter((r) => r.changed).length;
   const conflicts = results.reduce((n, r) => n + r.conflicts.length, 0);
-  if (!flags.check) logAction(root, 'xml', { summary: `${changed} arquivo(s) organizado(s), ${conflicts} conflito(s)` });
-  if (flags.json) printJson({ results });
-  else print(renderXml(results, Boolean(flags.check)));
-  return flags.check && (changed || conflicts) ? 1 : 0;
+  if (!check) logAction(root, 'xml', { summary: `${changed} arquivo(s) organizado(s), ${conflicts} conflito(s)` });
+  if (flags.json) printJson({ results, checkOnly: check, tools: notes });
+  else {
+    const out = renderXml(results, check);
+    if (notes.length) {
+      out.push('', ...notes.map((n) => `🔎 ${n}`));
+      if (!flags.check && !owned) out.push(changed ? '   Não mudei nada. Rode a ferramenta do time nesses arquivos (ou reldor xml --force para o Reldor organizar mesmo assim).' : '   Não mudei nada: só conferi.');
+    }
+    print(out);
+  }
+  return check && (changed || conflicts) ? 1 : 0;
 }
 
-/** Pre-commit guard: blocks unorganized XML and files that only came from the org. */
+/**
+ * Pre-commit guard: blocks XML with duplicated entries (or two different values for one item) and files that only
+ * came from the org. It follows tools: (a check another tool owns is verified, or left out) and the run ledger
+ * (a file whose content the review already checked is not checked again).
+ */
 function precommitCommand(root) {
+  const tools = require('../tools');
+  const { config } = loadConfig(root);
   const git = (args) => gitApi.git(root, args);
   const staged = (git(['diff', '--cached', '--name-only', '--diff-filter=ACM']).stdout || '').split('\n').filter(Boolean);
   const problems = [];
-  for (const file of staged.filter((f) => xmlOrganizer.isOrganizable(f))) {
-    const content = gitApi.git(root, ['show', `:${file}`]);
-    if (!content.ok) continue;
-    try {
-      const r = organizeXml(content.stdout + '\n');
-      if (r.report.duplicates) problems.push(`${file}: ${r.report.duplicates} entrada(s) duplicada(s). Rode "reldor xml ${file}" e "git add ${file}".`);
-      for (const c of r.report.conflicts) problems.push(`${file}: duas entradas diferentes para ${c.section} "${c.key}". Decida qual fica.`);
-    } catch {
-      /* not our business if the XML is unusual */
+  if (tools.checks(config, 'xml-duplicates')) {
+    const how = (file) => tools.fixHint(config, 'xml-duplicates', `Rode "reldor xml ${file}" e "git add ${file}".`);
+    for (const file of staged.filter((f) => xmlOrganizer.isOrganizable(f))) {
+      const content = gitApi.git(root, ['show', `:${file}`], { raw: true });
+      if (!content.ok) continue;
+      try {
+        const { result: r } = xmlOrganizer.checkXml(root, file, content.stdout);
+        if (!r.supported) continue;
+        if (r.duplicates) problems.push(`${file}: ${r.duplicates} entrada(s) duplicada(s). ${how(file)}`);
+        for (const c of r.conflicts) problems.push(`${file}: duas entradas diferentes para ${c.section} "${c.key}". Decida qual fica.`);
+      } catch {
+        /* not our business if the XML is unusual */
+      }
     }
   }
-  const snapshot = process.env.RELDOR_CLEAN_COMMIT ? null : snapshotApi.loadSnapshot(root);
+  const snapshot = process.env.RELDOR_CLEAN_COMMIT || !tools.checks(config, 'org-files') ? null : snapshotApi.loadSnapshot(root);
   if (snapshot) {
     const head = git(['rev-parse', '--verify', '--quiet', 'HEAD']).stdout;
     const fromOrg = new Set(head ? (git(['diff', '--name-only', '--no-renames', head, snapshot.tree]).stdout || '').split('\n').filter(Boolean) : []);
@@ -394,21 +438,31 @@ function renderSecurity(r) {
 
 function securityCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
+  const tools = require('../tools');
+  const shared = require('./checks');
+  const { runAnalyzer } = require('../../modules/sf/security/analyzer');
   const { config } = loadConfig(root);
   const { readProject } = require('../../modules/sf');
   let files = args;
   if (flags.all) files = security.allScannable(root, readProject(root).packageDirectories);
   else if (!files.length) files = changedFiles(root, config, { base: flags.base }).filter((c) => c.status !== 'deleted').map((c) => c.file).filter((f) => security.isScannable(f));
   const { model } = freshModel(root, flags);
-  const result = security.securityReview(root, files, {
-    model,
-    sensitiveTerms: config.security?.sensitive_terms,
-    strictSharing: Boolean(config.security?.strict_sharing),
-    analyzer: !flags['no-analyzer'],
-  });
+  // Asked by name, the Reldor rules always run (and are reused if the same content was already checked).
+  const rules = shared.securityRules(root, files, model, config);
+  const result = { ...rules.result, findings: [...rules.result.findings] };
+  // The Code Analyzer runs unless another tool owns it here (then --analyzer forces it) or --no-analyzer.
+  const useAnalyzer = !flags['no-analyzer'] && (tools.runs(config, 'code-analyzer') || flags.analyzer);
+  const ca = useAnalyzer ? runAnalyzer(root, files.filter((f) => security.isScannable(f))) : { ran: false, findings: [], note: tools.runs(config, 'code-analyzer') ? null : 'O Code Analyzer fica com outra ferramenta do time aqui (para rodar mesmo assim: --analyzer).' };
+  result.findings.push(...ca.findings);
+  const order = { alta: 0, 'média': 1, baixa: 2 };
+  result.findings.sort((a, b) => order[a.severity] - order[b.severity] || String(a.file).localeCompare(String(b.file)) || (a.line || 0) - (b.line || 0));
+  result.counts = { alta: 0, 'média': 0, baixa: 0 };
+  for (const f of result.findings) result.counts[f.severity] += 1;
+  result.analyzer = { ran: ca.ran, note: ca.note || null, reused: Boolean(ca.reused) };
+  result.reused = rules.reused;
   logAction(root, 'security', { summary: `${files.length} arquivo(s): ${result.counts.alta} alta, ${result.counts['média']} média` });
   if (flags.json) printJson(result);
-  else print(renderSecurity(result));
+  else print([...renderSecurity(result), ...toolNotes(config, ['security', 'code-analyzer']), ...(rules.reused ? ['♻️  Mesmo conteúdo já conferido antes: resultado reaproveitado (use --fresh para refazer).'] : [])]);
   const failOn = flags['fail-on'];
   if (failOn === 'alta' && result.counts.alta) return 1;
   if (failOn === 'média' && (result.counts.alta || result.counts['média'])) return 1;
@@ -444,23 +498,21 @@ function renderQuality(r) {
 
 function qualityCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
+  const tools = require('../tools');
+  const shared = require('./checks');
   const { config } = loadConfig(root);
   const { readProject } = require('../../modules/sf');
   const packageDirectories = readProject(root).packageDirectories;
   let files = args.map((f) => f.split(path.sep).join('/'));
   if (!flags.all && !files.length) files = changedFiles(root, config, { base: flags.base }).filter((c) => c.status !== 'deleted').map((c) => c.file);
   const { model } = freshModel(root, flags);
-  const result = quality.qualityReview(root, files, {
-    model,
-    packageDirectories,
-    base: flags.base || defaultBase(root, config),
-    all: Boolean(flags.all),
-    analyzer: !flags['no-analyzer'],
-    options: config.quality || {},
-  });
+  const analyzer = !flags['no-analyzer'] && (tools.runs(config, 'code-analyzer') || Boolean(flags.analyzer));
+  const run = shared.qualityRun(root, files, model, config, { packageDirectories, base: flags.base || defaultBase(root, config), all: Boolean(flags.all), analyzer });
+  const result = run.result;
+  if (!analyzer && !tools.runs(config, 'code-analyzer')) result.analyzer = { ran: false, note: 'O Code Analyzer fica com outra ferramenta do time aqui (para rodar mesmo assim: --analyzer).' };
   logAction(root, 'quality', { summary: `${result.files} classe(s): ${result.findings.length} apontamento(s)` });
-  if (flags.json) printJson(result);
-  else print(renderQuality(result));
+  if (flags.json) printJson({ ...result, reused: run.reused });
+  else print([...renderQuality(result), ...toolNotes(config, ['quality', 'code-analyzer']), ...(run.reused ? ['♻️  Mesmo conteúdo já conferido antes: resultado reaproveitado (use --fresh para refazer).'] : [])]);
   const failOn = flags['fail-on'];
   if (failOn === 'alta' && result.counts.alta) return 1;
   if (failOn === 'média' && (result.counts.alta || result.counts['média'])) return 1;
@@ -469,11 +521,13 @@ function qualityCommand(root, flags, args) {
 
 function checkCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
+  const shared = require('./checks');
+  const { config } = loadConfig(root);
   const { model } = freshModel(root, flags);
-  const issues = checkQueries(model, args);
+  const issues = args.length ? shared.queriesRun(root, args, model).result : checkQueries(model, args);
   logAction(root, 'check', { summary: `${issues.length} possível(is) campo(s) fora da query` });
   if (flags.json) printJson({ queryIssues: issues });
-  else print(['\n🛡️  Checagem de queries', '', issues.length ? '' : '✅ Nenhum campo lido fora da query encontrado.', ...renderQueryIssues(issues).slice(1)].filter((l, i) => i !== 2 || l));
+  else print([...['\n🛡️  Checagem de queries', '', issues.length ? '' : '✅ Nenhum campo lido fora da query encontrado.', ...renderQueryIssues(issues).slice(1)].filter((l, i) => i !== 2 || l), ...toolNotes(config, ['queries'])]);
   return 0;
 }
 

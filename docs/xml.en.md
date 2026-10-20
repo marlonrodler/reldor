@@ -12,7 +12,7 @@ Sorted files also make merges between environments calmer: fewer lines move, so 
 
 ## When to reach for it
 
-Before a commit (the AI runs it on the files you changed), or once with `reldor xml --all` to clean a project. `reldor xml --check` only reports; the pre-commit guard uses it.
+Before a commit (the AI runs it on the files you changed), or once with `reldor xml --all` to clean a project. `reldor xml --check` only reports, changing nothing. The pre-commit guard checks duplicates (order does not block a commit).
 
 ## It's working if
 
@@ -24,6 +24,9 @@ Before a commit (the AI runs it on the files you changed), or once with `reldor 
 **Does it change layouts or flows?**
 No. Their order is meaningful, so they are left alone.
 
+**Another team tool already sorts or removes duplicates.**
+Say so in [`tools`](./tools.en.md) (`xml-duplicates` and `xml-order`). With `verify`, `reldor xml` rewrites nothing: it only checks and, if something is missing, says which tool to run; `review` and the hook still guarantee no duplicate reaches the commit. With `skip`, Reldor stays out. To have Reldor organize anyway: `reldor xml --force`. The same file with the same content is checked only once.
+
 ## Where it fits
 
-It runs before [commit](./commit.en.md) and inside the pre-commit guard.
+It runs before [commit](./commit.en.md); the duplicate check also runs inside the pre-commit guard.

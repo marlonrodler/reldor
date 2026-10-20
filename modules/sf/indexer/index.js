@@ -240,6 +240,19 @@ function buildIndex(root, options = {}) {
   return { model, stats };
 }
 
+/**
+ * Fingerprint of the index as it stands: changes whenever any project file the index reads changes (size or date),
+ * or the indexer itself changes. Used by the run ledger so a check that depends on the whole project is not reused
+ * after something changed.
+ */
+function indexFingerprint(root) {
+  try {
+    return require('node:crypto').createHash('sha1').update(fs.readFileSync(cacheFiles(root).files)).digest('hex');
+  } catch {
+    return `no-index-${Date.now()}`;
+  }
+}
+
 /** Loads the saved index, or null. */
 function loadIndex(root) {
   const data = readJson(cacheFiles(root).index);
@@ -261,4 +274,4 @@ function ensureIndex(root, config, options = {}) {
   return loadIndex(root);
 }
 
-module.exports = { buildIndex, loadIndex, ensureIndex, indexAgeHours, aggregate, INDEX_VERSION };
+module.exports = { buildIndex, loadIndex, ensureIndex, indexAgeHours, indexFingerprint, aggregate, INDEX_VERSION };

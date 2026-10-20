@@ -219,5 +219,7 @@ function configuredOrg(root, home = require('node:os').homedir()) {
     || read(path.join(home, '.sf', 'config.json'), 'target-org') || read(path.join(home, '.sfdx', 'sfdx-config.json'), 'defaultusername');
 }
 
+const { CAPABILITIES: capabilities, detectTools } = require('./tools');
+
 module.exports = {
-  alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, doctorChecks, configuredOrg, readProject };
+  capabilities, detectTools, alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, doctorChecks, configuredOrg, readProject };

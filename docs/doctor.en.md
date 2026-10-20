@@ -8,7 +8,7 @@
 
 - **On the computer:** Node.js (18 or newer), Git, Salesforce CLI, and the optional tools (Code Analyzer, GitHub CLI). It also shows where Reldor is installed and the command to update it.
 - **In the AI:** whether it found the Reldor plugin in Kiro or Claude Code.
-- **In this folder:** whether it is a Salesforce project, a Git repository, and whether Reldor is already set up. It warns when the terminal is in Reldor's own folder instead of the project's.
+- **In this folder:** whether it is a Salesforce project, the project's default org, whether it is a Git repository, whether Reldor is already set up, and whether there are signs of team tools not decided yet (see [`tools`](./tools.en.md)). It warns when the terminal is in Reldor's own folder instead of the project's.
 
 ## When to reach for it
 
@@ -26,6 +26,9 @@ It looks in the known Kiro and Claude Code folders. If your AI already knows Rel
 
 **It says the folder is synced (OneDrive).**
 Reldor was cloned into a OneDrive folder, and syncing slows everything down. Install it with npm (`npm install -g github:marlonrodler/reldor`) and delete the cloned folder.
+
+**It says it found team tools.**
+The project has signs of tools that do part of Reldor's work (a hook, the pipeline, AI instructions). Run `reldor tools` to see them and decide who takes care of each thing.
 
 ## Where it fits
 

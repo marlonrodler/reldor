@@ -12,6 +12,11 @@ Classes that receive records as parameters or from `Trigger.new` are skipped, be
 
 Run `reldor check` once on a project to find old problems, or `reldor check MyClass` while you work. `test-radar` already runs it on the classes you changed.
 
+## Common questions
+
+**The same as review does?**
+Yes: `review` already includes this check. With the same content and the same classes, the result is reused, so running both does not repeat the work.
+
 ## Where it fits
 
 It is the static half of [test-radar](./test-radar.en.md).

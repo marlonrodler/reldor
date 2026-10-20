@@ -4,9 +4,9 @@
 
 ## What it does
 
-`init` sets Reldor up in a project in one step. It detects what it can on its own (the Salesforce project, the `sf` CLI, the default org, fflib, existing specs and branches) and asks only three things: the environment branches in promotion order, the reference org, and whether the team follows SLDS. It writes `.reldor/reldor.config.yaml` and `.reldor/profile.md`, and adds Reldor's local folders to `.gitignore`.
+`init` sets Reldor up in a project in one step. It detects what it can on its own (the Salesforce project, the `sf` CLI, the default org, fflib, existing specs and branches) and asks only four things: the environment branches in promotion order, the reference org, whether the team follows SLDS, and whether you already use a tool that creates branches, commits and opens PRs. It writes `.reldor/reldor.config.yaml` and `.reldor/profile.md`, and adds Reldor's local folders to `.gitignore`.
 
-The last environment (production) is always marked as blocked for deploys.
+The last environment is production and stays protected: Reldor never deploys, and the `test-radar --run` tests refuse to run there (unless `--allow-production`). After saving, it looks for signs of team tools that already do part of its work and suggests [`tools`](./tools.en.md).
 
 ## When to reach for it
 

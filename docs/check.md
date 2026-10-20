@@ -12,6 +12,11 @@ Classes que recebem registros por parâmetro ou do `Trigger.new` ficam de fora, 
 
 Rode `reldor check` uma vez num projeto para achar problemas antigos, ou `reldor check MinhaClasse` enquanto trabalha. O `test-radar` já roda essa checagem nas classes que você alterou.
 
+## Perguntas comuns
+
+**O mesmo que o review faz?**
+Sim: o `review` já inclui esta checagem. Com o mesmo conteúdo e as mesmas classes, o resultado é reaproveitado, então rodar os dois não repete o trabalho.
+
 ## Onde se encaixa
 
 É a metade estática do [test-radar](./test-radar.md).

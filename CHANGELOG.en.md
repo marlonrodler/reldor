@@ -2,6 +2,25 @@
 
 # Changelog
 
+## 0.19.0
+
+- `reldor tools`: Reldor lives with the team's tools. Each thing it does is a capability (`xml-duplicates`, `xml-order`,
+  `org-files`, `security`, `quality`, `code-analyzer`, `queries`, `affected-tests`, `run-tests`, `pre-commit`,
+  `profile-merge`), and the project picks in `tools:` whether Reldor does it (`run`), only checks without redoing it
+  (`verify`) or stays out (`skip`). It looks for signs of those tools (Git hooks, pipelines, AI instructions,
+  `package.json` scripts, a merge driver in `.gitattributes`) and suggests, showing the line; nothing is saved by itself.
+- `review`, the pre-commit hook, `xml`, `security`, `quality`, `check`, `test-radar`, `clean`, `hook install` and
+  `merge install` follow the modes. What stays with another tool shows in the result with its name. Commands that change
+  something only act on another tool's capability with `--force`.
+- Running once: the same check over the same content runs once (security and quality rules, Code Analyzer, affected
+  tests, queries, XML). The hook, `review` and the AI share the result (♻️). `--fresh` redoes it.
+- `status`, `doctor` and `init` warn when there are signs of team tools not decided yet.
+- Coherence: config keys that did nothing were removed (`spec.generator`, `advisors.mode` and `enabled`, `xml.types`,
+  `index.depth`, `git.clean_commit`, `pre_commit_hook`, `smart_merge`, `test_radar.auto_run`, `automations`,
+  `connectors`), and so were the empty folders that promised features. Skills no longer ask to run commands that do not
+  exist (`reldor context`, `reldor ask`). The README and architecture describe only what Reldor does today, with a
+  diagram of how it works and the Git section rewritten.
+
 ## 0.18.0
 
 - Docs are Portuguese first: every document is `<name>.md` in Portuguese and `<name>.en.md` in English (README,

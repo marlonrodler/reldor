@@ -4,11 +4,22 @@
 
 O guardião que lê a sua org antes de a sua IA escrever uma linha de código.
 
-**Em um minuto:** a IA escreve código Salesforce rápido, mas não enxerga a org inteira (o flow que roda antes da sua trigger, a validation rule que quebra os testes de outro time, o roll-up que salva o pai junto), e o Git não entende metadado (profiles dão conflito sem motivo, o commit leva tudo o que o retrieve trouxe). O Reldor é um comando que monta um índice do seu projeto e calcula esses fatos com scripts, e um plugin que ensina a sua IA (Kiro ou Claude Code) a usar esse comando. **Você conversa; a IA roda o Reldor e explica o resultado.**
+**Em um minuto:** a IA escreve código Salesforce rápido, mas não enxerga a org inteira (o flow que roda antes da sua trigger, a validation rule que quebra os testes de outro time, o roll-up que salva o pai junto), e o Git compara linhas, não itens de metadado (dois devs mexendo no mesmo profile viram conflito; o commit leva tudo o que o retrieve trouxe). O Reldor é um comando que monta um índice do seu projeto e calcula esses fatos com scripts, e um plugin que ensina a sua IA (Kiro ou Claude Code) a usar esse comando. **Você conversa; a IA roda o Reldor e explica o resultado.** E ele convive com as ferramentas que o time já usa: o que outra ferramenta faz, ele só confere ou deixa com ela, sem repetir.
 
-> **Status:** Fase 1 concluída; Fase 2 em andamento. Veja o [roadmap](./docs/roadmap.md).
+### Como funciona
 
-**Nesta página:** [Instalação](#instalação) · [O dia a dia](#o-dia-a-dia) · [Por que o Reldor existe](#por-que-o-reldor-existe) · [Referência](#referência) · [Segurança](#segurança) · [Licença](#licença)
+```text
+Você fala → a IA (skill do Reldor) → roda o comando reldor → scripts leem o índice do projeto
+         ← a IA explica o resultado ← o comando devolve fatos (JSON)
+```
+
+1. **Quem descobre os fatos é o script, nunca a IA.** Por isso as respostas são repetíveis.
+2. **O Reldor só lê metadados**, nunca registros, e roda na sua máquina.
+3. **O que é da empresa fica no `.reldor/` do repositório dela**: ambientes, padrões e as ferramentas do time.
+
+> **Status:** as funcionalidades das Fases 1 e 2 estão prontas no código e testadas em 16 projetos Salesforce públicos. Falta a validação em uso real (Fase 3). Veja o [roadmap](./docs/roadmap.md).
+
+**Nesta página:** [Como funciona](#como-funciona) · [Instalação](#instalação) · [O dia a dia](#o-dia-a-dia) · [Por que o Reldor existe](#por-que-o-reldor-existe) · [Referência](#referência) · [Segurança](#segurança) · [Licença](#licença)
 
 ## Instalação
 
@@ -144,7 +155,7 @@ Você não decora comandos: diz o que quer e a IA roda o certo.
 | **Subir** | "está pronto para o pré-UAT?" | [`promote`](./docs/promote.md): ordem dos commits e dependências faltando antes da PR |
 | **Desfazer** | "preciso fazer rollback da PR 123" | [`rollback`](./docs/rollback.md): revert, `destructiveChanges.xml` e riscos |
 
-Um gancho pre-commit também roda sozinho em todo commit, inclusive nos feitos por outras ferramentas.
+Depois de instalado (`reldor hook install`), um gancho pre-commit roda em todo commit, inclusive nos feitos por outras ferramentas.
 
 **Começando?** Na primeira semana, use só os momentos que leem (E agora?, Entender, Revisar): eles não mudam nada. Os que mexem (Limpar, Merge) sempre mostram o que vão fazer e pedem confirmação.
 
@@ -166,13 +177,19 @@ Um gancho pre-commit também roda sozinho em todo commit, inclusive nos feitos p
 
 **A solução.** O [`test-radar`](./docs/test-radar.md) aponta os testes que a sua mudança pode quebrar, diz por quê e roda na sandbox sem salvar nada. Ele também confere se todo campo lido no código está na query.
 
-### #3: O Git não entende Salesforce
+### #3: O Git compara linhas; o Salesforce pensa em itens
 
-**O problema.** Duas pessoas adicionam classes diferentes no mesmo profile e o Git oferece "tudo ou nada". Um retrieve mistura a org com o seu trabalho. Uma promoção falha porque um campo só existe em develop.
+**O problema.** Num profile ou permission set, cada permissão é um item, e os itens ficam em ordem alfabética. Quando duas pessoas acrescentam permissões vizinhas, o Git vê as mesmas linhas mudando dos dois lados e para com conflito, e quem resolve na mão costuma ficar com um lado só. Itens duplicados que passam despercebidos fazem o deploy falhar.
 
-**A solução.** O [`clean`](./docs/clean.md) deixa na pasta só o seu trabalho antes de qualquer ferramenta commitar. Um [merge assistido](./docs/merge.md) faz o `git merge` na branch de merge e resolve os conflitos mantendo o destino e aplicando só a sua mudança, e depois confere se **entrou só o seu**. Um [ensaio de promoção](./docs/promote.md) acha commits fora de ordem e campos que só existem na develop antes da pull request. E mais um [organizador de XML](./docs/xml.md), um gancho pre-commit e um [plano de rollback](./docs/rollback.md) com o revert, o `destructiveChanges.xml` e os riscos.
+**A solução.** Um [merge item a item](./docs/promote.md#merge-inteligente) dentro do `git merge` normal, que só deixa conflito quando os dois lados mudaram o mesmo item. Um [merge assistido](./docs/merge.md) na branch de merge, que mantém o destino, aplica só a sua mudança e confere se **entrou só o seu**. E um [organizador de XML](./docs/xml.md) que ordena e tira duplicados como o Salesforce faz.
 
-### #4: Brechas de segurança e código copiado que ninguém viu
+### #4: O retrieve e a promoção misturam trabalhos
+
+**O problema.** Um retrieve mistura a org com o seu trabalho, e o commit leva tudo. Uma promoção falha porque um campo só existe em develop, ou porque um commit não passou pelo ambiente anterior.
+
+**A solução.** O [`clean`](./docs/clean.md) deixa na pasta só o seu trabalho antes de qualquer ferramenta commitar, e o [commit limpo](./docs/commit.md) leva só as suas linhas. Um [ensaio de promoção](./docs/promote.md) acha commits fora de ordem e dependências faltando antes da pull request. E um [plano de rollback](./docs/rollback.md) traz o revert, o `destructiveChanges.xml` e os riscos.
+
+### #5: Brechas de segurança e código copiado que ninguém viu
 
 **O problema.** Um método de tela que lê dados sem checar permissão, uma query montada concatenando o que o usuário digitou, um `System.debug` com CPF, uma classe que ignora o compartilhamento a três chamadas da tela. Num banco, qualquer uma dessas vira incidente.
 
@@ -180,7 +197,7 @@ Um gancho pre-commit também roda sozinho em todo commit, inclusive nos feitos p
 
 O [`quality`](./docs/quality.md) pega a cópia antes de ela se espalhar: um bloco colado de outra classe, uma query que já mora num Selector, um método que já existe. Só a repetição que a sua mudança cria, mais o PMD e o CPD do Code Analyzer.
 
-### #5: Telas e automações no improviso
+### #6: Telas e automações no improviso
 
 **O problema.** A IA já sai codando: mais uma trigger num objeto que já tem uma, `@future` onde cabe Queueable, tela feita com HTML na mão.
 
@@ -189,6 +206,12 @@ O [`quality`](./docs/quality.md) pega a cópia antes de ela se espalhar: um bloc
 - [spec-review](./docs/advisors/spec-review.md): encontra as lacunas da spec.
 - [automation-design](./docs/advisors/automation-design.md): onde a lógica deve morar (flow, trigger, Queueable, Batch), olhando o que já existe.
 - [lwc-ux](./docs/advisors/lwc-ux.md): dois ou três caminhos de tela modernos com SLDS, mais uma POC descartável.
+
+### #7: Ferramentas que fazem a mesma coisa
+
+**O problema.** O time já tem um plugin que organiza profiles, uma esteira que roda o Code Analyzer e os testes, um gancho de commit. Uma ferramenta nova que faz tudo de novo gasta tempo, e duas ferramentas reescrevendo o mesmo arquivo brigam.
+
+**A solução.** O [`tools`](./docs/tools.md) acha sinais dessas ferramentas no projeto e pergunta quem cuida de cada coisa. O que outra ferramenta faz, o Reldor só confere (sem refazer) ou deixa com ela, e diz isso no resultado. E nada roda duas vezes: a mesma checagem sobre o mesmo conteúdo é reaproveitada.
 
 ## Referência
 
@@ -200,6 +223,7 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 |---|---|---|
 | [`reldor env`](./docs/env.md) | A cadeia de ambientes e os nomes de branch: ver e mudar, nada fixo no código | ✅ |
 | [`reldor review`](./docs/review.md) | Revisão antes do commit: segurança, qualidade, queries, testes e XML de uma vez | ✅ |
+| [`reldor tools`](./docs/tools.md) | Ferramentas do time: quem cuida de cada coisa, para o Reldor só conferir ou ficar de fora | ✅ |
 | [`reldor doctor`](./docs/doctor.md) | Confere a instalação e a pasta do terminal, e diz o próximo passo | ✅ |
 | [`reldor init`](./docs/init.md) | Configura o Reldor no projeto, perguntando só o que não detecta | ✅ |
 | [`reldor status`](./docs/status.md) | Onde você está: branch, pendências, ambientes, spec, próximo passo | ✅ |
@@ -233,20 +257,21 @@ Todas as skills são **acionadas pela IA**: ela usa quando a conversa pede.
 
 ## Segurança
 
-- Lê **apenas metadados**, nunca registros.
-- Tokens e credenciais ficam **fora do repositório**.
+- Lê **apenas metadados**, nunca registros. Quando a resposta depende de dados (um custom setting, por exemplo), ele entrega a SOQL para você conferir.
+- **Não guarda credenciais**: o acesso às orgs é o do seu `sf` CLI.
 - Toda ação fica num **histórico local** (`reldor log`).
-- **Ações de Git desligadas por padrão**: o Reldor confere e avisa, e criar branch, commitar, fazer merge e abrir PR ficam com o seu fluxo (por exemplo, o plugin de fluxo do time). O `reldor init` pergunta; ligue só se vocês não tiverem uma ferramenta para isso.
-- Deploy em produção **bloqueado por padrão**. Ações em quadros de tasks **desligadas por padrão**.
-- Nada de cliente mora no Reldor: times, prefixos e orgs ficam num perfil dentro do repositório do próprio cliente.
+- **Ações de Git desligadas por padrão**: o Reldor confere e avisa, e não cria branch, não commita e não abre PR por conta própria; isso fica com o seu fluxo (por exemplo, o plugin de fluxo do time). O merge assistido só roda quando você pede. O `reldor init` pergunta; ligue só se vocês não tiverem uma ferramenta para isso.
+- **Nunca faz deploy.** Na org, ele só faz o retrieve que você pede e roda os testes do `test-radar --run` como validação que não salva nada; os testes recusam produção, a não ser que você peça com `--allow-production`.
+- **Não manda o seu código para nenhum serviço.** Fora da sua máquina, ele só fala com a sua org pelo `sf` CLI e, se instalado, com o GitHub pelo `gh` (para ler as PRs abertas).
+- Nada de cliente mora no Reldor: ambientes, padrões e ferramentas do time ficam no `.reldor/` do repositório do próprio cliente.
 
 ## Como é construído
 
 Um **núcleo** genérico e um **módulo** por tecnologia. Salesforce é o primeiro; mobile ou web podem vir depois sem mexer no núcleo. Detalhes na [arquitetura](./docs/architecture.md); os termos que usamos estão no [glossário](./GLOSSARY.md); as decisões, em [docs/adr](./docs/adr).
 
 ```
-core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, advisors
+core/        cli, config, status, doctor, tools, runs, spec, git, log, report
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, tools, advisors
 skills/      as instruções da IA, iguais no Kiro e no Claude Code
 adapters/    manifestos finos por IDE
 ```

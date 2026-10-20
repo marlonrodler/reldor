@@ -32,6 +32,9 @@ It is the first thing the AI runs when you say "I want to use Reldor". In the te
 **It says a commit is missing in UAT, but I merged it.**
 Run with `--fetch`: your local copy of `origin/...` may be old.
 
+**What is "Ferramentas do time"?**
+What another tool does instead of Reldor (see [`tools`](./tools.en.md)), and the signs of tools it found that you have not decided yet. While a sign is undecided, the next step is to check with `reldor tools`.
+
 ## Where it fits
 
 `status` is the router's eyes. The `reldor` skill reads it to decide which step to lead you to.
