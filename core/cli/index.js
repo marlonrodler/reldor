@@ -12,6 +12,8 @@ const { rollbackCommand } = require('./rollback');
 const { reviewCommand } = require('./review');
 const { envCommand } = require('./env');
 const { doctorCommand } = require('./doctor');
+const { toolsCommand } = require('./tools');
+const runs = require('../runs');
 const pkg = require('../../package.json');
 
 // main: the moments people use (shown first). detail: the pieces behind them, still available.
@@ -25,6 +27,7 @@ const COMMANDS = {
   merge: { run: mergeCommand, main: true, help: 'Merge assistido na branch de merge: reldor merge <sua-branch> (--check, --continue, --abort)' },
   promote: { run: promoteCommand, main: true, help: 'Subir: ensaio para um ambiente (ordem dos commits, dependências)' },
   rollback: { run: rollbackCommand, main: true, help: 'Desfazer: plano de rollback de uma PR (não altera nada)' },
+  tools: { run: toolsCommand, help: 'Ferramentas do time: quem cuida de cada coisa, para o Reldor não repetir (set <capacidade> run|verify|skip)' },
   doctor: { run: doctorCommand, help: 'Confere a instalação e a pasta do terminal, e diz o próximo passo (--json)' },
   env: { run: envCommand, help: 'Cadeia de ambientes e branches: ver e mudar (set "nome:branch, ...", --base, --merge-branch, --production)' },
   init: { run: initCommand, help: 'Configura o Reldor neste projeto (--yes, --envs, --org, --design-system, --git-actions on|off)' },
@@ -100,6 +103,7 @@ async function main(argv = process.argv.slice(2)) {
     return 1;
   }
   const root = findProjectRoot(flags.cwd || process.cwd());
+  runs.setFresh(Boolean(flags.fresh));
   return entry.run(root, flags, args);
 }
 

@@ -42,4 +42,4 @@ Jest tests (`__tests__`), comments and sentences (error and assert messages that
 
 ## Where it fits
 
-`usages` powers safe delete today, and the rollback plan and query checks in Phase 2.
+`usages` is the basis of safe deletion: run it before deleting or renaming. The [rollback plan](./rollback.en.md) does a similar check for the items it would delete.

@@ -42,4 +42,4 @@ Testes Jest (`__tests__`), comentários e frases (mensagens de erro e de assert 
 
 ## Onde se encaixa
 
-O `usages` já faz a exclusão segura hoje e vai alimentar o plano de rollback e a checagem de queries na Fase 2.
+O `usages` é a base da exclusão segura: rode antes de apagar ou renomear. O [plano de rollback](./rollback.md) faz uma conferência parecida para os itens que ele mandaria apagar.

@@ -11,7 +11,7 @@ The environment chain is **configuration, not code**. Each project says, in `.re
 ```
 1. pre-uat → develop/time-a
 2. uat → release/uat
-3. producao → master  (produção, deploy bloqueado)
+3. producao → master  (produção, protegido: o test-radar --run recusa rodar ali)
 
 • As branches de desenvolvimento nascem de: master
 • Nome sugerido da branch de merge: merge/{feature}-{env}
@@ -20,7 +20,7 @@ The environment chain is **configuration, not code**. Each project says, in `.re
 | To change | Command |
 |---|---|
 | The chain (order = promotion order) | `reldor env set "pre-uat:develop/x, uat:rc/uat, prod:master"` |
-| Which environment is production (deploy blocked) | `reldor env --production prod` (default: the last one) |
+| Which environment is production (protected) | `reldor env --production prod` (default: the last one) |
 | Where development branches start | `reldor env --base master` (default: the production branch) |
 | Merge branch name pattern | `reldor env --merge-branch "merge/{env}/{feature}"` |
 | Rollback branch name pattern | `reldor env --rollback-branch "rollback/{id}"` |

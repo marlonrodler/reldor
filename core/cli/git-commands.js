@@ -156,11 +156,19 @@ const HOOK = hookScript();
 
 function hookCommand(root, flags, args) {
   const action = args[0] || 'install';
+  if (action === 'install' && !flags.force) {
+    const tools = require('../tools');
+    const { config } = require('../config').loadConfig(root);
+    if (!tools.runs(config, 'pre-commit')) {
+      print([`\n➖ ${tools.ownerNote(config, 'pre-commit')}`, 'Não instalei nada. Para instalar mesmo assim: reldor hook install --force']);
+      return 0;
+    }
+  }
   const hooksPath = run('git', ['config', 'core.hooksPath'], { cwd: root }).stdout;
   if (hooksPath && action === 'install') {
     print([
-      '\n🛡️  Este repositório usa core.hooksPath (' + hooksPath + ').',
-      'Acrescente esta linha ao seu pre-commit:',
+      '\n🛡️  Este repositório usa core.hooksPath (' + hooksPath + '): os ganchos são do time.',
+      'Não mexi neles. Para o Reldor conferir também, acrescente esta linha ao pre-commit do time:',
       '   command -v reldor >/dev/null 2>&1 && reldor precommit',
     ]);
     return 0;
@@ -183,14 +191,13 @@ function hookCommand(root, flags, args) {
     '\n🛡️  Gancho instalado (.git/hooks/pre-commit)',
     '',
     'A cada commit, inclusive os feitos na mão, o Reldor confere:',
-    '• XML de profile, permission set, labels... com duplicados ou fora de ordem;',
+    '• XML de profile, permission set, labels... com entradas duplicadas;',
     '• arquivos que só vieram da org no último retrieve.',
+    'Um gancho que já existia continua rodando antes. O que outra ferramenta do time cuida segue o reldor tools.',
     'Ele não muda nada no repositório. Para remover: reldor hook uninstall',
   ]);
   return 0;
 }
-
-
 
 /**
  * reldor clean: before any tool commits, leave in the folder only what is yours.
@@ -200,6 +207,13 @@ async function cleanCommand(root, flags) {
   if (!gitApi.isRepo(root)) {
     process.stderr.write('⚠️ Esta pasta não é um repositório Git.\n');
     return 1;
+  }
+  // Cleaning changes the folder: when another tool owns "files that came from the org", only --force cleans.
+  const tools = require('../tools');
+  const { config: cfg } = require('../config').loadConfig(root);
+  if (!flags.undo && !tools.runs(cfg, 'org-files') && !flags.force && !flags['dry-run']) {
+    print([`\n🔎 ${tools.ownerNote(cfg, 'org-files')}`, 'Não mexi na pasta. Para ver o que sairia: reldor clean --dry-run. Para o Reldor limpar mesmo assim: reldor clean --force']);
+    return 0;
   }
   if (flags.undo) {
     const list = run('git', ['stash', 'list', '--format=%gd%x09%s'], { cwd: root }).stdout.split('\n').filter(Boolean);
@@ -451,6 +465,12 @@ function mergeCommand(root, flags, args) {
     return 0;
   }
   if (action === 'install') {
+    const tools = require('../tools');
+    const { config: cfg } = require('../config').loadConfig(root);
+    if (!tools.runs(cfg, 'profile-merge') && !flags.force) {
+      print([`\n➖ ${tools.ownerNote(cfg, 'profile-merge')}`, 'Não liguei nada. Para ligar mesmo assim: reldor merge install --force']);
+      return 0;
+    }
     fs.mkdirSync(path.dirname(attrFile), { recursive: true });
     const block = [`${MERGE_MARK} start`, ...MERGE_PATTERNS.map((p) => `${p} merge=reldor`), `${MERGE_MARK} end`, ''].join('\n');
     fs.writeFileSync(attrFile, (stripped && !stripped.endsWith('\n') ? `${stripped}\n` : stripped) + block);

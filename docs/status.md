@@ -32,6 +32,9 @@ Ele compara os commits próprios da sua branch (os que ainda não estão em prod
 **Ele diz que falta um commit em UAT, mas eu já fiz o merge.**
 Rode com `--fetch`: a sua cópia local de `origin/...` pode estar desatualizada.
 
+**O que é "Ferramentas do time"?**
+O que outra ferramenta faz no lugar do Reldor (veja o [`tools`](./tools.md)), e os sinais de ferramentas que ele encontrou e você ainda não decidiu. Enquanto houver sinal sem decisão, o próximo passo é conferir com `reldor tools`.
+
 ## Onde se encaixa
 
 O `status` é os olhos do roteador. A skill `reldor` lê o resultado para decidir o próximo passo.

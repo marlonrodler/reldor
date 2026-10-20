@@ -38,6 +38,9 @@ No. It only runs when you ask, and it asks before committing. If you prefer, com
 **And `reldor merge install`?**
 It turns on the item-by-item driver inside the plain `git merge` too (for merges made by other tools), plus `rerere`. Details in [promote](./promote.en.md#smart-merge).
 
+**The team already has a merge driver for profiles.**
+Save `profile-merge: skip` in [`tools`](./tools.en.md): `reldor merge install` then turns nothing on (unless `--force`). The assisted merge (`reldor merge <branch>`) is still available.
+
 ## Where it fits
 
 After [promote](./promote.en.md) shows there are no missing dependencies, before the pull request.

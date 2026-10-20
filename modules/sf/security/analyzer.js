@@ -12,8 +12,22 @@ function available(root) {
   return runSf(['code-analyzer', 'run', '--help'], { cwd: root, timeout: 60000 }).ok;
 }
 
+/**
+ * Runs the Code Analyzer once per (rules, content): the same files with the same content are not analyzed twice
+ * (the hook, the review and the AI share the result). Folders as targets use the index fingerprint.
+ */
 function runAnalyzer(root, files, selectors = ['Security']) {
   if (!files.length) return { ran: false, findings: [] };
+  const runs = require('../../../core/runs');
+  const folders = files.filter((f) => !/\.[a-z0-9-]+$/i.test(f));
+  const parts = { selectors, files: runs.filesFingerprint(root, files.filter((f) => !folders.includes(f))), folders: folders.length ? [folders, require('../indexer').indexFingerprint(root)] : null };
+  // A failed or missing analyzer is not remembered: next time it is tried again.
+  const r = runs.once(root, 'code-analyzer', parts, () => runAnalyzerNow(root, files, selectors), { store: (x) => x.ran });
+  if (!r.result.ran) return r.result;
+  return { ...r.result, reused: r.reused };
+}
+
+function runAnalyzerNow(root, files, selectors) {
   if (!available(root)) return { ran: false, findings: [], note: 'Salesforce Code Analyzer não instalado. Para somar as regras oficiais: sf plugins install code-analyzer' };
   const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-ca-')), 'results.json');
   const args = ['code-analyzer', 'run', ...selectors.flatMap((s) => ['--rule-selector', s]), '--workspace', '.', ...files.flatMap((f) => ['--target', f]), '--output-file', out];

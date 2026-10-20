@@ -37,6 +37,9 @@ Não, ele roda o PMD. As checagens do próprio Reldor acham o que o PMD não ach
 **Dá para ajustar os tamanhos?**
 Sim, em `.reldor/reldor.config.yaml`, na seção `quality`: `min_tokens` (padrão 60), `min_lines` (6), `min_literal_files` (3).
 
+**A esteira já roda o PMD e o CPD.**
+Grave `code-analyzer: skip` no [`tools`](./tools.md): o `quality` roda só as regras do Reldor (`--analyzer` roda o Code Analyzer mesmo assim). Com o mesmo conteúdo, a mesma análise não roda duas vezes.
+
 ## Onde se encaixa
 
 Antes do [commit](./commit.md), junto com [security](./security.md) e [test-radar](./test-radar.md). Usa o mesmo índice do [explain](./explain.md) para saber quais classes são Selectors.

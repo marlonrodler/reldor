@@ -37,6 +37,9 @@ Corrija o que ele aponta, ou use `git commit --no-verify` quando for intencional
 **O que acontece com as mudanças da org depois do commit?**
 Ficam na sua pasta, fora do Git. Descarte com `git restore <arquivo>` se não precisar delas.
 
+**O time já tem um gancho de commit (husky, core.hooksPath).**
+O `hook install` mantém um `pre-commit` que já existia e roda ele antes. Com `core.hooksPath`, ele não mexe nos ganchos do time e mostra a linha para acrescentar. Se o gancho do time já faz o mesmo trabalho, grave `pre-commit: skip` (ou `xml-duplicates: verify`) no [`tools`](./tools.md).
+
 ## Onde se encaixa
 
 Fica entre o desenvolvimento e a promoção: retrieve → desenvolver → [test-radar](./test-radar.md) → [xml](./xml.md) → commit.

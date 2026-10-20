@@ -41,6 +41,9 @@ Field: tests that use the field in code are high priority, tests that use a clas
 **Salesforce has RunRelevantTests. Why not use it?**
 It is a good option for the pipeline. The radar explains *why* each test is on the list and runs before you push.
 
+**The pipeline already runs the tests.**
+Save `run-tests: skip` in [`tools`](./tools.en.md): the radar still lists the tests, and `--run` runs nothing (unless `--force`). With the same content, the test list is not computed twice.
+
 ## Where it fits
 
 It sits between development and promotion. It uses the same index as [explain](./explain.en.md) and [usages](./usages.en.md).

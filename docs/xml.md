@@ -12,7 +12,7 @@ Arquivos ordenados também deixam os merges entre ambientes mais tranquilos: men
 
 ## Quando usar
 
-Antes de um commit (a IA roda nos arquivos que você mudou), ou uma vez com `reldor xml --all` para limpar um projeto. O `reldor xml --check` só aponta; o gancho pre-commit usa ele.
+Antes de um commit (a IA roda nos arquivos que você mudou), ou uma vez com `reldor xml --all` para limpar um projeto. O `reldor xml --check` só aponta, sem mudar nada. O gancho pre-commit confere os duplicados (a ordem não barra commit).
 
 ## Está funcionando se
 
@@ -24,6 +24,9 @@ Antes de um commit (a IA roda nos arquivos que você mudou), ou uma vez com `rel
 **Ele mexe em layouts ou flows?**
 Não. A ordem deles tem significado, então ficam como estão.
 
+**Outra ferramenta do time já ordena ou tira duplicados.**
+Diga isso no [`tools`](./tools.md) (`xml-duplicates` e `xml-order`). Com `verify`, o `reldor xml` não reescreve nada: só confere e, se faltar algo, diz qual ferramenta rodar; o `review` e o gancho continuam garantindo que nenhum duplicado chegue ao commit. Com `skip`, o Reldor fica de fora. Para o Reldor organizar mesmo assim: `reldor xml --force`. O mesmo arquivo com o mesmo conteúdo é conferido uma vez só.
+
 ## Onde se encaixa
 
-Roda antes do [commit](./commit.md) e dentro do gancho pre-commit.
+Roda antes do [commit](./commit.md); a checagem de duplicados também roda dentro do gancho pre-commit.

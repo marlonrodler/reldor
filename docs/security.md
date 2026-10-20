@@ -38,6 +38,9 @@ Coloque `// reldor-ignore: <regra>` na linha ou na linha de cima, com um coment�
 **Substitui pentest ou a equipe de segurança?**
 Não. Ele pega os erros comuns cedo, enquanto o código ainda está na sua máquina.
 
+**A esteira já roda o Code Analyzer.**
+Grave `code-analyzer: skip` no [`tools`](./tools.md): o `security` roda só as regras do Reldor e diz que o Code Analyzer fica com a esteira (`--analyzer` roda mesmo assim). As regras do Reldor não rodam duas vezes sobre o mesmo conteúdo: se o `review` já conferiu esses arquivos, o resultado é reaproveitado. O Code Analyzer também guarda o resultado por conjunto de regras e conteúdo.
+
 ## Onde se encaixa
 
 Antes do [commit](./commit.md), ao lado do [test-radar](./test-radar.md). Usa o mesmo índice do [explain](./explain.md) para seguir o caminho.

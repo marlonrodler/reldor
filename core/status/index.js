@@ -28,6 +28,7 @@ function environmentStatus(root, environments, branch, baseName) {
 function nextStep(s) {
   if (!s.git.repo) return { id: 'git', text: 'Abra o Reldor dentro de um repositório Git.' };
   if (!s.config.exists) return { id: 'init', text: 'Configurar o Reldor neste projeto (reldor init).' };
+  if (s.tools && s.tools.suggestions.length) return { id: 'tools', text: `Encontrei ${s.tools.suggestions.length} sinal(is) de ferramentas do time que já fazem o que o Reldor faz. Confira com "reldor tools" para o Reldor não repetir trabalho.` };
   const pending = Object.values(s.git.pending).reduce((n, list) => n + list.length, 0);
   if (pending > 0) return { id: 'commit', text: `Você tem ${pending} arquivo(s) não commitado(s). Revisar e commitar.` };
   const env = s.environments;
@@ -64,6 +65,17 @@ function buildStatus(root, options = {}) {
     spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },
     modules: modules.map(({ mod, facts }) => ({ name: mod.name, label: mod.label, facts })),
   };
+  // Who takes care of what (tools: in the config) and signs of team tools not configured yet.
+  try {
+    const { toolsReport } = require('../tools');
+    const report = toolsReport(root, config, { withDetection: options.detectTools !== false });
+    status.tools = {
+      others: report.capabilities.filter((c) => c.mode !== 'run').map((c) => ({ id: c.id, mode: c.mode, owner: c.owner })),
+      suggestions: report.suggestions.map((x) => ({ capability: x.capability, suggested: x.suggested, owner: x.owner })),
+    };
+  } catch {
+    status.tools = { others: [], suggestions: [] };
+  }
   status.alerts = [];
   if (options.alerts !== false && exists) {
     for (const { mod } of modules) {

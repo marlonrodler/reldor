@@ -38,6 +38,9 @@ Add `// reldor-ignore: <rule>` on the line or the line above, with a comment say
 **Does it replace a pentest or the security team?**
 No. It catches the common mistakes early, while the code is still on your machine.
 
+**The pipeline already runs the Code Analyzer.**
+Save `code-analyzer: skip` in [`tools`](./tools.en.md): `security` runs only Reldor's rules and says the Code Analyzer stays with the pipeline (`--analyzer` runs it anyway). Reldor's rules do not run twice over the same content: if `review` already checked those files, the result is reused. The Code Analyzer also keeps its result per rule set and content.
+
 ## Where it fits
 
 Before [commit](./commit.en.md), next to [test-radar](./test-radar.en.md). It uses the same index as [explain](./explain.en.md) to follow the path.

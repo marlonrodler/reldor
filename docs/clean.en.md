@@ -27,6 +27,9 @@ When you are about to commit: say "I'm going to commit, clean what is not mine".
 **Why not only the clean commit?**
 Because the commit is often made by another tool that runs `git add -A`. Cleaning the folder makes any tool commit only your work.
 
+**Another tool already removes from the folder what came from the org.**
+Save `org-files: skip` (or `verify`) in [`tools`](./tools.en.md): `clean` then leaves the folder alone (`--dry-run` still shows what would go; `--force` cleans anyway).
+
 ## Where it fits
 
 Between the retrieve and the commit, next to [commit](./commit.en.md).

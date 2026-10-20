@@ -38,6 +38,9 @@ Não. Ele só roda quando você pede e pergunta antes de commitar. Se preferir, 
 **E o `reldor merge install`?**
 Liga o driver item a item também dentro do `git merge` normal (para merges feitos por outras ferramentas), mais o `rerere`. Detalhes no [promote](./promote.md#merge-inteligente).
 
+**O time já tem um merge driver para profiles.**
+Grave `profile-merge: skip` no [`tools`](./tools.md): o `reldor merge install` passa a não ligar nada (a não ser com `--force`). O merge assistido (`reldor merge <branch>`) continua disponível.
+
 ## Onde se encaixa
 
 Depois do [promote](./promote.md) mostrar que não falta dependência, antes da pull request.

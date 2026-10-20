@@ -27,6 +27,9 @@ Na hora de commitar: diga "vou commitar, limpa o que não é meu". Depois commit
 **Por que não só o commit limpo?**
 Porque muitas vezes o commit é feito por outra ferramenta, que roda `git add -A`. Limpando a pasta, qualquer ferramenta commita só o seu.
 
+**Outra ferramenta já tira da pasta o que veio da org.**
+Grave `org-files: skip` (ou `verify`) no [`tools`](./tools.md): o `clean` passa a não mexer na pasta (o `--dry-run` ainda mostra o que sairia; `--force` limpa mesmo assim).
+
 ## Onde se encaixa
 
 Entre o retrieve e o commit, junto com o [commit](./commit.md).

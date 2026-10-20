@@ -32,9 +32,14 @@ function organizeFiles(root, files, { check = false } = {}) {
     if (!fs.existsSync(full) || !isOrganizable(full)) continue;
     try {
       const original = fs.readFileSync(full, 'utf8');
+      if (check) {
+        const { result: c, reused } = checkXml(root, rel, original);
+        if (c.supported) results.push({ file: rel.split(path.sep).join('/'), changed: c.changed, type: c.type, duplicates: c.duplicates, sorted: c.sorted, conflicts: c.conflicts, reused });
+        continue;
+      }
       const { text, changed, report, supported } = organizeXml(original);
       if (!supported) continue;
-      if (changed && !check) fs.writeFileSync(full, text, 'utf8');
+      if (changed) fs.writeFileSync(full, text, 'utf8');
       results.push({ file: rel.split(path.sep).join('/'), changed, type: report.type, duplicates: report.duplicates, sorted: report.sorted, conflicts: report.conflicts });
     } catch (error) {
       results.push({ file: rel, changed: false, error: error.message, duplicates: 0, sorted: 0, conflicts: [] });
@@ -43,8 +48,21 @@ function organizeFiles(root, files, { check = false } = {}) {
   return results;
 }
 
+/**
+ * Checks one XML text without changing anything: { changed, duplicates, sorted, conflicts, supported }.
+ * The same file name with the same content is checked once (the hook, the review and `xml --check` share it).
+ */
+function checkXml(root, rel, text) {
+  const runs = require('../../../core/runs');
+  const name = String(rel).split(/[\\/]/).pop();
+  return runs.once(root, 'xml-check', { name, content: runs.hash(text) }, () => {
+    const { changed, report, supported } = organizeXml(text);
+    return { changed, supported, type: report.type, duplicates: report.duplicates, sorted: report.sorted, conflicts: report.conflicts };
+  });
+}
+
 function allOrganizable(root, packageDirectories) {
   return packageDirectories.flatMap((d) => walk(path.join(root, d))).map((f) => path.relative(root, f));
 }
 
-module.exports = { organizeFiles, allOrganizable, isOrganizable };
+module.exports = { organizeFiles, checkXml, allOrganizable, isOrganizable };

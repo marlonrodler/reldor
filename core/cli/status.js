@@ -48,6 +48,12 @@ function render({ status, modules }) {
   else if (status.spec.available.length) out.push(`• Nenhuma spec ligada a esta branch. Recentes: ${status.spec.available.map((s) => s.name).join(', ')}`);
   else out.push('• Nenhuma spec encontrada.');
 
+  if (status.tools && (status.tools.others.length || status.tools.suggestions.length)) {
+    out.push('', 'Ferramentas do time:');
+    for (const t of status.tools.others) out.push(`${t.mode === 'verify' ? '🔎' : '➖'} ${t.id}: ${t.owner || 'outra ferramenta'} (${t.mode === 'verify' ? 'o Reldor só confere' : 'o Reldor fica de fora'})`);
+    if (status.tools.suggestions.length) out.push(`💡 ${status.tools.suggestions.length} sinal(is) de ferramentas do time ainda não configurado(s): reldor tools`);
+  }
+
   if (!status.config.exists) out.push('', '⚠️ O Reldor ainda não foi configurado neste projeto.');
 
   if (status.alerts && status.alerts.length) {

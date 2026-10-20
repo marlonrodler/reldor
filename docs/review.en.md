@@ -30,6 +30,9 @@ Say "can I commit?". The AI runs it and goes through the 🔴 items first.
 **Do the separate commands still exist?**
 Yes (`security`, `quality`, `check`, `test-radar`, `xml`), for when you want only one part. `review` is the one to use day to day.
 
+**Another team tool already does some of these checks.**
+`review` follows [`tools`](./tools.en.md): a part another tool does is only checked (`verify`) or left out (`skip`), and the summary lists both with the tool's name, so nothing disappears silently. With the same content, no check runs twice: running `review` again, or the hook right after, reuses the result (♻️). `--fresh` redoes everything.
+
 ## Where it fits
 
 Right before [clean](./clean.en.md) and the commit.

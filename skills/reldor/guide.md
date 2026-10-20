@@ -10,7 +10,7 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "o que acontece quando…" | `reldor explain <Objeto> --event <insert\|update\|delete> --json` | Mostre a cadeia na ordem; marque o que é condicional |
 | "como testo…" | `reldor explain <Objeto> --event <evento> --json` | Monte o roteiro: ação → o que dispara → o que validar |
 | "documenta o fluxo de…" | `reldor explain` para cada evento | Escreva o documento a partir do resultado |
-| "vou começar a desenvolver" | `reldor context` | Mostre o resumo com nota de risco e peça aprovação |
+| "vou começar a desenvolver" | `reldor explain <Objeto> --json` para cada objeto que muda, e `reldor usages <item> --json` para o que vai ser alterado | Mostre o que já roda no objeto e onde o item é usado; aponte os riscos e peça aprovação |
 | salvou um metadado ou Apex / "quais testes podem quebrar?" | `reldor test-radar --json` | Mostre os testes e os motivos; ofereça rodar com `--run` depois de confirmar a org |
 | "tem campo fora da query?" | `reldor check [Classe] --json` | Liste os achados e o erro que evitam |
 | "vou apagar…" / "onde isso é usado?" | `reldor usages <item> --json` | Liste todos os usos antes de apagar |
@@ -24,9 +24,12 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "quero subir para <ambiente>" | `reldor promote <ambiente> --fetch --json` | Problemas primeiro (ordem, dependências, conflitos), depois o próximo passo |
 | "deu conflito em profile" / antes do primeiro merge | `reldor merge status` → `reldor merge install` | Explique que é só na máquina da pessoa |
 | "rollback da PR…" | `reldor rollback <n> --fetch --json` | Riscos primeiro (itens ainda usados, arquivos mudados depois); não execute sozinho |
+| "a gente já tem uma ferramenta que faz…" / "não quero que o Reldor repita…" | `reldor tools --json` → `reldor tools set <capacidade> <run\|verify\|skip> --owner "<ferramenta>"` (com confirmação) | Quem cuida de cada coisa; o que o Reldor só confere e o que fica de fora |
 | "muda os ambientes" / "qual é a cadeia?" | `reldor env --json` / `reldor env set "nome:branch, ..."` | A cadeia na ordem, qual é produção, de onde nascem as branches |
 | "vou commitar" / "limpa o que não é meu" | `reldor clean --dry-run --json` → `reldor clean --yes` | O que sai, o que fica, como desfazer |
 | "faz o merge da minha branch" (na branch de merge) | `reldor merge <branch> --yes --json` → resolver `hard` → `reldor merge --check` | O que foi resolvido, o que revisar, "entrou só o seu?" |
 
 ## Ordem natural de uma task
-refinar → contexto → desenvolver (radar de testes) → retrieve/deploy → commit limpo → promover → documentar
+refinar → entender (explain, usages) → desenvolver (radar de testes) → revisar (review) → limpar (clean) → commit pela ferramenta do time → promover (promote) → documentar
+
+O Reldor não faz deploy: o deploy fica com a pessoa ou com a esteira. O `test-radar --run` só valida, sem salvar nada.

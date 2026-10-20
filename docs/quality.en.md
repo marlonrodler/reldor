@@ -37,6 +37,9 @@ No, it runs it. Reldor's own checks find what PMD does not: a query that already
 **Can I tune the sizes?**
 Yes, in `.reldor/reldor.config.yaml` under `quality`: `min_tokens` (default 60), `min_lines` (6), `min_literal_files` (3).
 
+**The pipeline already runs PMD and CPD.**
+Save `code-analyzer: skip` in [`tools`](./tools.en.md): `quality` runs only Reldor's rules (`--analyzer` runs the Code Analyzer anyway). With the same content, the same analysis does not run twice.
+
 ## Where it fits
 
 Before [commit](./commit.en.md), with [security](./security.en.md) and [test-radar](./test-radar.en.md). It reads the same index as [explain](./explain.en.md) to know which classes are Selectors.

@@ -2,6 +2,25 @@
 
 # Histórico de versões
 
+## 0.19.0
+
+- `reldor tools`: o Reldor convive com as ferramentas do time. Cada coisa que ele faz é uma capacidade (`xml-duplicates`,
+  `xml-order`, `org-files`, `security`, `quality`, `code-analyzer`, `queries`, `affected-tests`, `run-tests`,
+  `pre-commit`, `profile-merge`), e o projeto escolhe em `tools:` se o Reldor faz (`run`), só confere sem refazer
+  (`verify`) ou fica de fora (`skip`). Ele procura sinais dessas ferramentas (ganchos de Git, esteira, instruções da IA,
+  scripts do `package.json`, merge driver no `.gitattributes`) e sugere, mostrando a linha; nada é gravado sozinho.
+- `review`, gancho pre-commit, `xml`, `security`, `quality`, `check`, `test-radar`, `clean`, `hook install` e
+  `merge install` seguem os modos. O que fica com outra ferramenta aparece no resultado com o nome dela. Comandos que
+  mudam algo só agem numa capacidade de outra ferramenta com `--force`.
+- Execução única: a mesma checagem sobre o mesmo conteúdo roda uma vez (regras de segurança e de qualidade, Code
+  Analyzer, testes afetados, queries, XML). O gancho, o `review` e a IA compartilham o resultado (♻️). `--fresh` refaz.
+- `status`, `doctor` e `init` avisam quando há sinais de ferramentas do time ainda não decididos.
+- Coerência: saíram da configuração as chaves que não faziam nada (`spec.generator`, `advisors.mode` e `enabled`,
+  `xml.types`, `index.depth`, `git.clean_commit`, `pre_commit_hook`, `smart_merge`, `test_radar.auto_run`,
+  `automations`, `connectors`) e as pastas vazias que prometiam funcionalidades. As skills não mandam mais rodar
+  comandos que não existem (`reldor context`, `reldor ask`). README e arquitetura descrevem só o que o Reldor faz hoje,
+  com um desenho de como funciona e a seção do Git reescrita.
+
 ## 0.18.0
 
 - Documentação em português primeiro: todo documento é `<nome>.md` em português e `<nome>.en.md` em inglês (README,

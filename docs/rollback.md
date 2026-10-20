@@ -17,7 +17,7 @@ O número da PR é achado na mensagem do commit de merge ("Merge pull request #1
 
 ## Quando usar
 
-Diga "preciso fazer rollback da PR 123". A IA mostra o plano e os riscos, e só roda um passo depois da sua confirmação.
+Diga "preciso fazer rollback da PR 123". A IA mostra o plano e os riscos. Com as ações de Git desligadas (o padrão), o passo a passo fica de referência para o seu fluxo; ligadas, ela só roda um passo depois da sua confirmação. O deploy nunca é feito pelo Reldor.
 
 ## Está funcionando se
 

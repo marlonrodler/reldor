@@ -4,11 +4,22 @@
 
 The guardian that reads your org before your AI writes a line of code.
 
-**In one minute:** AI writes Salesforce code fast, but it does not see the whole org (the flow that runs before your trigger, the validation rule that breaks another team's tests, the roll-up that saves the parent too), and Git does not understand metadata (profiles conflict for no reason, the commit takes everything the retrieve brought). Reldor is a command that builds an index of your project and computes those facts with scripts, plus a plugin that teaches your AI (Kiro or Claude Code) to use that command. **You talk; the AI runs Reldor and explains the result.**
+**In one minute:** AI writes Salesforce code fast, but it does not see the whole org (the flow that runs before your trigger, the validation rule that breaks another team's tests, the roll-up that saves the parent too), and Git compares lines, not metadata items (two devs touching the same profile become a conflict; the commit takes everything the retrieve brought). Reldor is a command that builds an index of your project and computes those facts with scripts, plus a plugin that teaches your AI (Kiro or Claude Code) to use that command. **You talk; the AI runs Reldor and explains the result.** And it lives with the tools your team already uses: what another tool does, it only checks or leaves to it, without repeating it.
 
-> **Status:** Phase 1 done; Phase 2 in progress. See the [roadmap](./docs/roadmap.en.md).
+### How it works
 
-**On this page:** [Installation](#installation) · [Day to day](#day-to-day) · [Why Reldor exists](#why-reldor-exists) · [Reference](#reference) · [Safety](#safety) · [License](#license)
+```text
+You talk → the AI (Reldor's skill) → runs the reldor command → scripts read the project's index
+        ← the AI explains the result ← the command returns facts (JSON)
+```
+
+1. **Scripts find the facts, never the AI.** That is why answers are repeatable.
+2. **Reldor reads metadata only**, never records, and runs on your machine.
+3. **What belongs to the company stays in its repository's `.reldor/`**: environments, patterns and the team's tools.
+
+> **Status:** Phase 1 and 2 features are done in code and tested on 16 public Salesforce projects. Validation in real use (Phase 3) is next. See the [roadmap](./docs/roadmap.en.md).
+
+**On this page:** [How it works](#how-it-works) · [Installation](#installation) · [Day to day](#day-to-day) · [Why Reldor exists](#why-reldor-exists) · [Reference](#reference) · [Safety](#safety) · [License](#license)
 
 ## Installation
 
@@ -144,7 +155,7 @@ You don't memorize commands: you say what you want and the AI runs the right one
 | **Go up** | "is it ready for pre-UAT?" | [`promote`](./docs/promote.en.md): commit order and missing dependencies before the PR |
 | **Undo** | "I need to roll back PR 123" | [`rollback`](./docs/rollback.en.md): revert, `destructiveChanges.xml` and risks |
 
-A pre-commit hook also runs by itself on every commit, including the ones made by other tools.
+Once installed (`reldor hook install`), a pre-commit hook runs on every commit, including the ones made by other tools.
 
 **Starting out?** In the first week, use only the moments that read (What now?, Understand, Review): they change nothing. The ones that change things (Clean, Merge) always show what they will do and ask for confirmation.
 
@@ -166,13 +177,19 @@ A pre-commit hook also runs by itself on every commit, including the ones made b
 
 **The fix.** [`test-radar`](./docs/test-radar.en.md) points to the tests your change can break, says why, and runs them in a sandbox without saving anything. It also checks that every field your code reads is in the query.
 
-### #3: Git doesn't understand Salesforce
+### #3: Git compares lines; Salesforce thinks in items
 
-**The problem.** Two people add different classes to the same profile and Git offers "all or nothing". A retrieve mixes the org into your work. A promotion fails because a field only exists in develop.
+**The problem.** In a profile or permission set, each permission is an item, and items are in alphabetical order. When two people add neighboring permissions, Git sees the same lines changing on both sides and stops with a conflict, and whoever resolves it by hand often keeps only one side. Duplicated items that slip through make the deploy fail.
 
-**The fix.** [`clean`](./docs/clean.en.md) leaves only your work in the folder before any tool commits. An [assisted merge](./docs/merge.en.md) does the `git merge` into the merge branch and resolves the conflicts by keeping the target and applying only your change, then checks that **only yours went in**. A [promotion rehearsal](./docs/promote.en.md) finds out-of-order commits and fields that only exist in develop before the pull request. Plus an [XML organizer](./docs/xml.en.md), a pre-commit guard and a [rollback plan](./docs/rollback.en.md) with the revert, the `destructiveChanges.xml` and the risks.
+**The solution.** An [item-by-item merge](./docs/promote.en.md#smart-merge) inside the plain `git merge`, which leaves a conflict only when both sides changed the same item. An [assisted merge](./docs/merge.en.md) on the merge branch, which keeps the target, applies only your change and checks that **only yours went in**. And an [XML organizer](./docs/xml.en.md) that sorts and removes duplicates the way Salesforce does.
 
-### #4: Security holes and copied code nobody saw
+### #4: Retrieves and promotions mix work together
+
+**The problem.** A retrieve mixes the org with your work, and the commit takes it all. A promotion fails because a field only exists in develop, or because a commit did not go through the previous environment.
+
+**The solution.** [`clean`](./docs/clean.en.md) leaves only your work in the folder before any tool commits, and the [clean commit](./docs/commit.en.md) takes only your lines. A [promotion rehearsal](./docs/promote.en.md) finds commits out of order and missing dependencies before the pull request. And a [rollback plan](./docs/rollback.en.md) brings the revert, the `destructiveChanges.xml` and the risks.
+
+### #5: Security holes and copied code nobody saw
 
 **The problem.** A screen method that reads data without checking permissions, a query built by concatenating what the user typed, a `System.debug` with a CPF, a class that ignores sharing three calls away from the screen. In a bank, any of these is an incident.
 
@@ -180,7 +197,7 @@ A pre-commit hook also runs by itself on every commit, including the ones made b
 
 [`quality`](./docs/quality.en.md) catches the copy before it spreads: a block pasted from another class, a query that already lives in a Selector, a method that already exists. Only the repetition your change creates, plus PMD and CPD from the Code Analyzer.
 
-### #5: Screens and automations on autopilot
+### #6: Screens and automations on autopilot
 
 **The problem.** The AI jumps straight into code: one more trigger on an object that already has one, `@future` where Queueable fits, a screen built from raw HTML.
 
@@ -189,6 +206,12 @@ A pre-commit hook also runs by itself on every commit, including the ones made b
 - [spec-review](./docs/advisors/spec-review.en.md): finds the gaps in the spec.
 - [automation-design](./docs/advisors/automation-design.en.md): where the logic should live (flow, trigger, Queueable, Batch), given what already exists.
 - [lwc-ux](./docs/advisors/lwc-ux.en.md): two or three modern screen options with SLDS, plus a throwaway POC.
+
+### #7: Tools that do the same thing
+
+**The problem.** The team already has a plugin that organizes profiles, a pipeline that runs the Code Analyzer and the tests, a commit hook. A new tool that does it all again wastes time, and two tools rewriting the same file fight.
+
+**The solution.** [`tools`](./docs/tools.en.md) finds signs of those tools in the project and asks who takes care of each thing. What another tool does, Reldor only checks (without redoing it) or leaves to it, and says so in the result. And nothing runs twice: the same check over the same content is reused.
 
 ## Reference
 
@@ -200,6 +223,7 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 |---|---|---|
 | [`reldor env`](./docs/env.en.md) | The environment chain and branch names: show and change, nothing fixed in the code | ✅ |
 | [`reldor review`](./docs/review.en.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
+| [`reldor tools`](./docs/tools.en.md) | Team tools: who takes care of each thing, so Reldor only checks or stays out | ✅ |
 | [`reldor doctor`](./docs/doctor.en.md) | Checks the installation and the terminal's folder, and gives the next step | ✅ |
 | [`reldor init`](./docs/init.en.md) | Sets Reldor up in a project, asking only what it can't detect | ✅ |
 | [`reldor status`](./docs/status.en.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |
@@ -233,20 +257,21 @@ All skills are **model-invoked**: the AI reaches for them when the conversation 
 
 ## Safety
 
-- Reads **metadata only**, never records.
-- Tokens and credentials stay **out of the repository**.
+- Reads **metadata only**, never records. When an answer depends on data (a custom setting, for example), it hands you the SOQL to check.
+- **Keeps no credentials**: org access is your `sf` CLI's.
 - Every action is written to a **local history** (`reldor log`).
-- **Git actions are off by default**: Reldor checks and advises, while creating branches, committing, merging and opening PRs stays with your own flow (for example, your team's workflow plugin). `reldor init` asks; turn them on only if you have no such tool.
-- Deploying to production is **blocked by default**. Actions on task boards are **off by default**.
-- Nothing about a client lives in Reldor: teams, prefixes and orgs stay in a profile inside the client's own repository.
+- **Git actions are off by default**: Reldor checks and advises, and does not create branches, commit or open PRs on its own; that stays with your own flow (for example, your team's workflow plugin). The assisted merge runs only when you ask. `reldor init` asks; turn them on only if you have no such tool.
+- **Never deploys.** In the org, it only does the retrieve you ask for and runs the `test-radar --run` tests as a validation that saves nothing; tests refuse production unless you ask with `--allow-production`.
+- **Sends your code to no service.** Outside your machine, it only talks to your org through the `sf` CLI and, if installed, to GitHub through `gh` (to read open PRs).
+- Nothing about a client lives in Reldor: environments, patterns and team tools stay in the `.reldor/` of the client's own repository.
 
 ## How it is built
 
 A generic **core** plus one **module** per technology. Salesforce is the first module; mobile or web can follow without touching the core. Details in [architecture](./docs/architecture.en.md); the words we use are in the [glossary](./GLOSSARY.en.md); decisions are in [docs/adr](./docs/adr).
 
 ```
-core/        cli, config, status, spec, git, log, report
-modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, advisors
+core/        cli, config, status, doctor, tools, runs, spec, git, log, report
+modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, tools, advisors
 skills/      the AI's instructions, shared by Kiro and Claude Code
 adapters/    thin per-IDE manifests
 ```

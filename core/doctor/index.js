@@ -104,6 +104,7 @@ function folderFacts(root, cwd) {
     reldorFolder: isReldor,
     gitRepo: git.ok && git.stdout === 'true',
     configured: fs.existsSync(paths(root).config),
+    toolSuggestions: 0,
   };
 }
 
@@ -115,6 +116,7 @@ function nextStep(checks, folder, plugin) {
   if (!folder.project.length) return `Esta pasta não é um projeto que o Reldor conhece${folder.markers && folder.markers.length ? ` (${folder.markers.join('; ')})` : ''}. Abra a pasta do projeto no VS Code, abra o terminal ali e rode reldor doctor de novo.`;
   if (plugin.state !== 'ok') return `Ligue o Reldor na sua IA. ${plugin.fix}.`;
   if (!folder.configured) return 'Tudo instalado. Abra o chat da sua IA neste projeto e diga: "quero usar o Reldor" (ou rode reldor init).';
+  if (folder.toolSuggestions) return `Tudo pronto. Encontrei ${folder.toolSuggestions} sinal(is) de ferramentas do time que já fazem o que o Reldor faz: confira com "reldor tools" para o Reldor não repetir trabalho.`;
   return 'Tudo pronto. Converse com a sua IA (ex.: "e agora?") ou rode reldor status.';
 }
 
@@ -126,6 +128,14 @@ function buildDoctor(root, cwd = process.cwd()) {
   for (const name of Object.keys(REGISTRY)) {
     const mod = REGISTRY[name]();
     if (typeof mod.doctorChecks === 'function') checks.push(...mod.doctorChecks(root, { inProject: folder.modules.includes(mod.name) }));
+  }
+  if (folder.configured && folder.project.length) {
+    try {
+      const { loadConfig } = require('../config');
+      folder.toolSuggestions = require('../tools').toolsReport(root, loadConfig(root).config).suggestions.length;
+    } catch {
+      folder.toolSuggestions = 0;
+    }
   }
   const plugin = pluginCheck();
   const ready = !checks.some((c) => c.required && c.state === 'missing');
