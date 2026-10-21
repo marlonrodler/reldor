@@ -225,6 +225,12 @@ Once installed (`reldor hook install`), a pre-commit hook runs on every commit, 
 
 **The solution.** [`tools`](./docs/tools.en.md) finds signs of those tools in the project and asks who takes care of each thing. What another tool does, Reldor only checks (without redoing it) or leaves to it, and says so in the result. And nothing runs twice: the same check over the same content is reused.
 
+### #8: Loose tasks, duplicated fields and limits blown
+
+**The problem.** The task arrives loose ("create field X", "add value Y"), and every word becomes a search. The field asked for often already exists under another name, in another team; the value exists but was never enabled in the record type. Each team creates its own copy, the object gets close to its field limit, and renaming things in a big org breaks reports and integrations.
+
+**The solution.** [`task`](./docs/task.en.md) finds by itself which task you are on (from the branch) and its spec in any tool, without mixing one task with another. [Refinement in stages](./docs/refine.en.md) puts the task in a light standard and searches only what it asks for. Before creating, it shows what already exists and who owns it: reuse it as it is, create a generic version every team can use, or create new, never renaming what exists. [`access`](./docs/access.en.md) shows where things still have to be enabled, and [`limits`](./docs/limits.en.md) warns when an object is close to a limit.
+
 ## Reference
 
 ### All commands

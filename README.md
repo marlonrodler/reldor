@@ -225,6 +225,12 @@ O [`quality`](./docs/quality.md) pega a cópia antes de ela se espalhar: um bloc
 
 **A solução.** O [`tools`](./docs/tools.md) acha sinais dessas ferramentas no projeto e pergunta quem cuida de cada coisa. O que outra ferramenta faz, o Reldor só confere (sem refazer) ou deixa com ela, e diz isso no resultado. E nada roda duas vezes: a mesma checagem sobre o mesmo conteúdo é reaproveitada.
 
+### #8: Task mal escrita, campo duplicado e limite estourado
+
+**O problema.** A task chega solta ("criar o campo X", "incluir o valor Y"), e cada palavra vira uma busca. O campo pedido muitas vezes já existe com outro nome, em outro time; o valor já existe, mas não foi liberado no record type. Cada time cria a sua cópia, o objeto se aproxima do limite de campos, e trocar nomes numa org grande quebra relatórios e integrações.
+
+**A solução.** O [`task`](./docs/task.md) descobre sozinho em que tarefa você está (pela branch) e acha a spec dela em qualquer ferramenta, sem misturar uma tarefa com outra. O [refinamento em etapas](./docs/refine.md) deixa a task num padrão leve e busca só o que ela pede. Antes de criar, mostra o que já existe e de quem é: reusar como está, criar uma versão genérica que todo time possa usar, ou criar novo, sem nunca renomear o que existe. O [`access`](./docs/access.md) mostra onde falta liberar, e o [`limits`](./docs/limits.md) avisa quando o objeto está perto de um limite.
+
 ## Referência
 
 ### Todos os comandos
