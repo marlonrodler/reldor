@@ -253,6 +253,8 @@ function parseApexClass(name, source) {
   };
   const sharingDecl = /\b((?:with|without|inherited)\s+sharing)\s+class\b/i.exec(code.slice(0, code.search(/\{/) + 1 || 400));
   info.sharing = sharingDecl ? sharingDecl[1].toLowerCase().replace(/\s+/, ' ') : 'none';
+  Object.assign(info, patternFacts(name, code, source));
+  info.signatures = info.isTest ? [] : methodSignatures(code);
   info.exposed = /@AuraEnabled|@RestResource|\bwebservice\b|@InvocableMethod|@RemoteAction/i.test(code);
   const ext = code.match(/\bclass\s+\w+\s+extends\s+(\w+)/i);
   info.extendsName = ext ? ext[1] : null;
@@ -290,6 +292,53 @@ function parseApexClass(name, source) {
   return info;
 }
 
+/** Design-pattern signs in one class: cheap regexes over code without comments or strings. */
+function patternFacts(name, code, source) {
+  const has = (re) => re.test(code);
+  const flags = {
+    singleton: has(/\bprivate\s+static\s+\w+\s+instance\b/i) && has(/\bstatic\s+\w+\s+getInstance\s*\(/i),
+    builder: (code.match(/\breturn\s+this\s*;/g) || []).length >= 2,
+    factory: /Factory$/i.test(name) || has(/\bType\.forName\s*\([^;]*\)\s*\.\s*newInstance\s*\(/),
+    dto: /(DTO|Wrapper|Request|Response|VO|Model)$/i.test(name),
+    exception: has(/\bextends\s+Exception\b/i),
+    callout: has(/\bnew\s+HttpRequest\s*\(/i),
+    namedCredential: /'callout:/i.test(source),
+    restResource: /@RestResource/i.test(source),
+    customMetadata: has(/\b\w+__mdt\b/i),
+    customSettings: has(/\.(getInstance|getOrgDefaults|getValues)\s*\(/) && has(/\b\w+__c\.(getInstance|getOrgDefaults|getValues)/),
+    labels: has(/\b(System\.)?Label\.\w+/),
+    logger: has(/\bLogger\.(log|debug|info|warn|error|saveLog)\w*\s*\(/i),
+    future: /@future/i.test(source),
+    testSetup: /@TestSetup/i.test(source),
+    stubApi: has(/\bSystem\.StubProvider\b|\bTest\.createStub\s*\(/),
+    apexMocks: has(/\bfflib_ApexMocks\b/),
+    httpMock: has(/\bHttpCalloutMock\b/),
+    unitOfWork: has(/\bfflib_I?SObjectUnitOfWork\b|\.newUnitOfWork\s*\(/),
+  };
+  const impl = code.match(/\bimplements\s+([\w\s,.<>]+?)\s*\{/i);
+  return {
+    patterns: Object.keys(flags).filter((k) => flags[k]),
+    implementsNames: impl ? impl[1].split(',').map((x) => x.trim().replace(/<.*$/, '')).filter(Boolean) : [],
+  };
+}
+
+/** Public and global methods with their parameters: the catalog behind `reldor helpers`. */
+function methodSignatures(code) {
+  const out = [];
+  const re = /\b((?:(?:public|global|static|override|virtual|webservice)\s+)+)([\w<>,.\s\[\]]+?)\s+(\w+)\s*\(([^)]*)\)\s*\{/g;
+  for (const m of code.matchAll(re)) {
+    const mods = m[1].toLowerCase();
+    if (!/\b(public|global)\b/.test(mods)) continue;
+    const returns = m[2].trim().split(/\s+/).pop();
+    if (/^(new|return|else|if)$/i.test(returns)) continue;
+    let p = m[4].trim();
+    while (/<[^<>]*>/.test(p)) p = p.replace(/<([^<>]*)>/g, (x, inner) => `‹${inner.replace(/,/g, ';')}›`);
+    const params = p ? p.split(',').map((x) => x.trim().replace(/‹/g, '<').replace(/›/g, '>').replace(/;\s*/g, ', ')).filter(Boolean) : [];
+    out.push({ name: m[3], returns, params, static: /\bstatic\b/.test(mods), line: code.slice(0, m.index).split('\n').length });
+  }
+  return out.slice(0, 200);
+}
+
 function parseTrigger(name, source) {
   const { code } = stripApex(source);
   const head = code.match(/trigger\s+(\w+)\s+on\s+(\w+)\s*\(([^)]*)\)/i);
@@ -300,8 +349,10 @@ function parseTrigger(name, source) {
     events,
     identifiers: unique((code.match(/\b[A-Z]\w+\b/g) || []).filter((id) => !head || (id !== head[1] && id !== head[2]))),
     classRefs: unique([...code.matchAll(/\b(\w+)\.class\b/g)].map((m) => m[1])),
+    // Logic in the trigger body (queries, DML, loops) instead of only calling a handler.
+    hasLogic: /\[\s*SELECT\b|\b(insert|update|upsert|delete)\s+\w+\s*;|\bfor\s*\(/i.test(code),
     fieldUses: require('./fieldrefs').apexFieldRefs(source, { triggerObject: head ? head[2] : null }).refs,
   };
 }
 
-module.exports = { stripApexComments, methodFacts, handlerRefs, PHASE_METHOD_RE, stripApex, parseApexClass, parseTrigger, parseSoql, parseDml, parseApplication, blockAfter };
+module.exports = { patternFacts, methodSignatures, stripApexComments, methodFacts, handlerRefs, PHASE_METHOD_RE, stripApex, parseApexClass, parseTrigger, parseSoql, parseDml, parseApplication, blockAfter };

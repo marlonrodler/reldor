@@ -2,6 +2,18 @@
 
 # Histórico de versões
 
+## 0.21.0
+
+- `profile.md` ganha **Padrões de projeto** (triggers, assíncrono, testes e mocks, Strategy, Factory, Builder, DTO,
+  Singleton, exceções, Unit of Work, log, configuração, integração, campos) e **Times e código compartilhado** (prefixos
+  de time em classes, objetos e campos; o que é compartilhado; helpers), com classes de exemplo. Tudo do índice.
+- `reldor helpers <termo>` (novo): os métodos que já existem, compartilhado primeiro. `--similar`: o mesmo método em
+  times diferentes, candidato a um método genérico.
+- `reldor me --team --prefix` (novo): o seu time, só na sua máquina (`.reldor/local.yaml`, no `.gitignore`); aparece
+  em `me` no `status`.
+- Skill: antes de criar um método, procura o que existe; se outra área pode usar, propõe um método genérico com
+  parâmetros numa classe compartilhada.
+
 ## 0.20.1
 
 - `reldor init --json` devolve JSON (antes saía texto, e a IA não conseguia ler o arquivo do `--out`).

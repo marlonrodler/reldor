@@ -157,6 +157,7 @@ You don't memorize commands: you say what you want and the AI runs the right one
 |---|---|---|
 | **What now?** | "what now?" | [`status`](./docs/status.en.md): where you are, warnings if you went up now, next step |
 | **Understand** | "what happens when an Opportunity is closed?", "where is this used?", "help me write the task" | [`explain`](./docs/explain.en.md), [`usages`](./docs/usages.en.md), [`refine`](./docs/refine.en.md) and the advisors |
+| **Create** | "is there already a method for this?" | [`helpers`](./docs/helpers.en.md): what already exists, shared first; if not, the AI suggests a generic method every team can use |
 | **Review** | "can I commit?" | [`review`](./docs/review.en.md): security, quality and repeated code, fields outside the query, tests that can break and XML, in one summary |
 | **Clean** | "I'm going to commit, clean what is not mine" | [`clean`](./docs/clean.en.md): separates your work from what came from the org and shows the commands to leave only yours in the folder |
 | **Merge** | "merge my branch" (on the merge branch) | [`merge`](./docs/merge.en.md): checks first, shows the `git merge` for you to run, resolves the file conflicts keeping the target and applying only your change, then checks that only yours went in |
@@ -239,6 +240,8 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor status`](./docs/status.en.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |
 | [`reldor index`](./docs/index-command.en.md) | Builds the project index; reads again only what changed | ✅ |
 | [`reldor explain`](./docs/explain.en.md) | Reverse engineering: automations in the order of execution | ✅ |
+| [`reldor helpers`](./docs/helpers.en.md) | Before creating a method: what already exists (shared first) and the same method in different teams | ✅ |
+| [`reldor me`](./docs/helpers.en.md) | Your team and its prefix, only on your machine | ✅ |
 | [`reldor usages`](./docs/usages.en.md) | Where something is used, before you change or delete it | ✅ |
 | `reldor log` | Everything Reldor did, newest first | ✅ |
 | [`reldor refine`](./docs/refine.en.md) | The facts behind a task idea: impact, attention points, open questions, size | ✅ |

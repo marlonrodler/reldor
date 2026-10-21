@@ -157,6 +157,7 @@ Você não decora comandos: diz o que quer e a IA roda o certo.
 |---|---|---|
 | **E agora?** | "e agora?" | [`status`](./docs/status.md): onde você está, avisos se subir agora, próximo passo |
 | **Entender** | "o que acontece quando uma Oportunidade é fechada?", "onde isso é usado?", "me ajuda a escrever a task" | [`explain`](./docs/explain.md), [`usages`](./docs/usages.md), [`refine`](./docs/refine.md) e os conselheiros |
+| **Criar** | "já existe um método para isso?" | [`helpers`](./docs/helpers.md): o que já existe, compartilhado primeiro; se não existir, a IA propõe um método genérico que todo time possa usar |
 | **Revisar** | "posso commitar?" | [`review`](./docs/review.md): segurança, qualidade e código repetido, campo fora da query, testes que podem quebrar e XML, num resumo só |
 | **Limpar** | "vou commitar, limpa o que não é meu" | [`clean`](./docs/clean.md): separa o seu do que veio da org e mostra os comandos para deixar na pasta só o seu |
 | **Merge** | "faz o merge da minha branch" (na branch de merge) | [`merge`](./docs/merge.md): confere antes, mostra o `git merge` para você rodar, resolve os conflitos dos arquivos mantendo o destino e aplicando só a sua mudança, e confere se entrou só o seu |
@@ -240,6 +241,8 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor index`](./docs/index-command.md) | Monta o índice do projeto; só relê o que mudou | ✅ |
 | [`reldor explain`](./docs/explain.md) | Engenharia reversa: automações na ordem de execução | ✅ |
 | [`reldor usages`](./docs/usages.md) | Onde algo é usado, antes de alterar ou apagar | ✅ |
+| [`reldor helpers`](./docs/helpers.md) | Antes de criar um método: o que já existe (compartilhado primeiro) e métodos iguais em times diferentes | ✅ |
+| [`reldor me`](./docs/helpers.md) | O seu time e o prefixo dele, só na sua máquina | ✅ |
 | `reldor log` | Tudo o que o Reldor fez, do mais recente ao mais antigo | ✅ |
 | [`reldor refine`](./docs/refine.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho | ✅ |
 | [`reldor test-radar`](./docs/test-radar.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |

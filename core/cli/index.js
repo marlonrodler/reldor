@@ -5,6 +5,8 @@ const { findProjectRoot } = require('../config');
 const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { profileCommand } = require('./profile');
+const { meCommand } = require('./me');
+const { helpersCommand } = require('./helpers');
 const { logCommand } = require('./log');
 const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, qualityCommand } = require('./sf-commands');
 const { snapshotCommand, commitCommand, cleanCommand, hookCommand, mergeCommand, mergeDriverCommand } = require('./git-commands');
@@ -34,6 +36,8 @@ const COMMANDS = {
   doctor: { run: doctorCommand, help: 'Confere a instalação e a pasta do terminal, e diz o próximo passo (--json)' },
   env: { run: envCommand, help: 'Cadeia de ambientes e org: ver e mudar (set "nome:branch, ...", --org <alias>, --org-for "nome:alias", --base, --production)' },
   init: { run: initCommand, help: 'Configura o Reldor neste projeto, sem perguntas (opcionais: --envs, --org, --design-system, --execute on|off)' },
+  me: { run: meCommand, help: 'O seu time, só na sua máquina (--team <nome> --prefix <PREFIXO>)' },
+  helpers: { run: helpersCommand, help: 'Antes de criar um método: o que já existe (termo), e métodos iguais em times diferentes (--similar)' },
   profile: { run: profileCommand, help: 'Atualiza o profile.md com o que está no projeto hoje (a parte do time fica como está)' },
   log: { run: logCommand, help: 'Histórico de ações do Reldor (--json)' },
   index: { run: indexCommand, help: 'Monta ou atualiza o índice do projeto (--full, --json)' },

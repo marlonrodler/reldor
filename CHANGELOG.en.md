@@ -2,6 +2,18 @@
 
 # Changelog
 
+## 0.21.0
+
+- `profile.md` gains **Design patterns** (triggers, async, tests and mocks, Strategy, Factory, Builder, DTO, Singleton,
+  exceptions, Unit of Work, logging, config, integration, fields) and **Teams and shared code** (team prefixes in classes,
+  objects and fields; what is shared; helpers), with example classes. All from the index.
+- `reldor helpers <term>` (new): the methods that already exist, shared first. `--similar`: the same method in different
+  teams, a candidate for one generic method.
+- `reldor me --team --prefix` (new): your team, only on your machine (`.reldor/local.yaml`, in `.gitignore`); shows up
+  as `me` in `status`.
+- Skill: before creating a method, it looks for what exists; if another area may use it, it suggests a generic method
+  with parameters in a shared class.
+
 ## 0.20.1
 
 - `reldor init --json` returns JSON (it used to print text, and the AI could not read the `--out` file).

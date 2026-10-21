@@ -62,6 +62,8 @@ function buildStatus(root, options = {}) {
     config: { exists, file },
     // execute: off (the default) = Reldor never changes Git or the org; it checks and hands over the commands.
     execute: executeOn(config) ? 'on' : 'off',
+    // The person's own team (reldor me), from .reldor/local.yaml; null when not set.
+    me: require('../config').readLocal(root).team ? require('../config').readLocal(root) : null,
     git: { repo, branch, pending, actions: executeOn(config) ? 'on' : 'off' },
     environments: repo ? environmentStatus(root, config.environments || [], branch, baseBranch(config)) : { configured: false, items: [] },
     spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },

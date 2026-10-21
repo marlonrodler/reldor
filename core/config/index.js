@@ -106,6 +106,28 @@ function branchName(template, vars) {
 }
 
 /** The config file as written (without defaults), to change it without writing every default back. */
+/** The person's own settings (team, prefix): .reldor/local.yaml, kept out of Git. */
+function readLocal(root) {
+  const file = path.join(paths(root).base, 'local.yaml');
+  try {
+    return YAML.parse(fs.readFileSync(file, 'utf8')) || {};
+  } catch {
+    return {};
+  }
+}
+
+/** Saves .reldor/local.yaml and makes sure .gitignore keeps it out of the repository. */
+function saveLocal(root, data) {
+  const base = paths(root).base;
+  fs.mkdirSync(base, { recursive: true });
+  const file = path.join(base, 'local.yaml');
+  fs.writeFileSync(file, `# Só seu, fora do Git: o seu time e o prefixo dele (reldor me).\n${YAML.stringify(data)}`, 'utf8');
+  const ignore = path.join(root, '.gitignore');
+  const current = fs.existsSync(ignore) ? fs.readFileSync(ignore, 'utf8') : '';
+  if (!current.split(/\r?\n/).includes('.reldor/local.yaml')) fs.appendFileSync(ignore, `${current && !current.endsWith('\n') ? '\n' : ''}.reldor/local.yaml\n`, 'utf8');
+  return file;
+}
+
 function readRawConfig(root) {
   const p = paths(root);
   if (!fs.existsSync(p.config)) return {};
@@ -128,4 +150,4 @@ function executeOn(config) {
   return raw === true || String(raw).toLowerCase() === 'on';
 }
 
-module.exports = { executeOn, gitActionsOn, productionEnv, baseBranch, branchName, readRawConfig, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };
+module.exports = { readLocal, saveLocal, executeOn, gitActionsOn, productionEnv, baseBranch, branchName, readRawConfig, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };
