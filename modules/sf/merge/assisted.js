@@ -56,7 +56,7 @@ function preflight(root, branch, { environments = [] } = {}) {
  * files. With `stage`, the resolved files are also marked as resolved in Git (git add); without it, they are listed
  * for the person to add. Returns { auto, resolved, hard }.
  */
-function resolveConflicts(root, { stage = true } = {}) {
+function resolveConflicts(root, { stage = false } = {}) {
   if (!mergeInProgress(root)) throw new Error('Não há merge em andamento. Comece com git merge --no-ff --no-commit <sua-branch>.');
   const conflicted = [...new Set(lines(git(root, ['diff', '--name-only', '--diff-filter=U'])))];
   const report = { auto: [], resolved: [], hard: [] };
@@ -101,16 +101,6 @@ function resolveConflicts(root, { stage = true } = {}) {
   return report;
 }
 
-/** Runs the merge without committing and resolves what Git stops on (execution on). */
-function startMerge(root, branch, { environments = [] } = {}) {
-  const { ref, current } = preflight(root, branch, { environments });
-  const m = git(root, ['merge', '--no-ff', '--no-commit', ref], { env: { GIT_MERGE_AUTOEDIT: 'no' }, timeout: 300000 });
-  if (!mergeInProgress(root)) {
-    if (/Already up to date|Já está atualizado/i.test(m.stdout + m.stderr)) return { branch, target: current, upToDate: true, auto: [], resolved: [], hard: [] };
-    throw new Error(`O git merge falhou: ${m.stderr || m.stdout}`);
-  }
-  return { branch, target: current, upToDate: false, ...resolveConflicts(root, { stage: true }) };
-}
 
 /** Count of each meaningful line (trimmed, not blank). */
 function counts(text) {
@@ -206,23 +196,6 @@ function verifyMerge(root) {
   return { target, feature, files: all.length, ok: issues.length === 0, issues };
 }
 
-/** Stages the files the AI or a person resolved and commits the merge. */
-function continueMerge(root) {
-  if (!mergeInProgress(root)) throw new Error('Não há merge em andamento.');
-  const pendingFiles = [...new Set([...lines(git(root, ['diff', '--name-only', '--diff-filter=U'])), ...lines(git(root, ['diff', '--name-only']))])];
-  const withMarkers = pendingFiles.filter((f) => {
-    const full = path.join(root, f);
-    return fs.existsSync(full) && MARKER.test(fs.readFileSync(full, 'utf8'));
-  });
-  if (withMarkers.length) return { committed: false, withMarkers };
-  for (const f of pendingFiles) git(root, ['add', '-A', '--', f]);
-  const c = git(root, ['commit', '--no-edit'], { env: { GIT_MERGE_AUTOEDIT: 'no' } });
-  if (!c.ok) throw new Error(`O commit falhou: ${c.stderr || c.stdout}`);
-  return { committed: true, commit: git(root, ['rev-parse', '--short', 'HEAD']).stdout };
-}
 
-function abortMerge(root) {
-  return git(root, ['merge', '--abort']).ok;
-}
 
-module.exports = { preflight, resolveConflicts, startMerge, verifyMerge, continueMerge, abortMerge, mergeInProgress };
+module.exports = { preflight, resolveConflicts, verifyMerge, mergeInProgress };

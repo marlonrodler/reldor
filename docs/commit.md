@@ -14,6 +14,7 @@ Ele trabalha **linha a linha**. Se o retrieve mudou uma classe e você mudou out
 git restore --staged .                                                      # começa com o stage vazio
 git apply --cached --3way --whitespace=nowarn .reldor/work/commit/so-o-seu.patch   # só as suas linhas no stage
 git commit -m "mensagem"                                                    # ou commite pela sua ferramenta
+reldor snapshot --after-commit                                              # a foto anda junto
 ```
 
 Não rode `git add -A` antes do commit: ele juntaria tudo de novo.
@@ -22,7 +23,7 @@ O `retrieve` também não roda nada na org: ele escolhe a org (a do `--org`, a d
 
 O `hook install` coloca um gancho pre-commit em `.git/hooks`, depois de pedir a sua confirmação. Ele roda em **todo** commit, inclusive nos feitos na mão, e barra duas coisas: entradas duplicadas em profiles, permission sets e outros XMLs, e arquivos que só vieram da org.
 
-Com `execute: on` na configuração, o `reldor commit -m "..."` e o `retrieve` rodam os comandos, sempre pedindo confirmação.
+Quando quem commita é uma ferramenta que roda `git add -A`, use `reldor commit --stash-org`: os comandos deixam na pasta só o seu trabalho, e o que veio da org vai para um stash do Git chamado "reldor clean", então nada se perde. `reldor commit --undo` mostra os comandos para trazer de volta (pulando arquivos que você mudou depois). `reldor clean` é o mesmo que `reldor commit --stash-org`. Se outra ferramenta já tira da pasta o que veio da org, grave `org-files: skip` (ou `verify`) no [`tools`](./tools.md).
 
 ## Quando usar
 

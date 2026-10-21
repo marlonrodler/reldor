@@ -86,9 +86,6 @@ async function initCommand(root, flags) {
   const environments = flags.envs ? parseEnvs(flags.envs) : [];
   const referenceOrg = (typeof flags.org === 'string' && flags.org) || (sf && sf.facts.defaultOrg) || null;
   const designSystem = typeof flags['design-system'] === 'string' ? flags['design-system'] : 'slds';
-  // Execution stays off unless the person asks: the Reldor checks and builds the commands; people run them.
-  const executeFlag = flags.execute ?? flags['git-actions'];
-  const execute = /^(on|sim|s|true)$/i.test(String(executeFlag ?? 'off')) ? 'on' : 'off';
 
   const config = {
     ...(flags.language ? { language: flags.language } : {}),
@@ -96,7 +93,6 @@ async function initCommand(root, flags) {
     ...(environments.length ? { environments } : {}),
     ...(referenceOrg ? { reference_org: referenceOrg } : {}),
     advisors: { design_system: designSystem },
-    execute,
   };
   const file = saveConfig(root, config);
   const { file: profile } = writeProfile(root, { modules, designSystem, specs });
@@ -117,10 +113,10 @@ async function initCommand(root, flags) {
   out.push(referenceOrg ? `• Org de referência: ${referenceOrg} (a org padrão do sf CLI)` : '• Org: nenhuma ainda. Quando um comando precisar, ele pergunta (ou: reldor env --org <alias>).');
   if (environments.length) out.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}`);
   else out.push('• Ambientes: nenhum ainda. Só fazem falta para ver onde a sua branch já está e para o ensaio de promoção (reldor env set).');
-  out.push('• Execução desligada: o Reldor confere e monta os comandos de Git e de org; quem roda é você.');
+  out.push('• O Reldor não executa nada no Git nem na org: ele confere e monta os comandos; quem roda é você.');
   const found = require('../tools').toolsReport(root, config).suggestions;
   if (flags.json) {
-    printJson({ configured: true, created: true, config: path.relative(root, file), profile: path.relative(root, profile), detected: { salesforce: Boolean(sf), specs: specs.length }, reference_org: referenceOrg, environments, execute, gitignore: ignored, tools: found, next: found.length ? 'reldor tools' : 'reldor status' });
+    printJson({ configured: true, created: true, config: path.relative(root, file), profile: path.relative(root, profile), detected: { salesforce: Boolean(sf), specs: specs.length }, reference_org: referenceOrg, environments, gitignore: ignored, tools: found, next: found.length ? 'reldor tools' : 'reldor status' });
     return 0;
   }
   if (found.length) {

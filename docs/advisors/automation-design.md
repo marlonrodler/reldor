@@ -19,4 +19,4 @@ A IA usa antes de criar ou alterar uma automação. Você pode perguntar "onde e
 
 ## Onde se encaixa
 
-Fica entre o [spec-review](./spec-review.md) e o código.
+Fica entre o [task-refine](./task-refine.md) e o código.

@@ -14,6 +14,7 @@ It works **line by line**. If the retrieve changed a class and you changed other
 git restore --staged .                                                      # start with an empty stage
 git apply --cached --3way --whitespace=nowarn .reldor/work/commit/so-o-seu.patch   # only your lines staged
 git commit -m "message"                                                     # or commit with your own tool
+reldor snapshot --after-commit                                              # the snapshot moves along
 ```
 
 Don't run `git add -A` before the commit: it would put everything back together.
@@ -22,7 +23,7 @@ Don't run `git add -A` before the commit: it would put everything back together.
 
 `hook install` adds a pre-commit guard to `.git/hooks`, after asking for your confirmation. It runs on **every** commit, including the ones you make by hand, and blocks two things: duplicated entries in profiles, permission sets and other XML, and files that only came from the org.
 
-With `execute: on` in the config, `reldor commit -m "..."` and `retrieve` run the commands, always asking for confirmation.
+When the commit is made by a tool that runs `git add -A`, use `reldor commit --stash-org`: the commands leave only your work in the folder, and what came from the org goes into a Git stash named "reldor clean", so nothing is lost. `reldor commit --undo` shows the commands to bring it back (skipping files you changed since). `reldor clean` is the same as `reldor commit --stash-org`. If another tool already takes the org part out of the folder, save `org-files: skip` (or `verify`) in [`tools`](./tools.en.md).
 
 ## When to reach for it
 

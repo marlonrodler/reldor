@@ -19,4 +19,4 @@ The AI reaches for it before creating or changing an automation. You can ask "wh
 
 ## Where it fits
 
-It sits between [spec-review](./spec-review.en.md) and the code.
+It sits between [task-refine](./task-refine.en.md) and the code.

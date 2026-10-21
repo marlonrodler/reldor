@@ -12,8 +12,8 @@ const PROFILE_FILE = 'profile.md';
 const DEFAULTS = Object.freeze({
   language: 'pt-BR',
   modules: ['sf'],
-  // execute (not set = off): off = Reldor never changes Git or the org; it checks and hands over the exact commands.
-  // on = Reldor may run them itself, always asking first. Deploys are never run by Reldor.
+  // Reldor never changes Git or the org (commit, stash, merge, retrieve, tests, deploy): it checks and hands over the
+  // exact commands. Read-only org queries (limits) may run directly.
   environments: [],
   reference_org: null,
   index: { refresh_hours: 24 },
@@ -134,20 +134,5 @@ function readRawConfig(root) {
   return YAML.parse(fs.readFileSync(p.config, 'utf8')) || {};
 }
 
-/** True when Reldor may run Git actions itself (commit, branch, merge). Kept for older configs: see executeOn. */
-function gitActionsOn(config) {
-  return String(config?.git?.actions || 'off').toLowerCase() === 'on';
-}
 
-/**
- * True when Reldor may change Git or the org itself (commit, stage, stash, merge, retrieve, running tests), always
- * asking first. Off by default: then it only checks and prints the commands for the person to run.
- * An older config with git.actions: on and no `execute` keeps working as on.
- */
-function executeOn(config) {
-  const raw = config?.execute;
-  if (raw === undefined || raw === null) return gitActionsOn(config);
-  return raw === true || String(raw).toLowerCase() === 'on';
-}
-
-module.exports = { readLocal, saveLocal, executeOn, gitActionsOn, productionEnv, baseBranch, branchName, readRawConfig, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };
+module.exports = { readLocal, saveLocal, productionEnv, baseBranch, branchName, readRawConfig, DEFAULTS, RELDOR_DIR, findProjectRoot, paths, loadConfig, saveConfig, deepMerge };

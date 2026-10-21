@@ -6,7 +6,7 @@
 
 `reldor merge <your-branch>` helps merge your development branch into the **merge branch** (the copy of the environment branch you are going to open the PR from), and resolves the conflicts with one rule: **keep what the target already has and apply only your change**.
 
-**Reldor does not run the merge or commit.** With execution off (the default), it checks first (the branch exists, the folder is clean, you are on the merge branch) and shows the commands in order:
+**Reldor does not run the merge or commit.** It checks first (the branch exists, the folder is clean, you are on the merge branch) and shows the commands in order:
 
 ```bash
 git merge --no-ff --no-commit <your-branch>  # you run it: the merge commit is kept for review
@@ -15,7 +15,7 @@ reldor merge --check                         # checks that only yours went in
 reldor merge --continue                      # shows the merge commit for you to run
 ```
 
-Resolving a conflict is changing a file, so `--resolve` does it after asking for confirmation, and shows the `git add` of the resolved files for you to run. With `execute: on`, `reldor merge <branch>` runs the merge and the staging for you, always asking for confirmation.
+Resolving a conflict is changing a file, so `--resolve` does it after asking for confirmation, and shows the `git add` of the resolved files for you to run.
 
 1. `git merge --no-ff --no-commit` keeps the merge commit for review.
 2. `--resolve` resolves what Git stops on:
@@ -43,8 +43,8 @@ On the merge branch, say "merge my branch". No more clicking "accept current / i
 **What if the AI resolves a conflict wrongly?**
 The check catches it: a line of the target that disappeared, or something that is not yours, shows up before the commit.
 
-**Does execution need to be on?**
-No. With execution off you run `git merge` and the commit, and Reldor takes care of the conflicts and the check. If you prefer, commit with your own tool after the check.
+**Who runs `git merge` and the commit?**
+You (or your tool). Reldor takes care of the conflicts in the files and the check.
 
 **And `reldor merge install`?**
 It turns on the item-by-item driver inside the plain `git merge` too (for merges made by other tools), plus `rerere`, after asking for confirmation (it only changes the local Git config). Details in [promote](./promote.en.md#smart-merge).

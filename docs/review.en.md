@@ -13,7 +13,7 @@
 | [Queries](./check.en.md) | Fields read but missing in the SOQL or Selector (an error in production) |
 | [Tests](./test-radar.en.md) | The test classes your change can break |
 | [XML](./xml.en.md) | Profiles, permission sets and labels out of order or with conflicting duplicates |
-| [Org files](./clean.en.md) | Changes that came from the org in a retrieve and are not yours |
+| [Org files](./commit.en.md) | Changes that came from the org in a retrieve and are not yours |
 
 The summary has two groups: 🔴 **fix before the commit** and 🟡 **attention**, each item with the file, the line and how to fix it. Then the tests to run. The Salesforce Code Analyzer runs once for security and quality when installed; `--no-analyzer` skips it.
 
@@ -35,4 +35,4 @@ Yes (`security`, `quality`, `check`, `test-radar`, `xml`), for when you want onl
 
 ## Where it fits
 
-Right before [clean](./clean.en.md) and the commit.
+Right before the [commit](./commit.en.md).

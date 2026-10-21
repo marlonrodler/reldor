@@ -99,7 +99,7 @@ test('the Kiro plugin also has POWER.md and steering files, for Kiro versions th
   assert.match(power, /^---\nname: "reldor"\ndisplayName: "Reldor"\ndescription: ".+"\nkeywords: \[.+\]\nauthor: ".+"\n---\n/);
   assert.match(power, /# Onboarding/);
   assert.match(power, /reldor status --json/, 'the router instructions are inside');
-  for (const f of ['reldor-guide.md', 'reldor-task-refine.md', 'reldor-spec-review.md', 'reldor-lwc-ux.md', 'reldor-automation-design.md']) {
+  for (const f of ['reldor-guide.md', 'reldor-task-refine.md', 'reldor-lwc-ux.md', 'reldor-automation-design.md']) {
     assert.ok(fs.existsSync(path.join(KIRO_COMMITTED, 'steering', f)), f);
     assert.ok(power.includes(f), `POWER.md lists ${f}`);
   }

@@ -19,6 +19,25 @@ function snapshotCommand(root, flags) {
     print(restoreCleanSnapshot(root) ? '🛡️  A foto do último retrieve voltou: o reldor clean e o commit limpo funcionam de novo.' : '⚠️ Não há foto guardada pelo reldor clean.');
     return 0;
   }
+  if (flags['after-commit']) {
+    // The person committed only their lines: the snapshot moves forward, so those lines are not "yours" again.
+    const snap = snapshotApi.loadSnapshot(root);
+    let saved = {};
+    try {
+      saved = JSON.parse(fs.readFileSync(path.join(root, '.reldor', 'work', 'commit', 'plano.json'), 'utf8'));
+    } catch {
+      /* no plan saved */
+    }
+    const head = run('git', ['rev-parse', 'HEAD'], { cwd: root }).stdout;
+    if (!snap || !saved.head || saved.head === head) {
+      print('⚠️ Não vi um commit novo desde o plano do reldor commit. A foto ficou como estava.');
+      return 1;
+    }
+    snapshotApi.advanceSnapshot(root, snap, { now: snapshotApi.workingTree(root) }, saved.failed || []);
+    logAction(root, 'snapshot', { summary: 'depois do commit' });
+    print('🛡️  Foto atualizada: o que você commitou não aparece mais como seu; o que veio da org continua de fora.');
+    return 0;
+  }
   if (flags.clear) {
     snapshotApi.clearSnapshot(root);
     print('🛡️  Foto apagada. O próximo commit volta a ser um commit comum.');
@@ -40,99 +59,131 @@ function list(title, files, icon) {
   return [`${icon} ${title} (${files.length}):`, ...files.slice(0, 30).map((f) => `   ${f}`), ...(files.length > 30 ? [`   ... e mais ${files.length - 30}`] : [])];
 }
 
+/**
+ * reldor commit: separates your work from what a retrieve brought, and hands over the Git commands. Reldor never runs
+ * them. Default: only your lines go into the stage, then you commit. --stash-org (the old "clean"): the org part goes
+ * into a stash, so any tool that runs "git add -A" commits only yours. --undo: brings the stashed org part back.
+ */
 async function commitCommand(root, flags, args) {
   if (!gitApi.isRepo(root)) {
     process.stderr.write('⚠️ Esta pasta não é um repositório Git.\n');
     return 1;
   }
+  if (flags.undo) return undoStash(root, flags);
+  const stashOrg = Boolean(flags['stash-org']);
+  const tools = require('../tools');
+  const { config: cfg } = require('../config').loadConfig(root);
+  // Taking the org part out of the folder is the "org-files" capability: when another tool owns it, only --force.
+  if (stashOrg && !tools.runs(cfg, 'org-files') && !flags.force && !flags['dry-run']) {
+    print([`\n🔎 ${tools.ownerNote(cfg, 'org-files')}`, 'Não mexi em nada. Para ver o plano: reldor commit --stash-org --dry-run. Para o Reldor montar os comandos mesmo assim: --force']);
+    return 0;
+  }
+  const title = stashOrg ? '\n🛡️  Deixar na pasta só o seu' : '\n🛡️  Commit limpo';
   const snapshot = snapshotApi.loadSnapshot(root);
   if (!snapshot) {
-    print([
-      '\n🛡️  Commit limpo',
-      '',
-      'Não há foto de retrieve: todos os arquivos alterados são seus.',
-      'Use o Git normalmente (git add / git commit), ou rode "reldor snapshot" logo depois do próximo retrieve.',
-    ]);
+    print([title, '', 'Não há foto de retrieve: todos os arquivos alterados são seus.', 'Use o Git normalmente (ou a sua ferramenta). Depois do próximo retrieve, rode "reldor snapshot".']);
     return 0;
   }
   const message = flags.message || flags.m || args.join(' ');
   const include = typeof flags.include === 'string' ? flags.include.split(',').map((s) => s.trim()).filter(Boolean) : [];
   const plan = snapshotApi.planCleanCommit(root, snapshot, include);
-  const out = ['\n🛡️  Commit limpo', '', `Foto de ${snapshot.at.replace('T', ' ').slice(0, 16)} (${snapshot.reason}).`, ''];
+  const out = [title, '', `Foto de ${snapshot.at.replace('T', ' ').slice(0, 16)} (${snapshot.reason}).`, ''];
   out.push(...list('Seus arquivos', plan.mine, '✅'));
-  out.push(...list('Arquivos que a org também mudou: só as suas linhas entram', plan.mixed, '✂️ '));
+  out.push(...list('Arquivos que a org também mudou: só as suas linhas', plan.mixed, '✂️ '));
   out.push(...list('Incluídos inteiros, a seu pedido', plan.whole, '📥'));
-  out.push(...list('Vieram da org e ficam de fora', plan.fromOrg, '⬜'));
+  out.push(...list(stashOrg ? 'Vieram só da org (saem da pasta, ficam num stash)' : 'Vieram da org e ficam de fora', plan.fromOrg, '⬜'));
+  const plainPlan = { mine: plan.mine, mixed: plan.mixed, whole: plan.whole, fromOrg: plan.fromOrg };
+  const nothingMine = !plan.mine.length && !plan.mixed.length && !plan.whole.length;
+  const nothingOrg = !plan.mixed.length && !plan.fromOrg.length;
+  if (flags['dry-run'] || (!stashOrg && nothingMine) || (stashOrg && nothingOrg)) {
+    if (stashOrg && nothingOrg && !flags['dry-run']) snapshotApi.clearSnapshot(root);
+    if (flags.json) printJson({ snapshot, plan: plainPlan });
+    else print([...out, '', flags['dry-run'] ? '➡️  Para incluir um arquivo da org inteiro: --include caminho/do/arquivo' : stashOrg ? '✅ Nada da org para tirar: a pasta já só tem o seu.' : 'Nenhuma mudança sua desde a foto. Nada para commitar.']);
+    return 0;
+  }
+  const { handover, cmdLine } = require('../report');
+  const patchFile = path.join(root, '.reldor', 'work', 'commit', 'so-o-seu.patch');
+  const p = snapshotApi.writeCleanPatch(root, snapshot, plan, patchFile);
+  const rel = path.relative(root, patchFile).split(path.sep).join('/');
+  if (stashOrg && p.failed.length) {
+    print([...out, '', '❌ Nestes arquivos as suas linhas encostam nas da org, e não dá para separar com segurança:', ...p.failed.map((f) => `   ${f}`), '   Use --include <arquivo> para manter o arquivo inteiro, ou separe à mão.']);
+    return 1;
+  }
+  const cmds = [
+    { cmd: 'git restore --staged .', why: 'começa com o stage vazio' },
+    { cmd: cmdLine(['git', 'apply', '--cached', '--3way', '--whitespace=nowarn', rel]), why: 'só as suas linhas no stage' },
+  ];
+  if (stashOrg) {
+    // The snapshot is kept aside: "--undo" brings it back, so the same retrieve can be separated again.
+    const keep = path.join(root, '.reldor', 'work', 'snapshot-before-clean.json');
+    fs.mkdirSync(path.dirname(keep), { recursive: true });
+    fs.writeFileSync(keep, JSON.stringify(snapshot, null, 2));
+    cmds.push(
+      { cmd: cmdLine(['git', 'stash', 'push', '--keep-index', '--include-untracked', '-m', 'reldor clean: o que veio da org']), why: 'guarda o que veio da org' },
+      { cmd: 'git restore --staged .', why: 'volta ao normal: o seu trabalho na pasta, nada no stage' },
+      { cmd: 'reldor snapshot --clear', why: 'a foto daquele retrieve já foi usada' },
+    );
+  } else {
+    cmds.push({ cmd: message ? cmdLine(['git', 'commit', '-m', message]) : 'commite pela sua ferramenta (ou git commit -m "mensagem")', why: 'sem "git add -A" antes: ele juntaria tudo de novo' });
+    cmds.push({ cmd: 'reldor snapshot --after-commit', why: 'a foto anda junto: o que você commitou não aparece de novo' });
+    fs.writeFileSync(path.join(root, '.reldor', 'work', 'commit', 'plano.json'), JSON.stringify({ head: plan.head, failed: p.failed }, null, 2));
+  }
+  logAction(root, stashOrg ? 'clean-plan' : 'commit-plan', { summary: `${plan.mine.length + plan.mixed.length} arquivo(s) seus; ${plan.fromOrg.length} da org` });
+  const failedLines = p.failed.length ? ['', '⚠️ Nestes arquivos as suas linhas encostam nas da org e ficaram fora do patch. Decida à mão (git add -p) ou inclua o arquivo inteiro com --include:', ...p.failed.map((f) => `   ${f}`)] : [];
+  if (flags.json) {
+    printJson({ plan: plainPlan, patch: rel, failed: p.failed, commands: cmds.map((c) => c.cmd) });
+    return 0;
+  }
+  const intro = stashOrg
+    ? `▶️  Para deixar na pasta só o seu, rode você (o Reldor separou as suas linhas em ${rel}):`
+    : `▶️  Para commitar só o seu, rode você, na pasta do projeto (o Reldor separou as suas linhas em ${rel}):`;
+  print([...out, ...failedLines, ...handover(cmds, { intro }), ...(stashOrg ? ['', 'Para trazer de volta depois: reldor commit --undo (ele monta os comandos).'] : [])]);
+  return 0;
+}
 
-  const nothing = !plan.mine.length && !plan.mixed.length && !plan.whole.length;
-  if (flags.json && (flags['dry-run'] || nothing)) {
-    printJson({ snapshot, plan: { mine: plan.mine, mixed: plan.mixed, whole: plan.whole, fromOrg: plan.fromOrg } });
-    return 0;
+/** reldor commit --undo: the commands that bring back what --stash-org put away (files you changed since are kept). */
+function undoStash(root, flags) {
+  const g = (a) => run('git', a, { cwd: root });
+  const mine = g(['stash', 'list', '--format=%gd%x09%s']).stdout.split('\n').filter(Boolean).find((l) => l.includes('reldor clean'));
+  if (!mine) {
+    print('⚠️ Não achei nada guardado pelo Reldor para trazer de volta.');
+    return 1;
   }
-  if (nothing) {
-    print([...out, '', 'Nenhuma mudança sua desde a foto. Nada para commitar.']);
-    return 0;
+  const ref = mine.split('\t')[0];
+  const W = g(['rev-parse', ref]).stdout;
+  const hasUntracked = g(['rev-parse', '-q', '--verify', `${W}^3`]).ok;
+  const back = [];
+  const skipped = [];
+  const steps = [];
+  // Tracked files: the org version comes back only where you did not change the file afterwards.
+  for (const f of g(['diff', '--name-only', `${W}^1`, W]).stdout.split('\n').filter(Boolean)) {
+    const now = fs.existsSync(path.join(root, f)) ? g(['hash-object', '--', f]).stdout : null;
+    const kept = g(['rev-parse', '-q', '--verify', `${W}^2:${f}`]).stdout || g(['rev-parse', '-q', '--verify', `${W}^1:${f}`]).stdout;
+    if (now === kept) {
+      steps.push(['checkout', W, '--', f]);
+      back.push(f);
+    } else skipped.push(f);
   }
-  const { config } = require('../config').loadConfig(root);
-  const actions = require('../config').executeOn(config);
-  if (flags['dry-run']) {
-    print([...out, '', '➡️  Para incluir um arquivo da org inteiro: --include caminho/do/arquivo']);
-    return 0;
-  }
-  // Execution off (the default): only your lines go into a patch file; the person stages it and commits.
-  if (!actions) {
-    const { handover, cmdLine } = require('../report');
-    const patchFile = path.join(root, '.reldor', 'work', 'commit', 'so-o-seu.patch');
-    const p = snapshotApi.writeCleanPatch(root, snapshot, plan, patchFile);
-    const rel = path.relative(root, patchFile).split(path.sep).join('/');
-    const cmds = [
-      { cmd: 'git restore --staged .', why: 'começa com o stage vazio' },
-      { cmd: cmdLine(['git', 'apply', '--cached', '--3way', '--whitespace=nowarn', rel]), why: 'só as suas linhas no stage' },
-      { cmd: message ? cmdLine(['git', 'commit', '-m', message]) : 'commite pela sua ferramenta (ou git commit -m "mensagem")', why: 'sem "git add -A" antes: ele juntaria tudo de novo' },
-    ];
-    const failedLines = p.failed.length ? ['', '⚠️ Nestes arquivos as suas linhas encostam nas da org e ficaram fora do patch. Decida à mão (git add -p) ou inclua o arquivo inteiro com --include:', ...p.failed.map((f) => `   ${f}`)] : [];
-    if (flags.json) printJson({ plan: { mine: plan.mine, mixed: plan.mixed, whole: plan.whole, fromOrg: plan.fromOrg }, patch: rel, failed: p.failed, commands: cmds.map((c) => c.cmd) });
-    else print([...out, ...failedLines, ...handover(cmds, { intro: `▶️  Para commitar só o seu, rode você, na pasta do projeto (o Reldor separou as suas linhas em ${rel}):` })]);
-    return 0;
-  }
-  if (flags.stage) {
-    if (!(await confirm('\n🛡️ Deixar no stage só esses arquivos e linhas (sem commitar)?', flags))) {
-      print('Cancelado. Nada foi alterado.');
-      return 0;
+  if (hasUntracked) {
+    for (const f of g(['ls-tree', '-r', '--name-only', `${W}^3`]).stdout.split('\n').filter(Boolean)) {
+      if (fs.existsSync(path.join(root, f))) skipped.push(f);
+      else {
+        steps.push(['checkout', `${W}^3`, '--', f]);
+        back.push(f);
+      }
     }
-    const { staged, failed } = snapshotApi.stageCleanCommit(root, snapshot, plan);
-    logAction(root, 'stage', { summary: `${staged.length} arquivo(s) seus no stage` });
-    if (flags.json) printJson({ staged, failed, fromOrg: plan.fromOrg });
-    else print(['', `✅ ${staged.length} arquivo(s) no stage, só com as suas linhas. Agora é só commitar pelo seu fluxo.`, ...(failed.length ? ['⚠️ Ficaram fora (as suas linhas encostam nas da org):', ...failed.map((f) => `   ${f}`)] : [])]);
-    return staged.length ? 0 : 1;
   }
-  if (!message) {
-    print([...out, '', '⚠️ Informe a mensagem: reldor commit -m "mensagem"']);
-    return 1;
-  }
-  if (!flags.json) print(out);
-  if (!(await confirm('\n🛡️ Commitar só esses arquivos e linhas?', flags))) {
-    print('Cancelado. Nada foi alterado.');
+  if (back.length) steps.push(['reset', '-q', '--', ...back]);
+  if (!skipped.length) steps.push(['stash', 'drop', ref]);
+  const { handover, cmdLine } = require('../report');
+  const cmds = steps.map((a) => cmdLine(['git', ...a]));
+  if (fs.existsSync(path.join(root, '.reldor', 'work', 'snapshot-before-clean.json'))) cmds.push('reldor snapshot --restore');
+  if (flags.json) {
+    printJson({ back, skipped, commands: cmds });
     return 0;
   }
-  const { staged, failed } = snapshotApi.stageCleanCommit(root, snapshot, plan);
-  if (!staged.length) {
-    print(['❌ Não consegui separar as suas linhas. Nada foi commitado.', ...failed.map((f) => `   ${f}`)]);
-    return 1;
-  }
-  const commit = run('git', ['commit', '-m', message], { cwd: root, env: { RELDOR_CLEAN_COMMIT: '1' } });
-  if (!commit.ok) {
-    run('git', ['read-tree', 'HEAD'], { cwd: root });
-    print(['❌ O commit falhou (nada foi alterado):', commit.stdout || commit.stderr]);
-    return 1;
-  }
-  snapshotApi.advanceSnapshot(root, snapshot, plan, failed);
-  logAction(root, 'commit', { summary: `${staged.length} arquivo(s) seus; ${plan.fromOrg.length} da org fora` });
-  const done = ['', `✅ Commit feito com ${staged.length} arquivo(s).`];
-  if (failed.length) done.push('', '⚠️ Nestes arquivos, as suas linhas encostam nas linhas que vieram da org. Ficaram fora do commit para você decidir:', ...failed.map((f) => `   ${f}`), '   Resolva à mão (git add -p) ou inclua o arquivo inteiro com --include.');
-  if (plan.fromOrg.length) done.push('', `ℹ️  ${plan.fromOrg.length} arquivo(s) da org continuam alterados na pasta, fora do Git. Se não precisar deles: git restore <arquivo>.`);
-  if (flags.json) printJson({ staged, failed, fromOrg: plan.fromOrg });
-  else print(done);
+  const skippedLines = skipped.length ? [`⚠️ Estes você mudou depois e ficam como estão (o backup continua em ${ref}):`, ...skipped.map((f) => `   ${f}`)] : [];
+  print([`\n🛡️  Trazer de volta: ${back.length} arquivo(s) da org voltariam para a pasta.`, ...skippedLines, ...handover(cmds)]);
   return 0;
 }
 
@@ -224,155 +275,9 @@ function restoreCleanSnapshot(root) {
   }
 }
 
-/**
- * reldor clean: before any tool commits, leave in the folder only what is yours.
- * What came from the org goes into a stash ("reldor clean"), so `git add -A` by any tool takes only your work.
- */
-async function cleanCommand(root, flags) {
-  if (!gitApi.isRepo(root)) {
-    process.stderr.write('⚠️ Esta pasta não é um repositório Git.\n');
-    return 1;
-  }
-  // Cleaning changes the folder: when another tool owns "files that came from the org", only --force cleans.
-  const tools = require('../tools');
-  const { config: cfg } = require('../config').loadConfig(root);
-  if (!flags.undo && !tools.runs(cfg, 'org-files') && !flags.force && !flags['dry-run']) {
-    print([`\n🔎 ${tools.ownerNote(cfg, 'org-files')}`, 'Não mexi na pasta. Para ver o que sairia: reldor clean --dry-run. Para o Reldor limpar mesmo assim: reldor clean --force']);
-    return 0;
-  }
-  if (flags.undo) {
-    const list = run('git', ['stash', 'list', '--format=%gd%x09%s'], { cwd: root }).stdout.split('\n').filter(Boolean);
-    const mine = list.find((l) => l.includes('reldor clean'));
-    if (!mine) {
-      print('⚠️ Não achei nenhuma limpeza do Reldor para desfazer.');
-      return 1;
-    }
-    const ref = mine.split('\t')[0];
-    const g = (args) => run('git', args, { cwd: root });
-    const W = g(['rev-parse', ref]).stdout;
-    const hasUntracked = g(['rev-parse', '-q', '--verify', `${W}^3`]).ok;
-    const back = [];
-    const skipped = [];
-    const steps = [];
-    // Tracked files: put the org version back only where you did not change the file after the cleaning.
-    for (const f of g(['diff', '--name-only', `${W}^1`, W]).stdout.split('\n').filter(Boolean)) {
-      const full = path.join(root, f);
-      const now = fs.existsSync(full) ? g(['hash-object', '--', f]).stdout : null;
-      const kept = g(['rev-parse', '-q', '--verify', `${W}^2:${f}`]).stdout || g(['rev-parse', '-q', '--verify', `${W}^1:${f}`]).stdout;
-      if (now === kept) {
-        steps.push(['checkout', W, '--', f]);
-        back.push(f);
-      } else {
-        skipped.push(f);
-      }
-    }
-    // Files that only existed in the org part.
-    if (hasUntracked) {
-      for (const f of g(['ls-tree', '-r', '--name-only', `${W}^3`]).stdout.split('\n').filter(Boolean)) {
-        if (fs.existsSync(path.join(root, f))) skipped.push(f);
-        else {
-          steps.push(['checkout', `${W}^3`, '--', f]);
-          back.push(f);
-        }
-      }
-    }
-    if (back.length) steps.push(['reset', '-q', '--', ...back]);
-    if (!skipped.length) steps.push(['stash', 'drop', ref]);
-    const keep = path.join(root, '.reldor', 'work', 'snapshot-before-clean.json');
-    const skippedLines = skipped.length ? [`⚠️ Estes você mudou depois da limpeza e ficam como estão (o backup continua em ${ref}):`, ...skipped.map((f) => `   ${f}`)] : [];
-    // Execution off (the default): the person runs the Git commands; the snapshot comes back with reldor snapshot --restore.
-    if (!require('../config').executeOn(cfg)) {
-      const { handover, cmdLine } = require('../report');
-      const cmds = steps.map((a) => cmdLine(['git', ...a]));
-      if (fs.existsSync(keep)) cmds.push('reldor snapshot --restore');
-      if (flags.json) printJson({ back, skipped, commands: cmds });
-      else print([`\n🛡️  Desfazer a limpeza: ${back.length} arquivo(s) da org voltariam para a pasta.`, ...skippedLines, ...handover(cmds)]);
-      return 0;
-    }
-    for (const a of steps) g(a);
-    // The snapshot of that retrieve comes back too, so "reldor clean" works again.
-    restoreCleanSnapshot(root);
-    print([`🛡️  ${back.length} arquivo(s) da org voltaram para a pasta.`, ...skippedLines]);
-    return 0;
-  }
-  const snapshot = snapshotApi.loadSnapshot(root);
-  if (!snapshot) {
-    print([
-      '\n🛡️  Limpar antes do commit',
-      '',
-      'Não há foto de retrieve, então tudo que mudou na pasta é seu: não há nada para limpar.',
-      'Dica: faça o retrieve pelo Reldor (reldor retrieve) ou rode "reldor snapshot" logo depois de um retrieve.',
-    ]);
-    return 0;
-  }
-  const include = typeof flags.include === 'string' ? flags.include.split(',').map((x) => x.trim()).filter(Boolean) : [];
-  const plan = snapshotApi.planCleanCommit(root, snapshot, include);
-  const out = ['\n🛡️  Limpar antes do commit', ''];
-  out.push(...list('Seus arquivos (ficam)', plan.mine, '✅'));
-  out.push(...list('A org também mudou: ficam só as suas linhas', plan.mixed, '✂️ '));
-  out.push(...list('Incluídos inteiros, a seu pedido', plan.whole, '📥'));
-  out.push(...list('Vieram só da org (saem da pasta)', plan.fromOrg, '⬜'));
-  if (!plan.mixed.length && !plan.fromOrg.length) {
-    snapshotApi.clearSnapshot(root);
-    print([...out, '', '✅ Nada da org para tirar: a pasta já só tem o seu.']);
-    return 0;
-  }
-  if (flags['dry-run']) {
-    if (flags.json) printJson({ plan });
-    else print([...out, '', '➡️  Para limpar: reldor clean']);
-    return 0;
-  }
-  // Execution off (the default): Reldor writes only your lines into a patch file and hands over the Git commands.
-  if (!require('../config').executeOn(cfg)) {
-    const { handover, cmdLine } = require('../report');
-    const patchFile = path.join(root, '.reldor', 'work', 'clean', 'so-o-seu.patch');
-    const p = snapshotApi.writeCleanPatch(root, snapshot, plan, patchFile);
-    if (p.failed.length) {
-      print([...out, '', '❌ Nestes arquivos as suas linhas encostam nas da org, e não dá para separar com segurança:', ...p.failed.map((f) => `   ${f}`), '   Use --include <arquivo> para manter o arquivo inteiro, ou separe à mão.']);
-      return 1;
-    }
-    const keep = path.join(root, '.reldor', 'work', 'snapshot-before-clean.json');
-    fs.mkdirSync(path.dirname(keep), { recursive: true });
-    fs.writeFileSync(keep, JSON.stringify(snapshot, null, 2));
-    const rel = path.relative(root, patchFile).split(path.sep).join('/');
-    const cmds = [
-      { cmd: 'git restore --staged .', why: 'começa com o stage vazio' },
-      { cmd: cmdLine(['git', 'apply', '--cached', '--3way', '--whitespace=nowarn', rel]), why: 'só as suas linhas no stage' },
-      { cmd: cmdLine(['git', 'stash', 'push', '--keep-index', '--include-untracked', '-m', 'reldor clean: o que veio da org']), why: 'guarda o que veio da org' },
-      { cmd: 'git restore --staged .', why: 'volta ao normal: o seu trabalho na pasta, nada no stage' },
-      { cmd: 'reldor snapshot --clear', why: 'a foto daquele retrieve já foi usada' },
-    ];
-    if (flags.json) printJson({ plan, patch: rel, commands: cmds.map((c) => c.cmd) });
-    else print([...out, ...handover(cmds, { intro: '▶️  Para limpar, rode você, na pasta do projeto (o Reldor não mexe no Git: ele separou as suas linhas em ' + rel + '):' }), '', 'Para trazer de volta depois: reldor clean --undo (ele monta os comandos).']);
-    return 0;
-  }
-  if (!flags.json) print(out);
-  if (!(await confirm('\n🛡️ Tirar da pasta o que veio da org (fica guardado num stash, dá para desfazer)?', flags))) {
-    print('Cancelado. Nada foi alterado.');
-    return 0;
-  }
-  const { staged, failed } = snapshotApi.stageCleanCommit(root, snapshot, plan);
-  if (failed.length) {
-    run('git', ['reset', '-q'], { cwd: root });
-    print(['❌ Nestes arquivos as suas linhas encostam nas da org, e não dá para separar com segurança. Nada foi alterado:', ...failed.map((f) => `   ${f}`), '   Use --include <arquivo> para manter o arquivo inteiro, ou separe à mão.']);
-    return 1;
-  }
-  const stash = run('git', ['stash', 'push', '--keep-index', '--include-untracked', '-m', 'reldor clean: o que veio da org'], { cwd: root });
-  if (!stash.ok) {
-    print(['❌ Não consegui guardar o que veio da org:', stash.stderr || stash.stdout]);
-    return 1;
-  }
-  run('git', ['reset', '-q'], { cwd: root }); // back to normal: your work is in the folder, nothing staged
-  // Keep the snapshot aside: "clean --undo" brings it back, so the same retrieve can be cleaned again.
-  const keep = path.join(root, '.reldor', 'work', 'snapshot-before-clean.json');
-  fs.mkdirSync(path.dirname(keep), { recursive: true });
-  fs.writeFileSync(keep, JSON.stringify(snapshot, null, 2));
-  snapshotApi.clearSnapshot(root);
-  logAction(root, 'clean', { summary: `${staged.length} arquivo(s) seus ficaram; ${plan.fromOrg.length + plan.mixed.length} limpo(s)` });
-  const done = ['', `✅ Pronto: a pasta tem só o seu (${staged.length} arquivo(s)). Pode commitar pelo seu fluxo (ex.: o plugin de fluxo do time).`, 'ℹ️  O que veio da org ficou guardado num stash. Para trazer de volta: reldor clean --undo'];
-  if (flags.json) printJson({ staged, stashed: [...plan.fromOrg, ...plan.mixed] });
-  else print(done);
-  return 0;
+/** reldor clean: kept as a short name for "reldor commit --stash-org" (and --undo). */
+function cleanCommand(root, flags, args) {
+  return commitCommand(root, flags.undo ? flags : { ...flags, 'stash-org': true }, args);
 }
 
 const MERGE_MARK = '# reldor-merge';
@@ -448,20 +353,15 @@ function renderResolved(r, staged) {
 
 /**
  * reldor merge <branch> | --resolve | --check | --continue | --abort: assisted merge into the current (merge) branch.
- * Execution off (the default): the Git steps (merge, add, commit, abort) are handed over as commands; Reldor only
- * resolves conflicts in the files (with confirmation) and checks that only yours went in.
+ * The Git steps (merge, add, commit, abort) are handed over as commands; Reldor only resolves conflicts in the files
+ * (with confirmation) and checks that only yours went in.
  */
 async function assistedMergeCommand(root, flags, args) {
   const assisted = require('../../modules/sf/merge/assisted');
   const { config } = require('../config').loadConfig(root);
-  const execute = require('../config').executeOn(config);
   const { handover, cmdLine } = require('../report');
   if (flags.abort) {
-    if (!execute) {
-      print(['\n🛡️  Desfazer o merge', ...handover([{ cmd: 'git merge --abort', why: 'a branch volta ao que era' }])]);
-      return 0;
-    }
-    print(assisted.abortMerge(root) ? '🛡️  Merge desfeito. A branch voltou ao que era.' : '⚠️ Não havia merge para desfazer.');
+    print(['\n🛡️  Desfazer o merge', ...handover([{ cmd: 'git merge --abort', why: 'a branch volta ao que era' }])]);
     return 0;
   }
   if (flags.check) {
@@ -479,15 +379,15 @@ async function assistedMergeCommand(root, flags, args) {
       print('Cancelado. Nada foi alterado.');
       return 0;
     }
-    const r = assisted.resolveConflicts(root, { stage: execute });
+    const r = assisted.resolveConflicts(root, { stage: false });
     logAction(root, 'merge-resolve', { summary: `${r.resolved.length} resolvido(s), ${r.hard.length} para revisar` });
     const v = assisted.verifyMerge(root);
     if (flags.json) {
-      printJson({ ...r, verify: v, commands: !execute && r.resolved.length ? [cmdLine(['git', 'add', '--', ...r.resolved.map((x) => x.file)])] : [] });
+      printJson({ ...r, verify: v, commands: r.resolved.length ? [cmdLine(['git', 'add', '--', ...r.resolved.map((x) => x.file)])] : [] });
       return 0;
     }
-    const out = ['\n🛡️  Conflitos do merge', '', ...renderResolved(r, execute), ...renderVerify(v)];
-    if (!execute && r.resolved.length) out.push(...handover([{ cmd: cmdLine(['git', 'add', '--', ...r.resolved.map((x) => x.file)]), why: 'marca como resolvidos' }]));
+    const out = ['\n🛡️  Conflitos do merge', '', ...renderResolved(r, false), ...renderVerify(v)];
+    if (r.resolved.length) out.push(...handover([{ cmd: cmdLine(['git', 'add', '--', ...r.resolved.map((x) => x.file)]), why: 'marca como resolvidos' }]));
     out.push('', r.hard.length ? '➡️  Resolva os ✋ (a IA pode fazer isso), depois: reldor merge --continue' : '➡️  Depois: reldor merge --continue (confere de novo e mostra o commit)');
     print(out);
     return 0;
@@ -499,63 +399,26 @@ async function assistedMergeCommand(root, flags, args) {
       print(['', 'Revise os pontos acima antes do commit; se estiver certo assim, rode de novo com --force.']);
       return 1;
     }
-    if (!execute) {
-      print(handover([{ cmd: 'git commit --no-edit', why: 'o commit de merge (ou pela sua ferramenta)' }, 'abra a PR pelo seu fluxo']));
-      return 0;
-    }
-    if (!(await confirm('\n🛡️ Fazer o commit de merge agora?', flags))) {
-      print('Ok, não commitei. O merge continua em andamento.');
-      return 0;
-    }
-    const r = assisted.continueMerge(root);
-    if (!r.committed) {
-      print(['⚠️ Ainda há marcação de conflito em:', ...r.withMarkers.map((f) => `   ${f}`)]);
-      return 1;
-    }
-    logAction(root, 'merge-commit', { summary: r.commit });
-    if (flags.json) printJson({ ...r, verify: v });
-    else print(`✅ Commit de merge feito (${r.commit}). Agora é abrir a PR pelo seu fluxo.`);
+    if (flags.json) printJson({ verify: v, commands: ['git commit --no-edit'] });
+    else print(handover([{ cmd: 'git commit --no-edit', why: 'o commit de merge (ou pela sua ferramenta)' }, 'abra a PR pelo seu fluxo']));
     return 0;
   }
   const branch = args[0];
-  if (!execute) {
-    let ref;
-    try {
-      ({ ref } = assisted.preflight(root, branch, { environments: config.environments || [] }));
-    } catch (error) {
-      print(`⚠️ ${error.message}`);
-      return 1;
-    }
-    const steps = [
-      { cmd: cmdLine(['git', 'merge', '--no-ff', '--no-commit', ref]), why: 'junta a sua branch, sem commitar' },
-      { cmd: 'reldor merge --resolve', why: 'se o Git parar com conflito: o Reldor resolve nos arquivos, mantendo o destino' },
-      { cmd: 'reldor merge --check', why: 'confere se entrou só o seu' },
-      { cmd: 'reldor merge --continue', why: 'confere de novo e mostra o commit de merge' },
-    ];
-    if (flags.json) printJson({ branch, ref, target: gitApi.currentBranch(root), commands: steps.map((x) => x.cmd) });
-    else print([`\n🛡️  Merge assistido: ${branch} → ${gitApi.currentBranch(root)}`, '', '✅ Pronto para o merge: sem pendências, branch encontrada, fora da branch do ambiente.', ...handover(steps)]);
-    return 0;
+  let ref;
+  try {
+    ({ ref } = assisted.preflight(root, branch, { environments: config.environments || [] }));
+  } catch (error) {
+    print(`⚠️ ${error.message}`);
+    return 1;
   }
-  if (!(await confirm(`\n🛡️ Fazer o merge de ${branch} nesta branch (${gitApi.currentBranch(root)}), sem commitar?`, flags))) {
-    print('Cancelado. Nada foi alterado.');
-    return 0;
-  }
-  const r = assisted.startMerge(root, branch, { environments: config.environments || [] });
-  logAction(root, 'merge', { summary: `${branch} → ${r.target}: ${r.resolved.length} resolvido(s), ${r.hard.length} para revisar` });
-  const v = r.upToDate ? null : assisted.verifyMerge(root);
-  if (flags.json) {
-    printJson({ ...r, verify: v });
-    return 0;
-  }
-  if (r.upToDate) {
-    print(`✅ Nada para juntar: ${r.target} já tem tudo de ${branch}.`);
-    return 0;
-  }
-  const out = [`\n🛡️  Merge assistido: ${branch} → ${r.target} (ainda sem commit)`, '', ...renderResolved(r, true)];
-  out.push(...renderVerify(v));
-  out.push('', r.hard.length ? '➡️  Resolva os ✋ (a IA pode fazer isso), depois: reldor merge --continue' : '➡️  Revise e, se estiver certo: reldor merge --continue (faz o commit de merge)');
-  out.push('   Para desistir: reldor merge --abort');
-  print(out);
+  const steps = [
+    { cmd: cmdLine(['git', 'merge', '--no-ff', '--no-commit', ref]), why: 'junta a sua branch, sem commitar' },
+    { cmd: 'reldor merge --resolve', why: 'se o Git parar com conflito: o Reldor resolve nos arquivos, mantendo o destino' },
+    { cmd: 'reldor merge --check', why: 'confere se entrou só o seu' },
+    { cmd: 'reldor merge --continue', why: 'confere de novo e mostra o commit de merge' },
+  ];
+  if (flags.json) printJson({ branch, ref, target: gitApi.currentBranch(root), commands: steps.map((x) => x.cmd) });
+  else print([`\n🛡️  Merge assistido: ${branch} → ${gitApi.currentBranch(root)}`, '', '✅ Pronto para o merge: sem pendências, branch encontrada, fora da branch do ambiente.', ...handover(steps)]);
   return 0;
 }
 

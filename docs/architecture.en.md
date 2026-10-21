@@ -70,7 +70,7 @@ AI asks for the task or a description. It never makes one up.
   that only yours went in. You run `git merge` and the merge commit; Reldor resolves the files with confirmation.
 - **Promotion rehearsal:** simulates the merge without changing anything; checks dependencies and commit order.
 - The environment chain comes from the config (e.g. develop → uat → producao), nothing hard-coded.
-- **Execution off by default** (`execute: off`): Reldor does not commit, merge or check out, and runs nothing in the org
+- **Reldor does not run Git or the org:** it does not commit, merge or check out, and runs nothing in the org
   (retrieve, tests, deploy). It checks and hands over the commands (`handover` in `core/report`). Changes to files only ask
   for confirmation (`core/cli/confirm.js`); with no terminal and no `--yes`, the answer is no.
 
@@ -106,7 +106,7 @@ modules/sf/
 ├─ rollback/      rollback plan
 ├─ metadata/      metadata types by path
 ├─ tools.js       the module's capabilities and team-tool detection
-└─ advisors/      advisors (skills): spec-review, automation-design, lwc-ux, task-refine
+└─ advisors/      advisors (skills): task-refine, automation-design, lwc-ux
 ```
 
 ## Module contract

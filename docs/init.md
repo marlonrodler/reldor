@@ -6,13 +6,13 @@
 
 O `init` configura o Reldor num projeto de uma vez, **sem perguntar nada**. Ele descobre o que consegue (o projeto Salesforce, o `sf` CLI, a org padrão do `sf`, as specs) e grava só isso:
 
-- `.reldor/reldor.config.yaml`: os módulos, a org padrão do `sf` como org de referência (se houver uma), o design system (`slds`, a não ser que você diga outro) e `execute: off`;
+- `.reldor/reldor.config.yaml`: os módulos, a org padrão do `sf` como org de referência (se houver uma), o design system (`slds`, a não ser que você diga outro);
 - `.reldor/profile.md`: o perfil do projeto (veja abaixo);
 - as pastas locais do Reldor (cache, log, work) no `.gitignore`.
 
 Branches dos ambientes e org **não são perguntadas no início**: só alguns comandos precisam delas, e esses pedem na hora (por exemplo, o `retrieve` sem org diz "Qual org? Rode de novo com --org <alias>"). Para deixar anotado, use o [`env`](./env.md). Depois de gravar, ele procura sinais de ferramentas do time que já fazem parte do trabalho dele e sugere o [`tools`](./tools.md).
 
-Com `execute: off`, o Reldor não roda nada no Git nem na org: ele confere e mostra os comandos prontos para você rodar.
+O Reldor nunca roda nada no Git nem na org: ele confere e mostra os comandos prontos para você rodar.
 
 ### O profile.md
 
@@ -27,7 +27,7 @@ O `reldor profile` relê o projeto e reescreve só a parte automática. Para pre
 
 ## Quando usar
 
-Diga "quero usar o Reldor" num projeto novo e a IA roda por você. No terminal: `reldor init`. Todas as opções são opcionais: `--envs "pre-uat:develop/x, uat:rc/uat, producao:master"`, `--org <alias>`, `--design-system <nome>`, `--execute on`.
+Diga "quero usar o Reldor" num projeto novo e a IA roda por você. No terminal: `reldor init`. Todas as opções são opcionais: `--envs "pre-uat:develop/x, uat:rc/uat, producao:master"`, `--org <alias>`, `--design-system <nome>`.
 
 ## Está funcionando se
 

@@ -6,7 +6,7 @@
 
 O `reldor merge <sua-branch>` ajuda no merge da sua branch de desenvolvimento na **branch de merge** (a cópia da branch do ambiente de onde você vai abrir a PR) e resolve os conflitos com uma regra: **mantém o que já existe no destino e aplica só a sua mudança**.
 
-**O Reldor não roda o merge nem commita.** Com a execução desligada (o padrão), ele confere antes (a branch existe, a pasta está limpa, você está na branch de merge) e mostra os comandos na ordem:
+**O Reldor não roda o merge nem commita.** Ele confere antes (a branch existe, a pasta está limpa, você está na branch de merge) e mostra os comandos na ordem:
 
 ```bash
 git merge --no-ff --no-commit <sua-branch>   # você roda: o commit de merge fica para ser revisado
@@ -15,7 +15,7 @@ reldor merge --check                         # confere se entrou só o seu
 reldor merge --continue                      # mostra o commit de merge para você rodar
 ```
 
-Resolver um conflito é mudar um arquivo, então o `--resolve` faz isso depois de pedir confirmação, e mostra o `git add` dos arquivos resolvidos para você rodar. Com `execute: on`, o `reldor merge <branch>` roda o merge e o stage por você, sempre pedindo confirmação.
+Resolver um conflito é mudar um arquivo, então o `--resolve` faz isso depois de pedir confirmação, e mostra o `git add` dos arquivos resolvidos para você rodar.
 
 1. O `git merge --no-ff --no-commit` deixa o commit de merge para ser revisado.
 2. O `--resolve` resolve o que faz o Git parar:
@@ -43,8 +43,8 @@ Na branch de merge, diga "faz o merge da minha branch". Nada de clicar em "accep
 **E se a IA resolver um conflito errado?**
 A conferência pega: uma linha do destino que sumiu, ou algo que não é seu, aparece antes do commit.
 
-**Precisa ligar a execução?**
-Não. Com a execução desligada você roda o `git merge` e o commit, e o Reldor cuida dos conflitos e da conferência. Se preferir, commite pela sua ferramenta depois da conferência.
+**Quem roda o `git merge` e o commit?**
+Você (ou a sua ferramenta). O Reldor cuida dos conflitos nos arquivos e da conferência.
 
 **E o `reldor merge install`?**
 Liga o driver item a item também dentro do `git merge` normal (para merges feitos por outras ferramentas), mais o `rerere`, depois de pedir confirmação (muda só a configuração local do Git). Detalhes no [promote](./promote.md#merge-inteligente).

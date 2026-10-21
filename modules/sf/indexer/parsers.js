@@ -74,6 +74,7 @@ function parseField(meta, { object, name }) {
     object,
     name: f.fullName || name,
     label: f.label || null,
+    description: f.description ? String(f.description).slice(0, 300) : f.inlineHelpText ? String(f.inlineHelpText).slice(0, 300) : null,
     type: f.type || null,
     required: bool(f.required),
     unique: bool(f.unique),

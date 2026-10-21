@@ -6,13 +6,13 @@
 
 `init` sets Reldor up in a project in one go, **without asking anything**. It finds what it can (the Salesforce project, the `sf` CLI, the `sf` default org, the specs) and saves only that:
 
-- `.reldor/reldor.config.yaml`: the modules, the `sf` default org as the reference org (if there is one), the design system (`slds`, unless you say otherwise) and `execute: off`;
+- `.reldor/reldor.config.yaml`: the modules, the `sf` default org as the reference org (if there is one), the design system (`slds`, unless you say otherwise);
 - `.reldor/profile.md`: the project profile (see below);
 - Reldor's local folders (cache, log, work) in `.gitignore`.
 
 Environment branches and the org are **not asked up front**: only some commands need them, and those ask at that moment (for example, `retrieve` without an org says "Which org? Run again with --org <alias>"). To write them down, use [`env`](./env.en.md). After saving, it looks for signs of team tools that already do part of its work and suggests [`tools`](./tools.en.md).
 
-With `execute: off`, Reldor runs nothing in Git or in the org: it checks and shows the ready commands for you to run.
+Reldor never runs anything in Git or in the org: it checks and shows the ready commands for you to run.
 
 ### profile.md
 
@@ -27,7 +27,7 @@ It is what the AI and the team read about the project. It has two parts:
 
 ## When to reach for it
 
-Say "I want to use Reldor" in a new project and the AI runs it for you. In the terminal: `reldor init`. Every option is optional: `--envs "pre-uat:develop/x, uat:rc/uat, prod:master"`, `--org <alias>`, `--design-system <name>`, `--execute on`.
+Say "I want to use Reldor" in a new project and the AI runs it for you. In the terminal: `reldor init`. Every option is optional: `--envs "pre-uat:develop/x, uat:rc/uat, prod:master"`, `--org <alias>`, `--design-system <name>`.
 
 ## It's working if
 

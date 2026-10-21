@@ -14,7 +14,7 @@ function render(report, config) {
   for (const c of report.capabilities) {
     out.push(`${ICON[c.mode]} ${c.id.padEnd(15)} ${c.label}${c.owner ? ` · ${c.owner}` : ''}`);
   }
-  out.push(`ℹ️  Git e org (commit, merge, retrieve, testes, deploy): ${require('../config').executeOn(config) ? 'o Reldor pode rodar, sempre com confirmação (execute: on)' : 'o Reldor só monta os comandos; quem roda é você (execute: off)'}`);
+  out.push('ℹ️  Git e org (commit, merge, retrieve, testes, deploy): o Reldor só monta os comandos; quem roda é você.');
   if (report.suggestions.length) {
     out.push('', `💡 Encontrei sinais de ferramentas do time que ainda não estão na configuração (${report.suggestions.length}):`);
     for (const s of report.suggestions) {

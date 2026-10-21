@@ -39,18 +39,25 @@ function project() {
 }
 
 const read = (dir, f) => fs.readFileSync(path.join(dir, f), 'utf8');
-// The project's config (.reldor/reldor.config.yaml); `execute: on` lets Reldor run Git and org steps itself.
+// The project's config (.reldor/reldor.config.yaml).
 const config = (dir, text) => {
   fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), text);
 };
-// Runs the commands Reldor handed over, as the person would paste them.
+// Runs the commands Reldor handed over, as the person would paste them ("reldor ..." runs this copy).
 const runHandover = (dir, commands) => {
   for (const c of commands) {
     if (/^(commite|abra)/.test(c)) continue;
-    const r = spawnSync(c, { cwd: dir, shell: true, encoding: 'utf8' });
-    assert.equal(r.status, 0, `${c}\n${r.stderr}`);
+    const r = c.startsWith('reldor ')
+      ? spawnSync(process.execPath, [CLI, ...c.slice(7).split(' ')], { cwd: dir, encoding: 'utf8' })
+      : spawnSync(c, { cwd: dir, shell: true, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 'dev', GIT_AUTHOR_EMAIL: 'dev@x', GIT_COMMITTER_NAME: 'dev', GIT_COMMITTER_EMAIL: 'dev@x' } });
+    assert.equal(r.status, 0, `${c}\n${r.stdout}${r.stderr}`);
   }
+};
+// What a retrieve does to the folder, then the snapshot the person takes right after.
+const fakeRetrieve = (dir, files) => {
+  for (const [f, text] of Object.entries(files)) fs.writeFileSync(path.join(dir, f), text);
+  assert.equal(reldor(dir, ['snapshot']).status, 0);
 };
 
 test('clean commit: only your lines go in, what the retrieve brought stays out', () => {
@@ -61,15 +68,11 @@ test('clean commit: only your lines go in, what the retrieve brought stays out',
     [`${CLS}/ScoreJob.cls`]: scoreJob.replace('public class ScoreJob', 'public with sharing class ScoreJob'),
     [`${CLS}/VeioDaOrg.cls`]: 'public class VeioDaOrg {}',
   };
-  // Execution off (the default): the retrieve is handed over as the sf command, and nothing runs.
+  // The retrieve is handed over as the sf command, and nothing runs.
   const off = JSON.parse(reldor(dir, ['retrieve', '--org', 'uat-sandbox', '--json'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_FAKE_RETRIEVE: JSON.stringify(retrieve) }).stdout);
   assert.deepEqual(off.commands, ['sf project retrieve start --target-org uat-sandbox', 'reldor snapshot']);
   assert.ok(!fs.existsSync(path.join(dir, `${CLS}/VeioDaOrg.cls`)), 'nothing was retrieved');
-  config(dir, 'execute: on\n');
-  const r = reldor(dir, ['retrieve', '--yes', '--org', 'uat-sandbox'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_FAKE_RETRIEVE: JSON.stringify(retrieve) });
-  assert.equal(r.status, 0, r.stderr + r.stdout);
-  assert.match(r.stdout, /Foto tirada/);
-  config(dir, '');
+  fakeRetrieve(dir, retrieve);
 
   fs.writeFileSync(path.join(dir, `${CLS}/ScoreJob.cls`), read(dir, `${CLS}/ScoreJob.cls`).replace('insert propostas;', 'insert propostas; // minha mudança'));
   fs.writeFileSync(path.join(dir, `${CLS}/MinhaClasse.cls`), 'public class MinhaClasse {}');
@@ -79,24 +82,15 @@ test('clean commit: only your lines go in, what the retrieve brought stays out',
   assert.deepEqual(plan.mixed, [`${CLS}/ScoreJob.cls`]);
   assert.deepEqual(plan.fromOrg.sort(), [`${CLS}/ContaController.cls`, `${CLS}/VeioDaOrg.cls`]);
 
-  // Execution off (the default): Reldor does not touch Git; it writes only your lines into a patch and hands over
-  // the commands. Running them stages exactly your lines.
+  // Reldor does not touch Git: it writes only your lines into a patch and hands over the commands.
   const head = git(dir, ['rev-parse', 'HEAD']).stdout;
-  const handed = JSON.parse(reldor(dir, ['commit', '-m', 'minha feature', '--yes', '--json']).stdout);
+  const handed = JSON.parse(reldor(dir, ['commit', '-m', 'minha feature', '--json']).stdout);
   assert.equal(git(dir, ['rev-parse', 'HEAD']).stdout, head, 'nothing was committed');
   assert.equal(git(dir, ['diff', '--cached', '--name-only']).stdout.trim(), '', 'nothing was staged by Reldor');
   assert.match(handed.commands[1], /^git apply --cached --3way --whitespace=nowarn \.reldor\/work\/commit\/so-o-seu\.patch$/);
   assert.equal(handed.commands[2], 'git commit -m "minha feature"');
-  runHandover(dir, handed.commands.slice(0, 2));
-  assert.deepEqual(git(dir, ['diff', '--cached', '--name-only']).stdout.trim().split('\n').sort(), [`${CLS}/MinhaClasse.cls`, `${CLS}/ScoreJob.cls`]);
-  assert.doesNotMatch(git(dir, ['show', `:${CLS}/ScoreJob.cls`]).stdout, /with sharing/, 'the org line is not staged');
-  assert.match(git(dir, ['show', `:${CLS}/ScoreJob.cls`]).stdout, /minha mudança/, 'your line is');
-  git(dir, ['reset', '-q']);
-
-  fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'git:\n  actions: on\n');
-  const c = reldor(dir, ['commit', '-m', 'minha feature', '--yes']);
-  assert.equal(c.status, 0, c.stdout + c.stderr);
+  assert.equal(handed.commands[3], 'reldor snapshot --after-commit');
+  runHandover(dir, handed.commands);
   const committed = git(dir, ['show', `HEAD:${CLS}/ScoreJob.cls`]).stdout;
   assert.match(committed, /minha mudança/, 'your line is in');
   assert.doesNotMatch(committed, /with sharing class ScoreJob/, 'the org line is out');
@@ -127,9 +121,7 @@ test('pre-commit hook blocks duplicated XML and files that only came from the or
   git(dir, ['add', PS]);
   assert.equal(git(dir, ['commit', '-m', 'ok'], { PATH }).status, 0, 'organized XML passes');
 
-  config(dir, 'execute: on\n');
-  const r = reldor(dir, ['retrieve', '--yes', '--org', 'uat-sandbox'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_FAKE_RETRIEVE: JSON.stringify({ [`${CLS}/VeioDaOrg.cls`]: 'public class VeioDaOrg {}' }) });
-  assert.equal(r.status, 0);
+  fakeRetrieve(dir, { [`${CLS}/VeioDaOrg.cls`]: 'public class VeioDaOrg {}' });
   git(dir, ['add', `${CLS}/VeioDaOrg.cls`]);
   const fromOrg = git(dir, ['commit', '-m', 'org'], { PATH });
   assert.notEqual(fromOrg.status, 0);
@@ -139,8 +131,7 @@ test('pre-commit hook blocks duplicated XML and files that only came from the or
 test('retrieve warns about uncommitted work before overwriting it', () => {
   const dir = project();
   fs.appendFileSync(path.join(dir, `${CLS}/ScoreJob.cls`), '\n// trabalho em andamento');
-  config(dir, 'execute: on\n');
-  const r = reldor(dir, ['retrieve', '--yes', '--org', 'uat-sandbox', '--metadata', 'ApexClass:ScoreJob'], { RELDOR_SF_BIN: FAKE_SF });
+  const r = reldor(dir, ['retrieve', '--org', 'uat-sandbox', '--metadata', 'ApexClass:ScoreJob'], { RELDOR_SF_BIN: FAKE_SF });
   assert.match(r.stdout, /não commitado/);
   assert.match(r.stdout, /conta como SEU/);
 });

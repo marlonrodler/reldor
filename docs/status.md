@@ -4,7 +4,7 @@
 
 ## O que faz
 
-O `status` diz onde você está e o que fazer agora: a branch atual, os arquivos ainda não commitados, os dados do projeto Salesforce, a spec ligada à branch e **em quais ambientes a sua feature já está** (por exemplo ✅ develop · ⬜ uat · ⬜ produção). No fim, sugere um próximo passo.
+O `status` diz onde você está e o que fazer agora: **a tarefa** (pelo número na branch, com a spec dela e a fase, e um aviso quando você muda de tarefa; veja o [`task`](./task.md)), a branch atual, os arquivos ainda não commitados, os dados do projeto Salesforce, a spec ligada à branch e **em quais ambientes a sua feature já está** (por exemplo ✅ develop · ⬜ uat · ⬜ produção). No fim, sugere um próximo passo.
 
 **Avisos automáticos.** Se a sua branch ainda não está no próximo ambiente, o `status` faz sozinho o [ensaio de promoção](./promote.md) e o [radar de colisão](./collisions.md) e mostra **só os problemas**, por exemplo:
 

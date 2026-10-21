@@ -6,6 +6,8 @@ const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { profileCommand } = require('./profile');
 const { meCommand } = require('./me');
+const { taskCommand } = require('./task');
+const { limitsCommand } = require('./limits');
 const { accessCommand } = require('./access');
 const { helpersCommand } = require('./helpers');
 const { logCommand } = require('./log');
@@ -21,40 +23,43 @@ const { deployCommand } = require('./deploy');
 const runs = require('../runs');
 const pkg = require('../../package.json');
 
-// main: the moments people use (shown first). detail: the pieces behind them, still available.
+// group: main = the moments of the day (shown first); setup = once per project or person; piece = what the AI and
+// review use behind the moments (reldor help --all); internal = called by Git or the hook, never by people.
 const COMMANDS = {
-  status: { run: statusCommand, main: true, help: 'E agora? Onde você está, avisos e o próximo passo (--json, --fetch)' },
-  explain: { run: explainCommand, main: true, help: 'Entender: o que acontece quando um registro é salvo (reldor explain <Objeto>)' },
-  usages: { run: usagesCommand, main: true, help: 'Entender: onde algo é usado, antes de mudar ou apagar' },
-  refine: { run: refineCommand, main: true, help: 'Entender: fatos para escrever uma task (reldor refine "<ideia>", ou --file task.md; --objects, --fields, --values "Obj.Campo=Valor")' },
-  review: { run: reviewCommand, main: true, help: 'Revisar antes do commit: segurança, qualidade, queries, testes e XML de uma vez' },
-  clean: { run: cleanCommand, main: true, help: 'Limpar antes do commit: deixa na pasta só o seu (--dry-run, --undo)' },
-  merge: { run: mergeCommand, main: true, help: 'Merge assistido na branch de merge: reldor merge <sua-branch> (--check, --continue, --abort)' },
-  promote: { run: promoteCommand, main: true, help: 'Subir: ensaio para um ambiente (ordem dos commits, dependências)' },
-  deploy: { run: deployCommand, main: true, help: 'Subir: monta os comandos de validação e de deploy dos seus arquivos (não executa)' },
-  rollback: { run: rollbackCommand, main: true, help: 'Desfazer: plano de rollback de uma PR (não altera nada)' },
-  tools: { run: toolsCommand, help: 'Ferramentas do time: quem cuida de cada coisa, para o Reldor não repetir (set <capacidade> run|verify|skip)' },
-  doctor: { run: doctorCommand, help: 'Confere a instalação e a pasta do terminal, e diz o próximo passo (--json)' },
-  env: { run: envCommand, help: 'Cadeia de ambientes e org: ver e mudar (set "nome:branch, ...", --org <alias>, --org-for "nome:alias", --base, --production)' },
-  init: { run: initCommand, help: 'Configura o Reldor neste projeto, sem perguntas (opcionais: --envs, --org, --design-system, --execute on|off)' },
-  access: { run: accessCommand, main: true, help: 'Já existe, mas está liberado? Onde falta liberar um campo, valor de picklist, objeto ou classe (--value, --rt, --perms)' },
-  me: { run: meCommand, help: 'O seu time, só na sua máquina (--team <nome> --prefix <PREFIXO>)' },
-  helpers: { run: helpersCommand, help: 'Antes de criar um método: o que já existe (termo), e métodos iguais em times diferentes (--similar)' },
-  profile: { run: profileCommand, help: 'Atualiza o profile.md com o que está no projeto hoje (a parte do time fica como está)' },
-  log: { run: logCommand, help: 'Histórico de ações do Reldor (--json)' },
-  index: { run: indexCommand, help: 'Monta ou atualiza o índice do projeto (--full, --json)' },
-  'test-radar': { run: testRadarCommand, help: 'Testes afetados pelas mudanças (--run --org <alias> roda sem salvar)' },
-  security: { run: securityCommand, help: 'Só a parte de segurança da revisão (--all, --no-analyzer, --fail-on)' },
-  quality: { run: qualityCommand, help: 'Só a parte de qualidade e código repetido da revisão (--all, --no-analyzer)' },
-  check: { run: checkCommand, help: 'Só a checagem de queries (campo lido fora da SOQL/Selector)' },
-  xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check)' },
-  retrieve: { run: retrieveCommand, help: 'Retrieve com confirmação da org e foto para o clean (--metadata, --manifest, --org)' },
-  snapshot: { run: snapshotCommand, help: 'Foto depois de um retrieve feito fora do Reldor (--clear para apagar)' },
-  commit: { run: commitCommand, help: 'Commit limpo: separa só as suas linhas e entrega os comandos (-m, --include, --dry-run)' },
-  hook: { run: hookCommand, help: 'Gancho pre-commit do Reldor (install | uninstall)' },
-  precommit: { run: precommitCommand, help: 'Checagem usada pelo gancho pre-commit', hidden: true },
-  collisions: { run: collisionsCommand, help: 'Radar de colisão (opcional): PRs abertas que mexem nos seus arquivos', hidden: true },
-  'merge-driver': { run: mergeDriverCommand, help: 'Uso interno do Git (chamado pelo merge inteligente)', hidden: true },
+  status: { run: statusCommand, group: 'main', help: 'E agora? Onde você está, a tarefa, avisos e o próximo passo' },
+  task: { run: taskCommand, group: 'main', help: 'A tarefa atual: número, spec, fase; trocar (use <id>) e onde guardar (output, set)' },
+  refine: { run: refineCommand, group: 'main', help: 'Refinar uma task: o que ela toca, o que já existe, o que falta liberar (--file task.md)' },
+  explain: { run: explainCommand, group: 'main', help: 'Entender: o que acontece quando um registro é salvo (reldor explain <Objeto>)' },
+  usages: { run: usagesCommand, group: 'main', help: 'Entender: onde algo é usado, antes de mudar ou apagar' },
+  access: { run: accessCommand, group: 'main', help: 'Já existe, mas está liberado? Onde falta liberar um campo, valor, objeto ou classe' },
+  helpers: { run: helpersCommand, group: 'main', help: 'Antes de criar um método: o que já existe, e o que se repete entre times (--similar)' },
+  limits: { run: limitsCommand, group: 'main', help: 'Limites: campos, relacionamentos, roll-ups e regras por objeto; --org lê os limites da org' },
+  review: { run: reviewCommand, group: 'main', help: 'Revisar antes do commit: segurança, qualidade, queries, testes e XML de uma vez' },
+  commit: { run: commitCommand, group: 'main', help: 'Separar o seu do que veio da org e entregar os comandos (-m, --stash-org, --undo, --dry-run)' },
+  deploy: { run: deployCommand, group: 'main', help: 'Montar os comandos de validação e de deploy dos seus arquivos (não executa)' },
+  merge: { run: mergeCommand, group: 'main', help: 'Merge assistido na branch de merge (reldor merge <sua-branch>, --resolve, --check, --continue)' },
+  promote: { run: promoteCommand, group: 'main', help: 'Ensaio de promoção: ordem dos commits e dependências antes da PR' },
+  rollback: { run: rollbackCommand, group: 'main', help: 'Plano de rollback de uma PR (não altera nada)' },
+  doctor: { run: doctorCommand, group: 'setup', help: 'Confere a instalação e a pasta do terminal' },
+  init: { run: initCommand, group: 'setup', help: 'Configura o Reldor no projeto, sem perguntas' },
+  env: { run: envCommand, group: 'setup', help: 'Ambientes e org (set "nome:branch, ...", --org <alias>, --org-for "nome:alias")' },
+  me: { run: meCommand, group: 'setup', help: 'O seu time, só na sua máquina (--team <nome> --prefix <PREFIXO>)' },
+  tools: { run: toolsCommand, group: 'setup', help: 'Ferramentas do time: o que o Reldor só confere ou deixa com elas' },
+  hook: { run: hookCommand, group: 'setup', help: 'Gancho pre-commit do Reldor (install | uninstall)' },
+  profile: { run: profileCommand, group: 'piece', help: 'Atualiza o profile.md com o que está no projeto hoje' },
+  'test-radar': { run: testRadarCommand, group: 'piece', help: 'Testes afetados (--run monta o comando; --result <arquivo> lê o resultado)' },
+  security: { run: securityCommand, group: 'piece', help: 'Só a parte de segurança da revisão' },
+  quality: { run: qualityCommand, group: 'piece', help: 'Só a parte de qualidade e código repetido da revisão' },
+  check: { run: checkCommand, group: 'piece', help: 'Só a checagem de queries (campo lido fora da SOQL/Selector)' },
+  xml: { run: xmlCommand, group: 'piece', help: 'Ordena e tira duplicados de profiles, permission sets, labels... (--check, --all)' },
+  retrieve: { run: retrieveCommand, group: 'piece', help: 'Monta o retrieve da org certa e a foto para o commit limpo' },
+  snapshot: { run: snapshotCommand, group: 'piece', help: 'Foto depois de um retrieve feito fora do Reldor (--clear, --restore)' },
+  index: { run: indexCommand, group: 'piece', help: 'Monta ou atualiza o índice do projeto (--full)' },
+  log: { run: logCommand, group: 'piece', help: 'Histórico do que o Reldor fez' },
+  collisions: { run: collisionsCommand, group: 'piece', help: 'PRs abertas que mexem nos seus arquivos (precisa do GitHub CLI)' },
+  clean: { run: cleanCommand, group: 'internal', help: 'O mesmo que reldor commit --stash-org' },
+  precommit: { run: precommitCommand, group: 'internal', help: 'Checagem usada pelo gancho pre-commit' },
+  'merge-driver': { run: mergeDriverCommand, group: 'internal', help: 'Uso interno do Git (merge item a item)' },
 };
 
 /** Parses `cmd --flag value --bool` into { command, flags, args }. */
@@ -82,17 +87,20 @@ function parseArgs(argv) {
   return { command, flags, args };
 }
 
-function help() {
+function help(all = false) {
+  const group = (g) => Object.entries(COMMANDS).filter(([, c]) => c.group === g).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`);
   const lines = [
     `🛡️  Reldor ${pkg.version} — o guardião do desenvolvimento`,
     '',
     'Você não precisa decorar comandos: peça à sua IA, por exemplo "quero usar o Reldor".',
     '',
-    'Os momentos:',
-    ...Object.entries(COMMANDS).filter(([, c]) => c.main).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
+    'O dia a dia:',
+    ...group('main'),
     '',
-    'Peças por trás deles (a IA usa quando precisa):',
-    ...Object.entries(COMMANDS).filter(([, c]) => !c.main && !c.hidden).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`),
+    'Configurar (uma vez):',
+    ...group('setup'),
+    '',
+    ...(all ? ['Peças por trás deles (a IA e o review usam):', ...group('piece')] : ['Peças que a IA usa por trás: reldor help --all']),
   ];
   process.stdout.write(lines.join('\n') + '\n');
 }
@@ -104,7 +112,7 @@ async function main(argv = process.argv.slice(2)) {
     return 0;
   }
   if (!command || command === 'help' || flags.help) {
-    help();
+    help(Boolean(flags.all));
     return 0;
   }
   const entry = COMMANDS[command];

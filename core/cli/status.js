@@ -43,6 +43,14 @@ function render({ status, modules }) {
     if (env.featureCommits === 0) out.push('• Esta branch ainda não tem commits próprios.');
   }
 
+  const t = status.task;
+  if (t && t.id) {
+    const phase = { refinar: 'refinar', desenvolver: 'desenvolver', promover: 'revisar e promover' }[t.phase] || t.phase;
+    out.push('', 'Tarefa:');
+    if (t.switched) out.push(`🔄 Mudou de tarefa: ${t.switched.from} → ${t.switched.to}. O que era da ${t.switched.from} fica guardado em .reldor/work/tasks/.`);
+    out.push(`• ${t.id} (${t.source === 'chat' ? 'dita no chat' : 'pela branch'}) · fase: ${phase}${t.resumed ? ' · retomando o que já foi feito' : ''}`);
+    if (t.specs.length > 1) out.push(`• Specs encontradas: ${t.specs.map((x) => `${x.path} (${x.tool})`).join(', ')}: qual vale? (reldor task)`);
+  }
   out.push('', 'Spec:');
   if (status.spec.current) out.push(`• ${status.spec.current.path} (${status.spec.current.files.join(', ')})`);
   else if (status.spec.available.length) out.push(`• Nenhuma spec ligada a esta branch. Recentes: ${status.spec.available.map((s) => s.name).join(', ')}`);

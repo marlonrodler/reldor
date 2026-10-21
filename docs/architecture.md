@@ -70,7 +70,7 @@ descrição. Nunca inventa.
   mudança, e confere se entrou só o seu. O `git merge` e o commit de merge, você roda; o Reldor resolve os arquivos com confirmação.
 - **Ensaio de promoção:** simula o merge sem mudar nada; checa dependências e a ordem dos commits.
 - A cadeia de ambientes vem da configuração (ex.: develop → uat → producao), sem nada fixo no código.
-- **Execução desligada por padrão** (`execute: off`): o Reldor não commita, não faz merge nem checkout e não roda nada na org
+- **O Reldor não executa Git nem org:** não commita, não faz merge nem checkout e não roda nada na org
   (retrieve, testes, deploy). Ele confere e entrega os comandos (`handover` em `core/report`). Mudanças só nos arquivos pedem
   confirmação (`core/cli/confirm.js`); sem terminal e sem `--yes`, a resposta é não.
 
@@ -106,7 +106,7 @@ modules/sf/
 ├─ rollback/      plano de rollback
 ├─ metadata/      tipos de metadado por caminho
 ├─ tools.js       capacidades do módulo e detecção das ferramentas do time
-└─ advisors/      conselheiros (skills): spec-review, automation-design, lwc-ux, task-refine
+└─ advisors/      conselheiros (skills): task-refine, automation-design, lwc-ux
 ```
 
 ## Contrato de um módulo

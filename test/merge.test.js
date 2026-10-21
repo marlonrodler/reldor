@@ -44,12 +44,12 @@ test('merge3: changes next to each other both go in; the same line changed twice
   assert.deepEqual([hard.conflicts[0].target, hard.conflicts[0].ours], [['    return 10;'], ['    return 99;']]);
 });
 
-// execute: on = Reldor runs the Git steps itself (with --yes); off (the default) hands them over as commands.
-function repo(execute = 'on') {
+// Reldor never runs Git: it hands over the commands, and the tests run them as the person would.
+function repo() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-merge-'));
   fs.cpSync(FIXTURE, dir, { recursive: true, filter: (s) => !s.includes(`${path.sep}.reldor`) });
   fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
-  write(dir, '.reldor/reldor.config.yaml', `execute: ${execute}\nenvironments:\n  - name: pre-uat\n    branch: develop\n  - name: production\n    branch: master\n`);
+  write(dir, '.reldor/reldor.config.yaml', `environments:\n  - name: pre-uat\n    branch: develop\n  - name: production\n    branch: master\n`);
   write(dir, '.gitignore', '.reldor/cache/\n.reldor/log/\n.reldor/work/\n');
   write(dir, C, CALC);
   write(dir, `${C}-meta.xml`, '<?xml version="1.0" encoding="UTF-8"?><ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>');
@@ -60,6 +60,21 @@ function repo(execute = 'on') {
   git(dir, ['commit', '-qm', 'base']);
   git(dir, ['branch', 'develop']);
   return dir;
+}
+
+// The whole assisted merge as the person does it: git merge (handed over), reldor merge --resolve, git add.
+function assistedMerge(dir, branch) {
+  const plan = json(dir, ['merge', branch]);
+  spawnSync(plan.commands[0], { cwd: dir, shell: true, encoding: 'utf8' });
+  const r = json(dir, ['merge', '--resolve', '--yes']);
+  for (const c of r.commands) spawnSync(c, { cwd: dir, shell: true, encoding: 'utf8' });
+  return r;
+}
+
+// What a retrieve does to the folder, then the snapshot the person takes right after.
+function fakeRetrieve(dir, files) {
+  for (const [f, text] of Object.entries(files)) write(dir, f, text);
+  assert.equal(reldor(dir, ['snapshot']).status, 0);
 }
 
 test('reldor merge: resolves what Git stops on, checks "only yours", commits the merge on --continue', () => {
@@ -80,14 +95,13 @@ test('reldor merge: resolves what Git stops on, checks "only yours", commits the
   assert.match(git(dir, ['merge', '--no-ff', '--no-commit', 'feature/minha']).stdout, /CONFLICT[\s\S]*CONFLICT/);
   git(dir, ['merge', '--abort']);
 
-  assert.match(reldor(dir, ['merge', 'feature/outra', '--yes']).stderr + reldor(dir, ['merge', '--abort']).stdout, /./);
-  const r = json(dir, ['merge', 'feature/minha', '--yes']);
+  const r = assistedMerge(dir, 'feature/minha');
   assert.deepEqual(r.hard, []);
   assert.deepEqual(r.resolved.map((x) => x.file).sort(), [C, PS]);
   assert.equal(r.verify.ok, true, JSON.stringify(r.verify.issues));
   assert.ok(read(dir, C).includes('return 10;') && read(dir, C).includes('// fim de a'));
-  const done = json(dir, ['merge', '--continue', '--yes']);
-  assert.equal(done.committed, true);
+  assert.match(reldor(dir, ['merge', '--continue']).stdout, /git commit --no-edit/);
+  assert.equal(git(dir, ['commit', '-q', '--no-edit']).status, 0);
   assert.equal(git(dir, ['rev-list', '--parents', '-n', '1', 'HEAD']).stdout.trim().split(' ').length, 3, 'a real merge commit (--no-ff)');
   assert.equal(json(dir, ['merge', '--check']).ok, true);
 });
@@ -105,11 +119,11 @@ test('reldor merge: a real conflict is left for review, and a wrong resolution i
   git(dir, ['commit', '-qam', 'minha']);
   git(dir, ['checkout', '-qb', 'merge/minha', 'develop']);
 
-  const r = json(dir, ['merge', 'feature/minha', '--yes']);
+  const r = assistedMerge(dir, 'feature/minha');
   assert.equal(r.hard.length, 1);
   assert.deepEqual(r.hard[0].conflicts[0].ours, ['    return 99;']);
   assert.ok(r.verify.issues.some((i) => i.kind === 'conflito'));
-  assert.equal(reldor(dir, ['merge', '--continue', '--yes']).status, 1, 'does not commit with markers');
+  assert.equal(reldor(dir, ['merge', '--continue']).status, 1, 'no commit command while there are markers');
 
   // Wrong: taking the whole file from my branch drops the colleague's method.
   write(dir, C, git(dir, ['show', `feature/minha:${C}`]).stdout);
@@ -123,20 +137,20 @@ test('reldor merge: a real conflict is left for review, and a wrong resolution i
   assert.deepEqual(ok.issues[0].lines, ['return 10;']);
 });
 
-test('reldor clean: leaves only your work in the folder, the org part goes to a stash and can come back', () => {
+test('reldor commit --stash-org: only your work stays in the folder, the org part goes to a stash and can come back', () => {
   const dir = repo();
   git(dir, ['checkout', '-qb', 'feature/minha']);
-  const retrieve = {
+  fakeRetrieve(dir, {
     [`${CLS}/ScoreJob.cls`]: read(dir, `${CLS}/ScoreJob.cls`).replace('public class ScoreJob', 'public with sharing class ScoreJob'),
     [`${CLS}/VeioDaOrg.cls`]: 'public class VeioDaOrg {}',
-  };
-  const rt = reldor(dir, ['retrieve', '--yes', '--org', 'dev'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_FAKE_RETRIEVE: JSON.stringify(retrieve) });
-  assert.equal(rt.status, 0, rt.stdout + rt.stderr);
+  });
   edit(dir, `${CLS}/ScoreJob.cls`, 'insert propostas;', 'insert propostas; // minha');
   write(dir, `${CLS}/Minha.cls`, 'public class Minha {}');
 
-  const c = reldor(dir, ['clean', '--yes']);
-  assert.equal(c.status, 0, c.stdout + c.stderr);
+  const c = json(dir, ['commit', '--stash-org']);
+  assert.ok(fs.existsSync(path.join(dir, `${CLS}/VeioDaOrg.cls`)), 'Reldor did not touch the folder');
+  runHandover(dir, c.commands);
+  assert.match(reldor(dir, ['commit', '--dry-run']).stdout, /Não há foto de retrieve/, 'the snapshot was used');
   assert.ok(!fs.existsSync(path.join(dir, `${CLS}/VeioDaOrg.cls`)), 'org-only file left the folder');
   assert.ok(fs.existsSync(path.join(dir, `${CLS}/Minha.cls`)), 'my new file stays');
   const score = read(dir, `${CLS}/ScoreJob.cls`);
@@ -148,7 +162,7 @@ test('reldor clean: leaves only your work in the folder, the org part goes to a 
   assert.deepEqual(git(dir, ['diff', '--cached', '--name-only']).stdout.trim().split('\n').sort(), [`${CLS}/Minha.cls`, `${CLS}/ScoreJob.cls`]);
   git(dir, ['reset', '-q']);
 
-  assert.equal(reldor(dir, ['clean', '--undo']).status, 0);
+  runHandover(dir, json(dir, ['commit', '--undo']).commands);
   assert.ok(fs.existsSync(path.join(dir, `${CLS}/VeioDaOrg.cls`)), 'the org part came back');
 });
 
@@ -178,7 +192,7 @@ test('reldor merge: profile blocks that plain Git glues together come out whole 
   assert.match(read(dir, P), /<<<<<<<[\s\S]*Account\.B__c[\s\S]*=======[\s\S]*Account\.C__c/);
   git(dir, ['merge', '--abort']);
 
-  const r = json(dir, ['merge', 'feature/minha', '--yes']);
+  const r = assistedMerge(dir, 'feature/minha');
   assert.deepEqual(r.hard, []);
   assert.equal(r.verify.ok, true, JSON.stringify(r.verify.issues));
   const text = read(dir, P);
@@ -195,7 +209,8 @@ test('reldor merge: says loudly when something that is not yours is coming in', 
   edit(dir, C, 'return 1;', 'return 11;');
   git(dir, ['commit', '-qam', 'minha']);
   git(dir, ['checkout', '-qb', 'merge/minha', 'develop']);
-  const out = reldor(dir, ['merge', 'feature/minha', '--yes']).stdout;
+  spawnSync(json(dir, ['merge', 'feature/minha']).commands[0], { cwd: dir, shell: true, encoding: 'utf8' });
+  const out = reldor(dir, ['merge', '--check']).stdout;
   assert.match(out, /Está vindo coisa a mais que não é sua/);
   assert.match(out, /outra, ainda não está no ambiente \(ana\)/);
 });
@@ -211,8 +226,8 @@ function runHandover(dir, commands) {
   }
 }
 
-test('execution off: merge, conflict resolution and commit are handed over; only the files are resolved by Reldor', () => {
-  const dir = repo('off');
+test('merge, conflict resolution and commit are handed over; only the files are resolved by Reldor', () => {
+  const dir = repo();
   git(dir, ['checkout', '-qb', 'feature/outra']);
   edit(dir, C, 'return 1;', 'return 10;');
   git(dir, ['commit', '-qam', 'outra'], 'ana');
@@ -245,16 +260,13 @@ test('execution off: merge, conflict resolution and commit are handed over; only
   assert.ok(!fs.existsSync(path.join(dir, '.git', 'MERGE_HEAD')));
 });
 
-test('execution off: clean writes only your lines into a patch and hands over the Git steps', () => {
-  const dir = repo('off');
+test('clean (the short name of commit --stash-org) writes only your lines into a patch and hands over the Git steps', () => {
+  const dir = repo();
   git(dir, ['checkout', '-qb', 'feature/minha']);
-  write(dir, '.reldor/reldor.config.yaml', 'execute: on\n');
-  const retrieve = {
+  fakeRetrieve(dir, {
     [`${CLS}/ScoreJob.cls`]: read(dir, `${CLS}/ScoreJob.cls`).replace('public class ScoreJob', 'public with sharing class ScoreJob'),
     [`${CLS}/VeioDaOrg.cls`]: 'public class VeioDaOrg {}',
-  };
-  assert.equal(reldor(dir, ['retrieve', '--yes', '--org', 'dev'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_FAKE_RETRIEVE: JSON.stringify(retrieve) }).status, 0);
-  git(dir, ['checkout', '-q', '--', '.reldor/reldor.config.yaml']);
+  });
   edit(dir, `${CLS}/ScoreJob.cls`, 'insert propostas;', 'insert propostas; // minha');
   write(dir, `${CLS}/Minha.cls`, 'public class Minha {}');
 
