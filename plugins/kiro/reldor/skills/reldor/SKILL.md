@@ -48,9 +48,20 @@ Se `reldor status` disser que o Reldor não está configurado:
 - Leia `.reldor/profile.md` antes de recomendar padrões: a parte automática diz o que o projeto usa; "Padrões da equipe" diz o que o time decidiu, e vale mais.
 - Quando a pessoa pedir ajuda para preencher ("me ajude a preencher o profile do Reldor"), rode `reldor profile --json`, mostre o que foi encontrado e pergunte **um tópico por vez** (prefixos por time, classes compartilhadas, Flow x Apex, regras de nome). Escreva as respostas, nas palavras dela, só na parte "Padrões da equipe", e mostre o trecho antes de salvar.
 - Nunca escreva entre as marcações `reldor:auto`: o `reldor profile` reescreve essa parte.
+- "Padrões de projeto" e "Times e código compartilhado" dizem como o código é feito (fflib, handlers, Builder, factories de teste...) e quais prefixos são de time. Siga esses padrões e use as classes de exemplo como modelo.
+
+## Seu time e código genérico
+- `me` no `reldor status --json` é o time da pessoa (fica só na máquina dela). Se for nulo e ela for criar código, pergunte uma vez qual é o time, mostrando os prefixos de `reldor me --json`, e com o "sim" rode `reldor me --team <nome> --prefix <PREFIXO>`.
+- **Antes de criar um método**, rode `reldor helpers <palavras do que ele faz> --json`:
+  - existe no compartilhado: use esse, não crie outro;
+  - existe na classe de outro time: proponha levar para o compartilhado e generalizar, em vez de copiar;
+  - não existe: pergunte se outra área pode precisar. Se sim, crie **genérico**: o que muda vira parâmetro (`SObjectType`, `SObjectField`, `Set<Id>`, um mapa de opções), sem nome de time nem objeto fixo quando não precisa, numa classe compartilhada no padrão do projeto (Util/Helper, Selector ou Service). Mostre a assinatura antes de escrever.
+- Código só do time: use o prefixo dele e os exemplos do profile.
+- Mudar uma classe compartilhada afeta todos os times: rode `reldor usages <Classe.metodo> --json` antes e avise quem usa.
+- Para "onde os times repetem código?", rode `reldor helpers --similar --json` e sugira juntar cada grupo num método genérico.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor doctor`, `reldor tools`, `reldor init`, `reldor env`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor clean`, `reldor rollback`, `reldor deploy`, `reldor profile`.
+`reldor status`, `reldor doctor`, `reldor tools`, `reldor init`, `reldor env`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor clean`, `reldor rollback`, `reldor deploy`, `reldor profile`, `reldor me`, `reldor helpers`.
 Se a pessoa pedir algo que não está nesta lista (conectores com quadros de tasks, documentação automática),
 diga que o Reldor ainda não faz isso e ajude do jeito tradicional, sem inventar resultados.
 

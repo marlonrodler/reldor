@@ -11,7 +11,7 @@ const { findSpecs } = require('../spec');
 const { logAction } = require('../log');
 const { title, print, printJson } = require('../report');
 
-const GITIGNORE_LINES = ['.reldor/cache/', '.reldor/work/', '.reldor/log/'];
+const GITIGNORE_LINES = ['.reldor/cache/', '.reldor/work/', '.reldor/log/', '.reldor/local.yaml'];
 
 /** Guesses a friendly environment name from a branch name. */
 function envName(branch, index, total) {
