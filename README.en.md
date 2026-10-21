@@ -133,8 +133,13 @@ From here on **you don't run commands**: the AI runs them for you and explains t
 <details>
 <summary><b>Something went wrong?</b></summary>
 
-- **"reldor is not recognized as a command"**: close and open the terminal (or all of VS Code). If it persists, run `npm prefix -g` and check that this folder is on your PATH.
-- **"running scripts is disabled on this system"** (PowerShell): use `reldor.cmd doctor` instead of `reldor doctor`, or run it in Command Prompt (cmd). Changing PowerShell's execution policy is your IT team's call.
+- **"reldor is not recognized as a command"**: close and open the terminal (or all of VS Code). If it persists, check it is installed with `npm ls -g reldor`. If it is, npm's folder is missing from your account's PATH. To add it, in **Command Prompt (cmd)**:
+  1. `npm prefix -g` shows the folder (something like `C:\Users\<you>\AppData\Roaming\npm`);
+  2. `reg query HKCU\Environment /v Path` shows your account's PATH;
+  3. `setx PATH "<the value from step 2>;<the folder from step 1>"` (if step 2 says there is no value, just `setx PATH "<the folder from step 1>"`). Don't use `%PATH%` here: it copies the system PATH into your account;
+  4. close and open the terminal.
+  Or through the screen: Start menu → "Edit environment variables for your account" → Path → New.
+- **"running scripts is disabled on this system"** or **"language mode"** (PowerShell restricted by IT): use `reldor.cmd doctor` instead of `reldor doctor`, or run it in Command Prompt (cmd). Changing PowerShell's policy is your IT team's call.
 - **`doctor` says it is Reldor's own folder, or that it found no project**: the terminal is in the wrong folder. Open the project folder in VS Code and open a new terminal.
 - **The AI says it doesn't know Reldor**: the plugin isn't installed (step 3), or the chat was opened before installing. Open a new chat.
 - **`npm install` warned about vulnerabilities**: update Reldor (table in step 2). Don't run `npm audit fix --force` on your own.

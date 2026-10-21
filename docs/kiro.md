@@ -72,5 +72,6 @@ Também dá para clicar em **Try the power** no painel Powers: o Kiro abre um ch
 - **Não acho o ícone do fantasminha com raio.** Ele fica na barra vertical de ícones da esquerda, junto com o explorador de arquivos e a busca. Se não aparecer, atualize o Kiro: os powers chegaram nas versões mais novas.
 - **"Import power from GitHub" deu erro.** Confira se o link termina em `plugins/kiro/reldor`. Se o Kiro não conseguir acessar o GitHub (rede da empresa, por exemplo), use o caminho B.
 - **"Import power from a folder" não aceitou a pasta.** Você escolheu a pasta errada. A certa tem o `plugin.json` dentro: `...\reldor\plugins\kiro\reldor`.
+- **"POWER.md not found for power 'reldor'".** A sua versão do Kiro usa o formato antigo de power. A partir da versão 0.19.1 o Reldor traz os dois formatos: no painel Powers, remova o **reldor** e importe de novo pelo mesmo link.
 - **A IA respondeu que não conhece o Reldor.** Abra um chat novo. Se continuar, confira se o **reldor** está na lista do painel Powers.
 - **A IA conhece o Reldor, mas o comando falha.** Falta o comando `reldor` no computador. Num terminal, rode `reldor doctor`. Se ele não for reconhecido, volte ao passo 2 do README.

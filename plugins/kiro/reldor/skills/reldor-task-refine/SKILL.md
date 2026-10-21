@@ -1,6 +1,6 @@
 ---
 name: reldor-task-refine
-description: Turns a task idea into a well-written Salesforce task with the real impact in view. Use when someone (tech lead, analyst, developer) wants to create, write, refine or estimate a task, user story or demand, or asks what a change would involve.
+description: Transforma a ideia de uma task numa task Salesforce bem escrita, com o impacto real à vista. Use quando alguém (tech lead, analista, dev) quiser criar, escrever, refinar ou estimar uma task, história ou demanda, ou perguntar o que uma mudança envolveria.
 ---
 
 # Conselheiro: refinador de task
