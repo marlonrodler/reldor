@@ -2,6 +2,12 @@
 
 # Changelog
 
+## 0.20.1
+
+- `reldor init --json` returns JSON (it used to print text, and the AI could not read the `--out` file).
+- Skill and power: when the IDE terminal mixes up or repeats the command and not even the `--out` file shows up, the AI
+  stops trying and asks the person to run it and paste the result (and checks the installed version).
+
 ## 0.20.0
 
 - **Execution off** (`execute: off`, the default): Reldor runs nothing in Git or in the org. `commit`, `clean`, `merge`,

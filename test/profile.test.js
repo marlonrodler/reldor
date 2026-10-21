@@ -15,8 +15,12 @@ const reldor = (cwd, args) => spawnSync(process.execPath, [CLI, ...args], { cwd,
 test('init asks nothing and writes only what it found; profile.md comes from the index and keeps the team part', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-profile-'));
   fs.cpSync(FIXTURE, dir, { recursive: true, filter: (s) => !s.includes(`${path.sep}.reldor`) });
-  const r = reldor(dir, ['init', '--no-cli']);
+  const r = reldor(dir, ['init', '--no-cli', '--json']);
   assert.equal(r.status, 0, r.stderr);
+  const j = JSON.parse(r.stdout);
+  assert.equal(j.created, true);
+  assert.equal(j.execute, 'off');
+  assert.equal(JSON.parse(reldor(dir, ['init', '--json']).stdout).created, false);
   const config = fs.readFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'utf8');
   assert.match(config, /execute: off/);
   assert.doesNotMatch(config, /environments|reference_org/);
