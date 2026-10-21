@@ -77,13 +77,16 @@ function testArgs({ org, tests, sourcePaths = [], wait = 60, json = true }) {
     : ['apex', 'run', 'test', ...out, '--target-org', org, '--wait', String(wait), '--code-coverage', '--result-format', json ? 'json' : 'human', '--class-names', tests.join(',')];
 }
 
-function runTests(root, { org, tests, sourcePaths = [], wait = 60 }) {
-  const args = testArgs({ org, tests, sourcePaths, wait });
-  const res = runSf(args, { cwd: root, timeout: (wait + 5) * 60000 });
-  const json = parseJson(res.stdout);
-  if (!json) return { ok: false, mode: sourcePaths.length ? 'validate' : 'run', error: res.stderr || res.stdout || 'sem resposta do sf CLI' };
-  if (json.status !== 0 && !json.result) return { ok: false, mode: sourcePaths.length ? 'validate' : 'run', error: json.message || 'falha no sf CLI' };
-  return { ok: true, mode: sourcePaths.length ? 'validate' : 'run', ...(sourcePaths.length ? fromDeploy(json) : fromApexRun(json)) };
+/**
+ * Reads the JSON of a test run the person did (sf project deploy start --dry-run ... --json, or sf apex run test --json).
+ * Works out which of the two it is from the shape of the result.
+ */
+function readTestResult(text) {
+  const json = parseJson(String(text || '').replace(/^\uFEFF/, ''));
+  if (!json) return { ok: false, error: 'o arquivo não tem o JSON do sf CLI (rode o comando com --json > arquivo)' };
+  if (json.status !== 0 && !json.result) return { ok: false, error: json.message || 'falha no sf CLI' };
+  const deploy = Boolean(json.result && (json.result.details || json.result.numberTestsTotal !== undefined || json.result.checkOnly !== undefined));
+  return { ok: true, mode: deploy ? 'validate' : 'run', ...(deploy ? fromDeploy(json) : fromApexRun(json)) };
 }
 
-module.exports = { testArgs, runSf, runTests, fromDeploy, fromApexRun, parseJson };
+module.exports = { testArgs, runSf, readTestResult, fromDeploy, fromApexRun, parseJson };

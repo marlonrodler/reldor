@@ -19,4 +19,6 @@ The AI reaches for it when someone wants to create, write, refine or size a task
 
 ## Where it fits
 
-It is the writer on top of [refine](../refine.en.md). Pair it with [spec-review](./spec-review.en.md) once the spec exists.
+It is the writer on top of [refine](../refine.en.md). When the spec already exists, it reviews that spec and points out only the gaps (this used to be the spec-review advisor).
+
+The path is light, with no back-and-forth: it finds the task and the spec ([task](../task.en.md)), puts the text in the standard (only if it is not yet), searches only the targets ([refine](../refine.en.md)), shows what already exists to **reuse** or **make generic** instead of creating, what has to be enabled ([access](../access.en.md)) and the limits ([limits](../limits.en.md)), and writes everything at once for you to approve. It saves where you chose: in the spec, in a `.md` in the team's docs, or both.

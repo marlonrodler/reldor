@@ -19,10 +19,9 @@ test('init asks nothing and writes only what it found; profile.md comes from the
   assert.equal(r.status, 0, r.stderr);
   const j = JSON.parse(r.stdout);
   assert.equal(j.created, true);
-  assert.equal(j.execute, 'off');
   assert.equal(JSON.parse(reldor(dir, ['init', '--json']).stdout).created, false);
   const config = fs.readFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'utf8');
-  assert.match(config, /execute: off/);
+  assert.doesNotMatch(config, /execute/);
   assert.doesNotMatch(config, /environments|reference_org/);
 
   const file = path.join(dir, '.reldor', 'profile.md');

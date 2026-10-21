@@ -24,10 +24,17 @@ environments:
 # Org usada no retrieve, no test-radar --run e no deploy quando nenhuma é informada (reldor env --org <alias>)
 reference_org: uat-sandbox
 
-# Execução: off (padrão) = o Reldor confere e monta os comandos de Git e de org (commit, stash, merge, retrieve, testes,
-# deploy); quem roda é você. Mudanças só nos arquivos (xml, gancho, conflitos) pedem confirmação.
-# on = o Reldor também roda esses comandos, sempre pedindo confirmação.
-execute: off
+# O Reldor nunca roda Git nem mexe na org (commit, stash, merge, retrieve, testes, deploy): ele confere e monta os
+# comandos; quem roda é você. Mudanças só nos arquivos (xml, gancho, conflitos) pedem confirmação. Da org, ele só lê.
+
+# Edição da org: decide alguns limites (reldor limits). enterprise (padrão), unlimited, performance, developer, professional
+org:
+  edition: enterprise
+
+# A tarefa (reldor task): o formato das branches e a pasta de documentação, confirmados uma vez
+task:
+  branch_pattern: null      # ex.: gerado por reldor task set --branch-shape "feature/<time>-<id>-<descrição>"
+  docs_dir: null            # ex.: documentacao/times/{time} ({time} = o time da pessoa, de reldor me)
 
 index:
   refresh_hours: 24         # idade máxima do índice salvo antes de reler o projeto

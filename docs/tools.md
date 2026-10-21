@@ -58,7 +58,7 @@ Grave `run` para aquela capacidade (`reldor tools set <capacidade> run`). Isso r
 Em `.reldor/cache/runs.json`, fora do Git. Apagar o arquivo só faz as checagens rodarem de novo.
 
 **E o commit, o merge e a PR?**
-Isso já tem a sua chave própria: `execute` (desligada por padrão: o Reldor só monta os comandos de Git e de org). O `tools` só mostra como está.
+O Reldor nunca faz isso: ele só monta os comandos de Git e de org, e quem roda é você ou a sua ferramenta.
 
 ## Onde se encaixa
 

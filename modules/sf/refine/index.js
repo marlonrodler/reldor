@@ -351,6 +351,13 @@ function refineBrief(model, { text = '', objects = [], fields = [], values = [] 
 
 function renderBrief(b) {
   const out = ['\n🛡️  Refinamento: o que existe em volta desta task', ''];
+  if (b.format && !b.format.hasTargets) out.push('ℹ️  A task não está no padrão (sem o bloco de alvos): a busca usou as palavras do texto. Reescrever no modelo deixa a busca certeira.', '');
+  if (b.format && b.format.hasTargets && b.format.missingSections.length) out.push(`ℹ️  Faltam seções na task: ${b.format.missingSections.join(', ')}.`, '');
+  if (b.targets) {
+    const t = b.targets;
+    const line = (x) => (x.status === 'certo' ? `"${x.asked}" → ${x.ref}` : x.status === 'provável' ? `"${x.asked}" → ${x.ref} (provável)` : x.status === 'dúvida' ? `"${x.asked}": dúvida entre ${x.candidates.map((c) => c.ref).join(', ')}` : `"${x.asked}": não achei no projeto`);
+    out.push('Alvos da task:', ...[...t.objects, ...t.fields, ...t.values.map((v) => v.field)].map((x) => `   ${line(x)}`), '');
+  }
   if (!b.objects.length) {
     out.push('Não identifiquei objetos do projeto no texto. Informe com --objects Objeto1,Objeto2.');
     return out;
@@ -381,6 +388,11 @@ function renderBrief(b) {
     out.push(`🔤 ${f.ref}: ${f.exists ? `existe (${f.type}${f.required ? ', obrigatório' : ''}), usado em ${f.usedIn} lugar(es)` : 'não existe ainda'}`);
   }
   if (b.unknownObjects.length) out.push(`⚠️ Não encontrei no projeto: ${b.unknownObjects.join(', ')}`);
+  for (const r of b.reuse || []) {
+    out.push('', `🧩 Criar ${r.item.tipo} "${r.item.nome}"${r.item.objeto ? ` em ${r.item.objeto}` : ''}: ${r.pick === 'criar' ? r.why : 'já existe algo parecido'}`);
+    for (const c of r.candidates) out.push(`   • ${c.label} (${c.ref}${c.owner ? `, time ${c.owner}` : ', compartilhado'}; ${c.usage.uses} uso(s), ${c.usage.automations} automação(ões)) → ${c.pick === 'reusar' ? 'reusar' : 'criar genérico'}: ${c.why}`);
+  }
+  for (const l of b.limits || []) out.push('', `📐 ${l.text}`);
   out.push('', 'Pontos de atenção:', ...(b.attention.length ? b.attention.map((a) => `   ⚠️ ${a}`) : ['   nenhum']));
   out.push('', 'Perguntas em aberto:', ...b.questions.map((q, i) => `   ${i + 1}. ${q}`));
   out.push('', `📏 Tamanho (sinal, não estimativa): ${b.signal.size} · ${b.signal.pieces} peça(s) envolvida(s)`);
@@ -388,4 +400,4 @@ function renderBrief(b) {
   return out;
 }
 
-module.exports = { refineBrief, renderBrief, detectMentions, STANDARD_WORDS };
+module.exports = { refineBrief, renderBrief, detectMentions, STANDARD_WORDS, nameWords, norm };

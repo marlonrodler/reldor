@@ -2,6 +2,22 @@
 
 # Changelog
 
+## 0.23.0
+
+- **Fewer commands in sight:** help shows the 14 daily ones and the 6 for setup; the pieces are in `reldor help --all`.
+- **Reldor never runs Git or the org.** `execute: on` is gone. `commit`, `merge`, `retrieve` and `test-radar --run` only
+  hand over the commands. Test results come back with `reldor test-radar --result <file>`. From the org, only reads.
+- `clean` became `reldor commit --stash-org` (and `--undo`); `reldor clean` stays as the short name. After the commit,
+  `reldor snapshot --after-commit` moves the snapshot along.
+- `reldor task` (new): the task from the branch id (shape learned from the repository), the spec in any tool (Kiro, Spec
+  Kit, OpenSpec, another folder), the phase, a folder per task, a note when the task changes, the team's docs folder and
+  where the refined task goes (`output`). `status` brings the task.
+- Refinement in stages: with the `alvos` block at the top of the task, `refine` searches only the targets (names become
+  API names with how sure it is), says what already exists to **reuse** or **make generic** (owner, uses, automations;
+  never rename) and the limits. The task-refine advisor does the whole path and took over spec-review.
+- `reldor limits` (new): fields, relationships, master-detail, roll-ups and validation rules per object, picklist values
+  and formulas, from the project; `--org` reads the org's limits (read-only).
+
 ## 0.22.0
 
 - `reldor access` (new): "it exists, but is it enabled?". For a field and a picklist value: the value (active? similar

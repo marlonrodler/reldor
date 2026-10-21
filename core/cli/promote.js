@@ -75,7 +75,7 @@ function promoteCommand(root, flags, args) {
   const report = rehearse(root, config, { env, source: flags.branch || 'HEAD' });
   logAction(root, 'promote', { summary: `${report.source} → ${report.env}: ${report.commits.length} commit(s), ${report.conflicts.length} conflito(s), ${report.missing.length} dependência(s)` });
   if (flags.json) printJson(report);
-  else print(renderPromote(report, require('../config').executeOn(config), config));
+  else print(renderPromote(report, false, config));
   return 0;
 }
 

@@ -4,6 +4,8 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 
 | A pessoa diz algo como | Rode | Depois |
 |---|---|---|
+| "em que tarefa estou?" / "vamos na tarefa 1234" / começar a trabalhar | `reldor task --json` (ou `reldor task use 1234`) | A tarefa, a spec, a fase; uma tarefa por vez |
+| "tem algum limite perto de estourar?" / a task cria campos | `reldor limits [Objeto] --json` (e `--org <alias>`, só leitura) | O que está a 80% ou mais |
 | "quero usar o Reldor" | `reldor status` (e `reldor init`, se não estiver configurado) | Explique a etapa e sugira o próximo passo; não pergunte branches nem org |
 | "me ajude a preencher o profile" | `reldor profile --json` | O que foi encontrado; pergunte um tópico por vez e escreva só em "Padrões da equipe" |
 | "instalei o Reldor, e agora?" / "não está funcionando" | `reldor doctor --json` | O que falta, com o comando que resolve, e o `next` |
@@ -32,10 +34,10 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "monta o deploy" / "sobe para a sandbox" | `reldor deploy [ambiente] [--org <alias>] --json` | Validação primeiro, depois o quick deploy; nunca rode, mostre os comandos |
 | "a gente já tem uma ferramenta que faz…" / "não quero que o Reldor repita…" | `reldor tools --json` → `reldor tools set <capacidade> <run\|verify\|skip> --owner "<ferramenta>"` (com confirmação) | Quem cuida de cada coisa; o que o Reldor só confere e o que fica de fora |
 | "muda os ambientes" / "qual é a cadeia?" / "a org é tal" | `reldor env --json` / `reldor env set "nome:branch, ..."` / `reldor env --org <alias>` | A cadeia na ordem, qual é produção, a org de referência |
-| "vou commitar" / "limpa o que não é meu" | `reldor clean --dry-run --json` → `reldor clean --json` | O que sai, o que fica, os comandos para a pessoa rodar, como desfazer |
+| "vou commitar" / "limpa o que não é meu" | `reldor commit --dry-run --json` → `reldor commit -m "..." --json` (ou `--stash-org` se a ferramenta do time roda `git add -A`) | O que é seu, o que veio da org, os comandos para a pessoa rodar, como desfazer (`--undo`) |
 | "faz o merge da minha branch" (na branch de merge) | `reldor merge <branch> --json` → a pessoa roda o `git merge` → `reldor merge --resolve --yes --json` (com o "sim") → resolver `hard` → `reldor merge --check` | O que foi resolvido, o que revisar, "entrou só o seu?" |
 
 ## Ordem natural de uma task
-refinar → entender (explain, usages) → desenvolver (radar de testes) → revisar (review) → limpar (clean) → commit pela pessoa ou pela ferramenta do time → deploy na sandbox (comandos do `reldor deploy`) → promover (promote) → documentar
+tarefa (task) → refinar → entender (explain, usages) → desenvolver (helpers, radar de testes) → revisar (review) → commit limpo (commit) pela pessoa ou pela ferramenta do time → deploy na sandbox (comandos do `reldor deploy`) → promover (promote) → documentar
 
 O Reldor não executa nada no Git nem na org: ele confere e monta os comandos, e quem roda é a pessoa ou a esteira.

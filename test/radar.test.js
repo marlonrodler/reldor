@@ -59,13 +59,15 @@ test('radar: a class change points to the tests that use it, and checks its quer
 test('radar --run validates local changes without saving, and reports failures and coverage', () => {
   const dir = featureRepo();
   const log = path.join(dir, 'sf-args.json');
-  // Execution off (the default): the sf command is handed over and nothing runs in the org.
+  // The sf command is handed over and nothing runs in the org.
   const handed = JSON.parse(reldor(dir, ['test-radar', '--run', '--org', 'uat-sandbox', '--json'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_SF_LOG: log }).stdout);
   assert.ok(!fs.existsSync(log), 'sf was not called');
-  assert.match(handed.commands[0], /^sf project deploy start --dry-run --target-org uat-sandbox --wait 60 --test-level RunSpecifiedTests .*--tests \w+Test/);
-  fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'execute: on\n');
-  const r = reldor(dir, ['test-radar', '--run', '--yes', '--org', 'uat-sandbox', '--json'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_SF_LOG: log });
+  assert.match(handed.commands[0], /^sf project deploy start --dry-run --json --target-org uat-sandbox --wait 60 --test-level RunSpecifiedTests .*--tests \w+Test.* > \.reldor\/work\/test-radar\/resultado\.json$/);
+  assert.equal(handed.commands[1], 'reldor test-radar --result .reldor/work/test-radar/resultado.json');
+  // The person runs it (here, the fake sf), and Reldor reads the result.
+  const ran = spawnSync(handed.commands[0].replace(/^sf /, `"${process.execPath}" "${FAKE_SF}" `), { cwd: dir, shell: true, encoding: 'utf8', env: { ...process.env, RELDOR_SF_LOG: log } });
+  assert.equal(ran.status, 0, ran.stderr);
+  const r = reldor(dir, ['test-radar', '--result', '.reldor/work/test-radar/resultado.json', '--json']);
   const args = JSON.parse(fs.readFileSync(log, 'utf8'));
   assert.ok(args.includes('--dry-run'), 'never saves to the org');
   assert.ok(args.includes('RunSpecifiedTests'));
@@ -80,7 +82,7 @@ test('radar --run refuses production', () => {
   const dir = featureRepo();
   fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'environments:\n  - name: producao\n    branch: master\n    org: prod-org\n    deploy: blocked\n');
-  const r = reldor(dir, ['test-radar', '--run', '--yes', '--org', 'prod-org'], { RELDOR_SF_BIN: FAKE_SF });
+  const r = reldor(dir, ['test-radar', '--run', '--org', 'prod-org'], { RELDOR_SF_BIN: FAKE_SF });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /produção/);
 });

@@ -156,11 +156,13 @@ Você não decora comandos: diz o que quer e a IA roda o certo.
 | Momento | O que você diz | O que o Reldor faz |
 |---|---|---|
 | **E agora?** | "e agora?" | [`status`](./docs/status.md): onde você está, avisos se subir agora, próximo passo |
-| **Entender** | "o que acontece quando uma Oportunidade é fechada?", "onde isso é usado?", "me ajuda a escrever a task" | [`explain`](./docs/explain.md), [`usages`](./docs/usages.md), [`refine`](./docs/refine.md) e os conselheiros |
+| **Tarefa** | "vamos na tarefa 1234" | [`task`](./docs/task.md): acha a tarefa pela branch e a spec dela em qualquer ferramenta, diz a fase, e não mistura uma tarefa com outra |
+| **Refinar** | "me ajuda a escrever a task", "revisa a spec" | [`refine`](./docs/refine.md) com o conselheiro [task-refine](./docs/advisors/task-refine.md): deixa a task no padrão, busca só o que ela pede, diz o que já existe para reusar, o que falta liberar e os limites |
+| **Entender** | "o que acontece quando uma Oportunidade é fechada?", "onde isso é usado?" | [`explain`](./docs/explain.md), [`usages`](./docs/usages.md) e os conselheiros |
 | **Liberar** | "esse valor já existe?", "o campo não aparece" | [`access`](./docs/access.md): o que já está e onde falta liberar (record type, layout, acesso, path, tradução, regras) |
 | **Criar** | "já existe um método para isso?" | [`helpers`](./docs/helpers.md): o que já existe, compartilhado primeiro; se não existir, a IA propõe um método genérico que todo time possa usar |
 | **Revisar** | "posso commitar?" | [`review`](./docs/review.md): segurança, qualidade e código repetido, campo fora da query, testes que podem quebrar e XML, num resumo só |
-| **Limpar** | "vou commitar, limpa o que não é meu" | [`clean`](./docs/clean.md): separa o seu do que veio da org e mostra os comandos para deixar na pasta só o seu |
+| **Commitar** | "vou commitar, tira o que não é meu" | [`commit`](./docs/commit.md): separa o seu do que veio da org e mostra os comandos (só as suas linhas no commit, ou `--stash-org` para deixar na pasta só o seu) |
 | **Merge** | "faz o merge da minha branch" (na branch de merge) | [`merge`](./docs/merge.md): confere antes, mostra o `git merge` para você rodar, resolve os conflitos dos arquivos mantendo o destino e aplicando só a sua mudança, e confere se entrou só o seu |
 | **Subir** | "está pronto para o pré-UAT?" | [`promote`](./docs/promote.md): ordem dos commits e dependências faltando antes da PR |
 | **Deploy** | "monta o deploy para a minha sandbox" | [`deploy`](./docs/deploy.md): os comandos de validação e de deploy dos seus arquivos, com os testes do radar; quem roda é você |
@@ -168,7 +170,7 @@ Você não decora comandos: diz o que quer e a IA roda o certo.
 
 Depois de instalado (`reldor hook install`), um gancho pre-commit roda em todo commit, inclusive nos feitos por outras ferramentas.
 
-**Começando?** Na primeira semana, use só os momentos que leem (E agora?, Entender, Revisar): eles não mudam nada. Nos outros (Limpar, Merge, Deploy), o Reldor confere e entrega os comandos; você decide se e quando rodar.
+**Começando?** Na primeira semana, use só os momentos que leem (E agora?, Entender, Revisar): eles não mudam nada. Nos outros (Commitar, Merge, Deploy), o Reldor confere e entrega os comandos; você decide se e quando rodar.
 
 ## Por que o Reldor existe
 
@@ -198,7 +200,7 @@ Depois de instalado (`reldor hook install`), um gancho pre-commit roda em todo c
 
 **O problema.** Um retrieve mistura a org com o seu trabalho, e o commit leva tudo. Uma promoção falha porque um campo só existe em develop, ou porque um commit não passou pelo ambiente anterior.
 
-**A solução.** O [`clean`](./docs/clean.md) separa o seu trabalho do que veio da org e entrega os comandos para deixar na pasta só o seu, antes de qualquer ferramenta commitar; o [commit limpo](./docs/commit.md) faz o mesmo para levar só as suas linhas. Um [ensaio de promoção](./docs/promote.md) acha commits fora de ordem e dependências faltando antes da pull request. E um [plano de rollback](./docs/rollback.md) traz o revert, o `destructiveChanges.xml` e os riscos.
+**A solução.** O [commit limpo](./docs/commit.md) separa o seu trabalho do que veio da org e entrega os comandos para levar só as suas linhas, ou, com `--stash-org`, para deixar na pasta só o seu antes de qualquer ferramenta commitar. Um [ensaio de promoção](./docs/promote.md) acha commits fora de ordem e dependências faltando antes da pull request. E um [plano de rollback](./docs/rollback.md) traz o revert, o `destructiveChanges.xml` e os riscos.
 
 ### #5: Brechas de segurança e código copiado que ninguém viu
 
@@ -214,7 +216,6 @@ O [`quality`](./docs/quality.md) pega a cópia antes de ela se espalhar: um bloc
 
 **A solução.** Conselheiros que entram **antes** do código, com uma pergunta e sem bloquear nada:
 
-- [spec-review](./docs/advisors/spec-review.md): encontra as lacunas da spec.
 - [automation-design](./docs/advisors/automation-design.md): onde a lógica deve morar (flow, trigger, Queueable, Batch), olhando o que já existe.
 - [lwc-ux](./docs/advisors/lwc-ux.md): dois ou três caminhos de tela modernos com SLDS, mais uma POC descartável.
 
@@ -238,21 +239,22 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor doctor`](./docs/doctor.md) | Confere a instalação e a pasta do terminal, e diz o próximo passo | ✅ |
 | [`reldor init`](./docs/init.md) | Configura o Reldor no projeto sem perguntar nada: grava só o que detectou | ✅ |
 | [`reldor profile`](./docs/init.md#o-profilemd) | Atualiza o `profile.md` com o que está no projeto hoje, sem mexer na parte do time | ✅ |
-| [`reldor status`](./docs/status.md) | Onde você está: branch, pendências, ambientes, spec, próximo passo | ✅ |
+| [`reldor status`](./docs/status.md) | Onde você está: tarefa, branch, pendências, ambientes, spec, próximo passo | ✅ |
+| [`reldor task`](./docs/task.md) | A tarefa atual: número pela branch, spec em qualquer ferramenta, fase, pasta por tarefa; onde guardar a task refinada | ✅ |
+| [`reldor limits`](./docs/limits.md) | Limites por objeto contados pelo projeto (campos, relacionamentos, roll-ups, regras); `--org` lê os limites da org | ✅ |
 | [`reldor index`](./docs/index-command.md) | Monta o índice do projeto; só relê o que mudou | ✅ |
 | [`reldor explain`](./docs/explain.md) | Engenharia reversa: automações na ordem de execução | ✅ |
 | [`reldor usages`](./docs/usages.md) | Onde algo é usado, antes de alterar ou apagar | ✅ |
 | [`reldor helpers`](./docs/helpers.md) | Antes de criar um método: o que já existe (compartilhado primeiro) e métodos iguais em times diferentes | ✅ |
 | [`reldor me`](./docs/helpers.md) | O seu time e o prefixo dele, só na sua máquina | ✅ |
 | `reldor log` | Tudo o que o Reldor fez, do mais recente ao mais antigo | ✅ |
-| [`reldor refine`](./docs/refine.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho (texto longo por `--file`) | ✅ |
+| [`reldor refine`](./docs/refine.md) | Os fatos de uma task: com a task no padrão, busca só os alvos, o que reusar, o que liberar e os limites (`--file`) | ✅ |
 | [`reldor access`](./docs/access.md) | Já existe, mas está liberado? Onde falta liberar um valor de picklist, campo, objeto ou classe: record type, layout, FLS, path, tradução, regras | ✅ |
-| [`reldor test-radar`](./docs/test-radar.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |
+| [`reldor test-radar`](./docs/test-radar.md) | Testes que podem quebrar com as suas mudanças; monta o comando de validação e lê o resultado (`--result`) | ✅ |
 | [`reldor check`](./docs/check.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
 | [`reldor security`](./docs/security.md) | Revisão de segurança das mudanças: SOQL injection, CRUD/FLS, sharing, logs sensíveis, segredos, XSS, flows, acesso de convidado | ✅ |
 | [`reldor retrieve`](./docs/commit.md) | Monta o comando de retrieve da org certa e tira a foto para o commit limpo | ✅ |
-| [`reldor clean`](./docs/clean.md) | Antes do commit: separa o seu do que veio da org e entrega os comandos (o que veio da org vai para um stash) | ✅ |
-| [`reldor commit`](./docs/commit.md) | Commit limpo: prepara só as suas linhas, até em arquivos que o retrieve também mudou, e entrega os comandos | ✅ |
+| [`reldor commit`](./docs/commit.md) | Commit limpo: prepara só as suas linhas, até em arquivos que o retrieve também mudou, e entrega os comandos (`--stash-org` deixa na pasta só o seu; `reldor clean` é o nome curto) | ✅ |
 | [`reldor deploy`](./docs/deploy.md) | Monta os comandos de validação e de deploy dos seus arquivos, com os testes do radar; nunca executa | ✅ |
 | [`reldor quality`](./docs/quality.md) | Código que a sua mudança repete (blocos, queries, métodos, textos) mais PMD e CPD | ✅ |
 | [`reldor xml`](./docs/xml.md) | Ordena e remove duplicados em profiles, permission sets, labels, sharing rules, package.xml | ✅ |
@@ -266,7 +268,6 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 Todas as skills são **acionadas pela IA**: ela usa quando a conversa pede.
 
 - **[reldor](./skills/reldor/SKILL.md)**: O roteador. Descobre onde você está e conduz o próximo passo.
-- **[spec-review](./modules/sf/advisors/spec-review/SKILL.md)**: Aponta o que falta numa spec antes de ela rodar.
 - **[automation-design](./modules/sf/advisors/automation-design/SKILL.md)**: Recomenda onde uma regra de negócio deve morar.
 - **[lwc-ux](./modules/sf/advisors/lwc-ux/SKILL.md)**: Propõe telas LWC modernas e acessíveis antes de codar.
 - **[task-refine](./modules/sf/advisors/task-refine/SKILL.md)**: Transforma a ideia numa task escrita com o impacto real: o que muda, perguntas em aberto, critérios de aceite e cenários de teste.
@@ -276,7 +277,7 @@ Todas as skills são **acionadas pela IA**: ela usa quando a conversa pede.
 - Lê **apenas metadados**, nunca registros. Quando a resposta depende de dados (um custom setting, por exemplo), ele entrega a SOQL para você conferir.
 - **Não guarda credenciais**: o acesso às orgs é o do seu `sf` CLI.
 - Toda ação fica num **histórico local** (`reldor log`).
-- **Execução desligada por padrão** (`execute: off`): o Reldor não commita, não faz stash, merge nem checkout, e não roda nada na org (retrieve, testes, deploy). Ele confere e mostra os comandos prontos; quem roda é você ou o seu fluxo (por exemplo, a ferramenta do time que cria branch e abre PR). Mudanças só nos arquivos (organizar XML, resolver conflito num arquivo, instalar o gancho ou o merge driver) pedem confirmação antes. Quem quiser que o Reldor rode os comandos liga com `execute: on`, e cada um ainda pede confirmação.
+- **Não executa Git nem mexe na org.** O Reldor não commita, não faz stash, merge nem checkout, e não roda retrieve, testes nem deploy. Ele confere e mostra os comandos prontos; quem roda é você ou o seu fluxo (por exemplo, a ferramenta do time que cria branch e abre PR). Mudanças só nos arquivos (organizar XML, resolver conflito num arquivo, instalar o gancho ou o merge driver) pedem confirmação antes. Da org, ele só **lê** (os limites, com `reldor limits --org`).
 - **Nunca faz deploy.** O [`reldor deploy`](./docs/deploy.md) só monta os comandos. Para produção, só a validação: o deploy segue pela esteira do time.
 - **Não manda o seu código para nenhum serviço.** Fora da sua máquina, ele só fala com a sua org pelo `sf` CLI e, se instalado, com o GitHub pelo `gh` (para ler as PRs abertas).
 - Nada de cliente mora no Reldor: ambientes, padrões e ferramentas do time ficam no `.reldor/` do repositório do próprio cliente.

@@ -8,7 +8,7 @@
 
 It also checks the queries of the changed classes: a custom field read from a record that the class queried, but that is not in the SOQL or in the selector. That is the "SObject row was retrieved via SOQL without querying the requested field" error, caught before it reaches UAT.
 
-With `--run`, it runs those tests **without saving anything**: a check-only deploy (`--dry-run`) of your changed files with `RunSpecifiedTests`, so the tests see your local changes. It refuses production and, with execution off (the default), **runs nothing in the org**: it shows the ready `sf project deploy start --dry-run ... --test-level RunSpecifiedTests --tests ...` command for you to run. With `execute: on`, it runs it after confirming the org.
+With `--run`, it runs those tests **without saving anything**: a check-only deploy (`--dry-run`) of your changed files with `RunSpecifiedTests`, so the tests see your local changes. It refuses production and **runs nothing in the org**: it shows the ready `sf project deploy start --dry-run --json ... > .reldor/work/test-radar/resultado.json` command for you to run, then `reldor test-radar --result .reldor/work/test-radar/resultado.json`, which reads the result and shows failures and coverage.
 
 ## When to reach for it
 

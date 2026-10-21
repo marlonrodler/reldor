@@ -19,4 +19,6 @@ A IA usa quando alguém quer criar, escrever, refinar ou dimensionar uma task, h
 
 ## Onde se encaixa
 
-É o redator em cima do [refine](../refine.md). Combine com o [spec-review](./spec-review.md) quando a spec existir.
+É o redator em cima do [refine](../refine.md). Quando a spec já existe, ele revisa a própria spec e aponta só as lacunas (antes isso era o conselheiro spec-review).
+
+O caminho é leve, sem bate-volta: ele acha a tarefa e a spec ([task](../task.md)), deixa o texto no padrão (só se ainda não estiver), busca só os alvos ([refine](../refine.md)), mostra o que já existe para **reusar** ou **generalizar** em vez de criar, o que falta liberar ([access](../access.md)) e os limites ([limits](../limits.md)), e escreve tudo de uma vez para você aprovar. Grava onde você escolheu: na spec, num `.md` da documentação do time, ou nos dois.

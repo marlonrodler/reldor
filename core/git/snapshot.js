@@ -99,32 +99,8 @@ function planCleanCommit(root, snapshot, include = []) {
 }
 
 /**
- * Stages exactly: your changes since the snapshot (applied line by line, also on files the retrieve touched),
- * plus whole files you chose to include. Returns { staged, failed } where failed are files whose lines overlap
- * with the org's change and need a person to decide.
- */
-function stageCleanCommit(root, snapshot, plan) {
-  const reset = git(root, ['read-tree', plan.head]);
-  if (!reset.ok) throw new Error(reset.stderr);
-  const staged = [];
-  const failed = [];
-  const apply = (from, files) => {
-    for (const file of files) {
-      const patch = git(root, ['diff', '--binary', '--full-index', '--no-renames', from, plan.now, '--', file], { raw: true });
-      if (!patch.stdout) continue;
-      const res = git(root, ['apply', '--cached', '--3way', '--whitespace=nowarn', '-'], { input: patch.stdout });
-      if (res.ok) staged.push(file);
-      else failed.push(file);
-    }
-  };
-  apply(snapshot.tree, [...plan.mine, ...plan.mixed]);
-  apply(plan.head, plan.whole);
-  return { staged, failed };
-}
-
-/**
- * Only your lines as one patch file, for the person to apply with `git apply --cached`: the same result as
- * stageCleanCommit, without Reldor touching the Git index. Each file is checked on a throwaway index first, so the
+ * Only your lines as one patch file, for the person to apply with `git apply --cached`: only your lines, without
+ * Reldor touching the Git index. Each file is checked on a throwaway index first, so the
  * files whose lines touch the org's lines are reported before anything is run. Returns { file, staged, failed }.
  */
 function writeCleanPatch(root, snapshot, plan, file) {
@@ -181,4 +157,4 @@ function advanceSnapshot(root, snapshot, plan, failed) {
   }
 }
 
-module.exports = { takeSnapshot, loadSnapshot, clearSnapshot, planCleanCommit, stageCleanCommit, writeCleanPatch, advanceSnapshot, workingTree, REF };
+module.exports = { takeSnapshot, loadSnapshot, clearSnapshot, planCleanCommit, writeCleanPatch, advanceSnapshot, workingTree, REF };

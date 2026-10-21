@@ -13,7 +13,7 @@ O `review` é tudo que vale conferir antes de um commit, numa rodada só e num r
 | [Queries](./check.md) | Campo lido mas que falta na SOQL ou no Selector (erro em produção) |
 | [Testes](./test-radar.md) | As classes de teste que a sua mudança pode quebrar |
 | [XML](./xml.md) | Profiles, permission sets e labels fora de ordem ou com duplicado em conflito |
-| [Arquivos da org](./clean.md) | Mudanças que vieram da org num retrieve e não são suas |
+| [Arquivos da org](./commit.md) | Mudanças que vieram da org num retrieve e não são suas |
 
 O resumo tem dois grupos: 🔴 **corrija antes do commit** e 🟡 **atenção**, cada item com o arquivo, a linha e como corrigir. Depois, os testes para rodar. O Salesforce Code Analyzer roda uma vez só para segurança e qualidade, quando instalado; o `--no-analyzer` pula.
 
@@ -35,4 +35,4 @@ O `review` segue o [`tools`](./tools.md): uma parte que outra ferramenta faz é 
 
 ## Onde se encaixa
 
-Logo antes do [clean](./clean.md) e do commit.
+Logo antes do [commit](./commit.md).

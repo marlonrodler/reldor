@@ -14,9 +14,7 @@ const quality = require('../../modules/sf/quality');
 const { organizeXml } = require('../../modules/sf/xml/organize');
 const snapshotApi = require('../git/snapshot');
 const gitApi = require('../git');
-const { runSf } = require('../../modules/sf/org/sf');
 const { changedFiles, defaultBase } = require('../../modules/sf/test-radar/changes');
-const { runTests } = require('../../modules/sf/org/sf');
 const { resolveOrg } = require('../../modules/sf/org/guard');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -171,6 +169,7 @@ function renderRun(result, target, coverageTarget, changedClasses) {
 async function testRadarCommand(root, flags) {
   if (!requireSfProject(root)) return 1;
   const { config } = loadConfig(root);
+  if (typeof flags.result === 'string') return testResult(root, flags, config);
   const { model } = freshModel(root, flags);
   const changes = changedFiles(root, config, { base: flags.base, files: flags.files });
   const shared = require('./checks');
@@ -225,29 +224,40 @@ async function testRadarCommand(root, flags) {
     process.stderr.write(`🛡️ ${target.org} é produção. O radar não roda lá por padrão.\n`);
     return 1;
   }
-  // Execution off (the default): the tests run in the org, so the person runs the command.
-  if (!require('../config').executeOn(config)) {
-    const { handover, cmdLine } = require('../report');
-    const { testArgs } = require('../../modules/sf/org/sf');
-    const sourcePaths = flags['org-code'] ? [] : sourcePathsFor(root, changes);
-    const cmd = cmdLine(['sf', ...testArgs({ org: target.org, tests: radar.tests.map((t) => t.name), sourcePaths, wait: Number(flags.wait) || 60, json: false })]);
-    const why = sourcePaths.length ? 'validação: sobe os seus arquivos sem salvar e roda só esses testes' : 'roda os testes contra o que já está na org';
-    if (flags.json) printJson({ ...result, org: target.org, commands: [cmd] });
-    else print([...out, ...handover([{ cmd, why }]), '   Depois, cole o resultado aqui (ou para a IA) para ver falhas e cobertura.']);
-    return 0;
-  }
-  if (!flags.json) print(out);
-  const ok = await confirm(`\n🛡️ Rodar ${radar.tests.length} teste(s) na org ${target.org}${target.environment ? ` (${target.environment})` : ''}?`, flags);
-  if (!ok) {
-    print('Cancelado. Nada foi executado.');
-    return 0;
-  }
+  // Running tests is an org action: Reldor builds the command; the person runs it and hands the result back.
+  const { handover, cmdLine } = require('../report');
+  const { testArgs } = require('../../modules/sf/org/sf');
   const sourcePaths = flags['org-code'] ? [] : sourcePathsFor(root, changes);
-  const run = runTests(root, { org: target.org, tests: radar.tests.map((t) => t.name), sourcePaths, wait: Number(flags.wait) || 60 });
+  const resultFile = '.reldor/work/test-radar/resultado.json';
+  fs.mkdirSync(path.join(root, '.reldor', 'work', 'test-radar'), { recursive: true });
+  const cmd = `${cmdLine(['sf', ...testArgs({ org: target.org, tests: radar.tests.map((t) => t.name), sourcePaths, wait: Number(flags.wait) || 60, json: true })])} > ${resultFile}`;
+  const steps = [
+    { cmd, why: sourcePaths.length ? 'validação: sobe os seus arquivos sem salvar e roda só esses testes' : 'roda os testes contra o que já está na org' },
+    { cmd: `reldor test-radar --result ${resultFile}`, why: 'o Reldor lê o resultado: falhas e cobertura' },
+  ];
+  logAction(root, 'test-radar', { summary: `${target.org}: ${radar.tests.length} teste(s), comando montado` });
+  if (flags.json) printJson({ ...result, org: target.org, commands: steps.map((x) => x.cmd) });
+  else print([...out, ...handover(steps)]);
+  return 0;
+}
+
+/** reldor test-radar --result <arquivo>: reads the JSON of a test run the person did, and shows failures and coverage. */
+function testResult(root, flags, config) {
+  const { readTestResult } = require('../../modules/sf/org/sf');
+  let text = '';
+  try {
+    // Windows PowerShell 5.1 writes "> file" as UTF-16: read it as such when the file says so.
+    const buf = fs.readFileSync(path.resolve(root, flags.result));
+    text = buf[0] === 0xff && buf[1] === 0xfe ? buf.slice(2).toString('utf16le') : buf.toString('utf8');
+  } catch {
+    process.stderr.write(`⚠️ Não consegui ler ${flags.result}.\n`);
+    return 1;
+  }
+  const run = readTestResult(text);
   const coverageTarget = Number(config.test_radar?.coverage_target) || 75;
-  logAction(root, 'test-radar-run', { summary: `${target.org}: ${run.ok ? `${run.passed.length} ok, ${run.failed.length} falha(s)` : 'erro'}` });
-  if (flags.json) printJson({ ...result, org: target.org, run });
-  else print(renderRun(run, target.org, coverageTarget, radar.classes));
+  logAction(root, 'test-radar-result', { summary: run.ok ? `${run.passed.length} ok, ${run.failed.length} falha(s)` : 'resultado ilegível' });
+  if (flags.json) printJson({ run });
+  else print(renderRun(run, run.org || 'org', coverageTarget, []));
   return run.ok && run.success ? 0 : 2;
 }
 
@@ -270,7 +280,35 @@ function refineCommand(root, flags, args) {
   }
   const { model } = freshModel(root, flags);
   const values = typeof flags.values === 'string' ? flags.values.split(';').map((x) => x.trim()).filter(Boolean) : [];
-  const brief = refineBrief(model, { text, objects: list(flags.objects), fields: list(flags.fields), values });
+  const { taskFormat, resolveTargets } = require('../../modules/sf/refine/targets');
+  const format = taskFormat(text);
+  let brief;
+  if (format.alvos) {
+    // The task is in the standard: only its targets are searched (no loose words), then reuse and limits.
+    const targets = resolveTargets(model, format.alvos);
+    brief = refineBrief(model, { text: format.body, objects: [...targets.search.objects, ...list(flags.objects)], fields: [...targets.search.fields, ...list(flags.fields)], values: [...targets.search.values, ...values] });
+    brief.targets = targets;
+    const myPrefix = require('../config').readLocal(root).prefix || null;
+    brief.reuse = require('../../modules/sf/reuse').reuseOptions(model, targets.create, { myPrefix });
+    brief.limits = require('../../modules/sf/limits').limitsForTask(model, targets.create, loadConfig(root).config);
+  } else {
+    brief = refineBrief(model, { text, objects: list(flags.objects), fields: list(flags.fields), values });
+  }
+  brief.format = { standard: format.standard, hasTargets: format.hasTargets, missingSections: format.missingSections };
+  // Saved in the task's folder, so coming back to the task does not search again.
+  try {
+    const gitApi2 = require('../git');
+    const branch = gitApi2.isRepo(root) ? gitApi2.currentBranch(root) : null;
+    const t = require('../task').currentTask(root, loadConfig(root).config, { branch, remember: false });
+    if (t.id) {
+      const dir = require('../task').taskFolder(root, t.id);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'refine.json'), JSON.stringify(brief, null, 2));
+      brief.saved = path.relative(root, path.join(dir, 'refine.json')).split(path.sep).join('/');
+    }
+  } catch {
+    /* saving is a convenience */
+  }
   logAction(root, 'refine', { summary: `${brief.objects.map((o) => o.name).join(', ') || 'nenhum objeto'} · ${brief.signal.size}` });
   if (flags.json) printJson(brief);
   else print(renderBrief(brief));
@@ -411,36 +449,13 @@ async function retrieveCommand(root, flags) {
   const manyArgs = (flag, name) => (typeof flags[flag] === 'string' ? flags[flag].split(',').map((x) => x.trim()).filter(Boolean).flatMap((v) => [name, v]) : []);
   sfArgs.push(...manyArgs('metadata', '--metadata'), ...manyArgs('source-dir', '--source-dir'));
   if (typeof flags.manifest === 'string') sfArgs.push('--manifest', flags.manifest);
-  // Execution off (the default): the retrieve changes the folder with what is in the org, so the person runs it.
-  if (!require('../config').executeOn(config)) {
-    const { handover, cmdLine } = require('../report');
-    const steps = [{ cmd: cmdLine(['sf', ...sfArgs]), why: 'traz da org' }];
-    if (!specific || flags['as-org']) steps.push({ cmd: 'reldor snapshot', why: 'logo depois: o que veio conta como da org, fora do seu commit' });
-    if (flags.json) printJson({ org: target.org, production: target.production, commands: steps.map((s) => s.cmd) });
-    else print([...out, ...handover(steps)]);
-    return 0;
-  }
-  print(out);
-  if (!(await confirm(`\n🛡️ Fazer o retrieve da org ${target.org}?`, flags))) {
-    print('Cancelado. Nada foi alterado.');
-    return 0;
-  }
-  const res = runSf([...sfArgs, '--json'], { cwd: root, timeout: 30 * 60000 });
-  const { parseJson } = require('../../modules/sf/org/sf');
-  const json = parseJson(res.stdout);
-  if (!json || json.status !== 0) {
-    print(`❌ O retrieve falhou: ${(json && json.message) || res.stderr || 'sem resposta do sf CLI'}`);
-    return 1;
-  }
-  const files = (json.result && json.result.files) || [];
-  let snap = null;
-  if (!specific || flags['as-org']) snap = snapshotApi.takeSnapshot(root, `retrieve ${target.org}`);
-  logAction(root, 'retrieve', { summary: `${target.org}: ${files.length} arquivo(s)${snap ? ', foto tirada' : ''}` });
-  print([
-    '',
-    `✅ Retrieve concluído: ${files.length} arquivo(s).`,
-    snap ? '📸 Foto tirada. Quando for commitar: reldor commit -m "mensagem"' : 'ℹ️  Sem foto: o que veio conta como seu.',
-  ]);
+  // The retrieve changes the folder with what is in the org: the person runs it, then the snapshot.
+  const { handover, cmdLine } = require('../report');
+  const steps = [{ cmd: cmdLine(['sf', ...sfArgs]), why: 'traz da org' }];
+  if (!specific || flags['as-org']) steps.push({ cmd: 'reldor snapshot', why: 'logo depois: o que veio conta como da org, fora do seu commit' });
+  logAction(root, 'retrieve-plan', { summary: `${target.org}: comando montado` });
+  if (flags.json) printJson({ org: target.org, production: target.production, pending: pendingCount, commands: steps.map((x) => x.cmd) });
+  else print([...out, ...handover(steps)]);
   return 0;
 }
 

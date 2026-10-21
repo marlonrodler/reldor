@@ -8,7 +8,22 @@
 
 From those facts only, it adds **attention points** (the object already has a trigger, so the logic goes into its handler), **open questions** (which record types? what about existing records? what volume?) and a **size signal** (small, medium or large, from the number of pieces involved; not an hour estimate).
 
-The [task-refine](./advisors/task-refine.en.md) advisor turns this into the written task.
+### In stages, without noise
+
+With the task **in the standard** (an `alvos:` block at the top of the file, with the objects, fields, values and what the task asks to create), `refine` searches **only the targets**, never every word of the text:
+
+1. **Names:** each target, as the task writes it ("Approval status", "Account"), becomes the API name, with how sure the match is: certain, likely, doubt (two candidates almost equal) or not found. Only a doubt becomes a question.
+2. **Facts** of each object and field (the usual ones, above), and for each picklist value the [`access`](./access.en.md) command.
+3. **Does it already exist? (`reuse`)**: for each item to **create** (field, object, class or method, flow, LWC), what the project already has with the same meaning, by label, name and description, in Portuguese and English. For each candidate: which team owns it (by prefix) or whether it is shared, how many uses and automations depend on it, and the suggestion:
+   - **reuse** as it is, when it is shared or your team's and nothing of another team depends on it;
+   - **create a generic one**, when it belongs to another team or another team's automations depend on it: don't touch theirs, create a shared one and offer it to them;
+   - **create new**, when nothing is close.
+   Renaming what exists is never suggested: in a big org it breaks reports, integrations and other teams' code.
+4. **Limits:** if the new fields bring the object close to a limit, it says so (see [`limits`](./limits.en.md)).
+
+Without the `alvos` block, it says the task is not in the standard and uses the words of the text, as before. The result is saved in the task's folder (`.reldor/work/tasks/<id>/refine.json`, see [`task`](./task.en.md)).
+
+The [task-refine](./advisors/task-refine.en.md) advisor does the whole path: finds the task and the spec, puts the text in the standard, runs refine and access, and writes the task (or completes the existing spec) where you chose.
 
 ## When to reach for it
 

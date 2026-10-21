@@ -8,7 +8,22 @@ O `refine` recebe a ideia de uma task em palavras simples ("bloquear o fechament
 
 Só a partir desses fatos, ele acrescenta **pontos de atenção** (o objeto já tem trigger, então a lógica entra no handler), **perguntas em aberto** (quais record types? e os registros que já existem? qual o volume?) e um **sinal de tamanho** (pequeno, médio ou grande, pelo número de peças envolvidas; não é estimativa de horas).
 
-O conselheiro [task-refine](./advisors/task-refine.md) transforma isso na task escrita.
+### Em etapas, sem ruído
+
+Com a task **no padrão** (um bloco `alvos:` no topo do arquivo, com os objetos, campos, valores e o que a task pede para criar), o `refine` procura **só os alvos**, nunca cada palavra do texto:
+
+1. **Nomes:** cada alvo, do jeito que a task escreve ("Status da aprovação", "Conta"), vira o nome de API, com o grau de certeza: certo, provável, dúvida (dois candidatos quase iguais) ou não achei. Só a dúvida vira pergunta.
+2. **Fatos** de cada objeto e campo (os de sempre, acima), e para cada valor de picklist o comando do [`access`](./access.md).
+3. **Já existe? (`reuse`)**: para cada item a **criar** (campo, objeto, classe ou método, flow, LWC), o que o projeto já tem com o mesmo sentido, pelo rótulo, pelo nome e pela descrição, em português e inglês. Para cada candidato: de qual time é (pelo prefixo) ou se é compartilhado, quantos usos e quantas automações dependem dele, e a sugestão:
+   - **reusar**, como está, quando é compartilhado ou do seu time e nada de outro time depende dele;
+   - **criar genérico**, quando é de outro time ou automações de outro time dependem dele: não mexer no deles, criar um compartilhado e oferecer para eles;
+   - **criar novo**, quando nada é parecido.
+   Renomear o que existe nunca é sugerido: numa org grande, isso quebra relatórios, integrações e o código de outros times.
+4. **Limites:** se os campos novos deixam o objeto perto de um limite, ele avisa (veja o [`limits`](./limits.md)).
+
+Sem o bloco `alvos`, ele avisa que a task não está no padrão e usa as palavras do texto, como antes. O resultado fica salvo na pasta da tarefa (`.reldor/work/tasks/<número>/refine.json`, veja o [`task`](./task.md)).
+
+O conselheiro [task-refine](./advisors/task-refine.md) faz o caminho todo: acha a tarefa e a spec, deixa o texto no padrão, roda o refine e o access, e escreve a task (ou completa a spec que já existe) onde você escolheu.
 
 ## Quando usar
 

@@ -2,6 +2,23 @@
 
 # Histórico de versões
 
+## 0.23.0
+
+- **Menos comandos à vista:** a ajuda mostra os 14 do dia a dia e os 6 de configuração; as peças ficam em
+  `reldor help --all`.
+- **O Reldor nunca executa Git nem org.** Saiu o `execute: on`. `commit`, `merge`, `retrieve` e `test-radar --run`
+  só entregam os comandos. O resultado dos testes volta por `reldor test-radar --result <arquivo>`. Da org, só leitura.
+- `clean` virou `reldor commit --stash-org` (e `--undo`); `reldor clean` continua como nome curto. Depois do commit,
+  `reldor snapshot --after-commit` anda com a foto.
+- `reldor task` (novo): a tarefa pelo número da branch (formato aprendido do repositório), a spec em qualquer
+  ferramenta (Kiro, Spec Kit, OpenSpec, outra pasta), a fase, uma pasta por tarefa, aviso de troca de tarefa, a pasta
+  de documentação do time e para onde vai a task refinada (`output`). O `status` traz a tarefa.
+- Refinamento em etapas: com o bloco `alvos` no topo da task, o `refine` busca só os alvos (nomes viram API com grau
+  de certeza), diz o que já existe para **reusar** ou **criar genérico** (dono, usos, automações; nunca renomear) e os
+  limites. O conselheiro task-refine faz o caminho todo e absorveu o spec-review.
+- `reldor limits` (novo): campos, relacionamentos, master-detail, roll-ups e validation rules por objeto, valores de
+  picklist e fórmulas, pelo projeto; `--org` lê os limites da org (só leitura).
+
 ## 0.22.0
 
 - `reldor access` (novo): "já existe, mas está liberado?". Para um campo e um valor de picklist: o valor (ativo?

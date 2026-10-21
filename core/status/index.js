@@ -1,7 +1,7 @@
 'use strict';
 
 const gitApi = require('../git');
-const { loadConfig, executeOn, baseBranch } = require('../config');
+const { loadConfig, baseBranch } = require('../config');
 const { findSpecs, specForBranch } = require('../spec');
 const { loadModules } = require('../modules');
 
@@ -41,6 +41,9 @@ function nextStep(s) {
       return { id: 'done', text: 'A feature já está em todos os ambientes.' };
     }
   }
+  const t = s.task;
+  if (t && t.id && !t.spec) return { id: 'refine', target: t.id, text: `Tarefa ${t.id}: não achei a spec. Refinar a partir do card (reldor refine) ou dizer onde ela está (reldor task).` };
+  if (t && t.id && t.spec) return { id: 'develop', target: t.id, text: `Tarefa ${t.id}: seguir pela spec ${t.spec}.` };
   if (!s.spec.current && s.spec.available.length === 0) {
     return { id: 'spec', text: 'Começar pela task: refinar a ideia ou gerar a spec.' };
   }
@@ -60,15 +63,24 @@ function buildStatus(root, options = {}) {
   const status = {
     root,
     config: { exists, file },
-    // execute: off (the default) = Reldor never changes Git or the org; it checks and hands over the commands.
-    execute: executeOn(config) ? 'on' : 'off',
     // The person's own team (reldor me), from .reldor/local.yaml; null when not set.
     me: require('../config').readLocal(root).team ? require('../config').readLocal(root) : null,
-    git: { repo, branch, pending, actions: executeOn(config) ? 'on' : 'off' },
+    git: { repo, branch, pending },
     environments: repo ? environmentStatus(root, config.environments || [], branch, baseBranch(config)) : { configured: false, items: [] },
-    spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },
+    spec: { current: specForBranch(specs, branch, require('../task').taskIdFrom(branch, (config.task || {}).branch_pattern)), available: specs.slice(0, 5) },
     modules: modules.map(({ mod, facts }) => ({ name: mod.name, label: mod.label, facts })),
   };
+  // The task being worked on (from the branch, a spec, or the one named in the chat), and if it changed.
+  try {
+    const pendingCount = Object.values(pending).reduce((n, l) => n + l.length, 0);
+    const base = baseBranch(config);
+    const ahead = repo && base && base !== branch ? Number(gitApi.git(root, ['rev-list', '--count', `${base}..HEAD`]).stdout) || 0 : 0;
+    status.task = require('../task').currentTask(root, config, { branch, pending: pendingCount, ahead, remember: options.remember !== false });
+    const local = require('../config').readLocal(root);
+    if (status.task) status.task.output = local.output || null;
+  } catch {
+    status.task = null;
+  }
   // Who takes care of what (tools: in the config) and signs of team tools not configured yet.
   try {
     const { toolsReport } = require('../tools');

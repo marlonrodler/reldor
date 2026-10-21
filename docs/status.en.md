@@ -4,7 +4,7 @@
 
 ## What it does
 
-`status` tells you where you are and what to do next: current branch, files not committed yet, the Salesforce project facts, the spec linked to the branch, and **which environments already have your feature** (for example ✅ develop · ⬜ uat · ⬜ production). It ends with one suggested next step.
+`status` tells you where you are and what to do next: **the task** (from the id in the branch, with its spec and phase, and a note when you switch tasks; see [`task`](./task.en.md)), current branch, files not committed yet, the Salesforce project facts, the spec linked to the branch, and **which environments already have your feature** (for example ✅ develop · ⬜ uat · ⬜ production). It ends with one suggested next step.
 
 **Automatic warnings.** If your branch is not in the next environment yet, `status` runs the [promotion rehearsal](./promote.en.md) and the [collision radar](./collisions.en.md) by itself and shows **only the problems**, for example:
 
