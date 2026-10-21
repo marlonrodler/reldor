@@ -9,7 +9,7 @@ const { writeProfile } = require('../profile');
 const { detectModules } = require('../modules');
 const { findSpecs } = require('../spec');
 const { logAction } = require('../log');
-const { title, print } = require('../report');
+const { title, print, printJson } = require('../report');
 
 const GITIGNORE_LINES = ['.reldor/cache/', '.reldor/work/', '.reldor/log/'];
 
@@ -68,6 +68,10 @@ async function initCommand(root, flags) {
   const out = [title('Reldor · configuração')];
   const existing = loadConfig(root);
   if (existing.exists && !flags.force) {
+    if (flags.json) {
+      printJson({ configured: true, created: false, config: path.relative(root, existing.file), next: 'reldor profile (atualiza o profile.md) ou reldor init --force (refaz tudo)' });
+      return 0;
+    }
     print([...out, '✅ O Reldor já está configurado neste projeto.', `• Arquivo: ${path.relative(root, existing.file)}`, '• Para atualizar o profile.md com o que está no projeto hoje: reldor profile', '• Para refazer tudo: reldor init --force']);
     return 0;
   }
@@ -115,6 +119,10 @@ async function initCommand(root, flags) {
   else out.push('• Ambientes: nenhum ainda. Só fazem falta para ver onde a sua branch já está e para o ensaio de promoção (reldor env set).');
   out.push('• Execução desligada: o Reldor confere e monta os comandos de Git e de org; quem roda é você.');
   const found = require('../tools').toolsReport(root, config).suggestions;
+  if (flags.json) {
+    printJson({ configured: true, created: true, config: path.relative(root, file), profile: path.relative(root, profile), detected: { salesforce: Boolean(sf), specs: specs.length }, reference_org: referenceOrg, environments, execute, gitignore: ignored, tools: found, next: found.length ? 'reldor tools' : 'reldor status' });
+    return 0;
+  }
   if (found.length) {
     out.push('', `💡 Encontrei sinais de ferramentas do time que já fazem parte do que o Reldor faz (${found.length}):`);
     for (const f of found.slice(0, 6)) out.push(`   • ${f.capability}: ${f.owner}`);

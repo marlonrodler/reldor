@@ -2,6 +2,12 @@
 
 # Histórico de versões
 
+## 0.20.1
+
+- `reldor init --json` devolve JSON (antes saía texto, e a IA não conseguia ler o arquivo do `--out`).
+- Skill e power: quando o terminal da IDE mistura ou repete o comando e nem o `--out` aparece, a IA para de tentar e pede
+  para a pessoa rodar e colar o resultado (e confere a versão instalada).
+
 ## 0.20.0
 
 - **Execução desligada** (`execute: off`, o padrão): o Reldor não roda nada no Git nem na org. `commit`, `clean`, `merge`,
