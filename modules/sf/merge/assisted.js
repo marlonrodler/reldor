@@ -37,8 +37,9 @@ function mergeInProgress(root) {
  * decide (both sides changed the same lines) is left with markers and returned for the AI or a person.
  * Nothing is committed.
  */
-function startMerge(root, branch, { environments = [] } = {}) {
-  if (mergeInProgress(root)) throw new Error('Já existe um merge em andamento. Use --check, --continue ou --abort.');
+/** Checks before a merge: not on an environment branch, nothing pending, the branch exists. Returns the ref. */
+function preflight(root, branch, { environments = [] } = {}) {
+  if (mergeInProgress(root)) throw new Error('Já existe um merge em andamento. Use --resolve, --check, --continue ou --abort.');
   const current = gitApi.currentBranch(root);
   if (environments.some((e) => e.branch === current)) {
     throw new Error(`Você está na branch do ambiente (${current}). Crie a branch de merge a partir dela e rode de novo lá.`);
@@ -47,15 +48,18 @@ function startMerge(root, branch, { environments = [] } = {}) {
   if (pending) throw new Error('Há mudanças não commitadas nesta branch. Commite ou guarde (git stash) antes do merge.');
   const ref = gitApi.resolveBranch(root, branch) || branch;
   if (!git(root, ['rev-parse', '-q', '--verify', `${ref}^{commit}`]).ok) throw new Error(`Branch ${branch} não encontrada.`);
+  return { ref, current };
+}
 
-  const m = git(root, ['merge', '--no-ff', '--no-commit', ref], { env: { GIT_MERGE_AUTOEDIT: 'no' }, timeout: 300000 });
-  if (!mergeInProgress(root)) {
-    if (/Already up to date|Já está atualizado/i.test(m.stdout + m.stderr)) return { branch, target: current, upToDate: true, auto: [], resolved: [], hard: [] };
-    throw new Error(`O git merge falhou: ${m.stderr || m.stdout}`);
-  }
-
+/**
+ * Resolves the conflicts of a merge in progress with the rule "keep the target, apply only your change", writing the
+ * files. With `stage`, the resolved files are also marked as resolved in Git (git add); without it, they are listed
+ * for the person to add. Returns { auto, resolved, hard }.
+ */
+function resolveConflicts(root, { stage = true } = {}) {
+  if (!mergeInProgress(root)) throw new Error('Não há merge em andamento. Comece com git merge --no-ff --no-commit <sua-branch>.');
   const conflicted = [...new Set(lines(git(root, ['diff', '--name-only', '--diff-filter=U'])))];
-  const report = { branch, target: current, upToDate: false, auto: [], resolved: [], hard: [] };
+  const report = { auto: [], resolved: [], hard: [] };
   for (const file of conflicted) {
     const base = show(root, `:1:${file}`);
     const target = show(root, `:2:${file}`);
@@ -81,14 +85,13 @@ function startMerge(root, branch, { environments = [] } = {}) {
         }
       }
       if (!out) {
-        git(root, ['checkout', '--merge', '--', file]);
         report.hard.push({ file, whole: true, why: 'juntar linha a linha deixaria as tags quebradas; resolva olhando os blocos inteiros' });
         continue;
       }
     }
     fs.writeFileSync(path.join(root, file), out.text);
     if (!out.conflicts.length) {
-      git(root, ['add', '--', file]);
+      if (stage) git(root, ['add', '--', file]);
       report.resolved.push({ file, how: out.how });
     } else {
       report.hard.push({ file, conflicts: out.conflicts });
@@ -96,6 +99,17 @@ function startMerge(root, branch, { environments = [] } = {}) {
   }
   report.auto = lines(git(root, ['diff', '--cached', '--name-only'])).filter((f) => !conflicted.includes(f));
   return report;
+}
+
+/** Runs the merge without committing and resolves what Git stops on (execution on). */
+function startMerge(root, branch, { environments = [] } = {}) {
+  const { ref, current } = preflight(root, branch, { environments });
+  const m = git(root, ['merge', '--no-ff', '--no-commit', ref], { env: { GIT_MERGE_AUTOEDIT: 'no' }, timeout: 300000 });
+  if (!mergeInProgress(root)) {
+    if (/Already up to date|Já está atualizado/i.test(m.stdout + m.stderr)) return { branch, target: current, upToDate: true, auto: [], resolved: [], hard: [] };
+    throw new Error(`O git merge falhou: ${m.stderr || m.stdout}`);
+  }
+  return { branch, target: current, upToDate: false, ...resolveConflicts(root, { stage: true }) };
 }
 
 /** Count of each meaningful line (trimmed, not blank). */
@@ -211,4 +225,4 @@ function abortMerge(root) {
   return git(root, ['merge', '--abort']).ok;
 }
 
-module.exports = { startMerge, verifyMerge, continueMerge, abortMerge, mergeInProgress };
+module.exports = { preflight, resolveConflicts, startMerge, verifyMerge, continueMerge, abortMerge, mergeInProgress };

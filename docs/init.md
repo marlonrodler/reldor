@@ -4,26 +4,44 @@
 
 ## O que faz
 
-O `init` configura o Reldor num projeto de uma vez. Ele descobre sozinho o que consegue (o projeto Salesforce, o `sf` CLI, a org padrão, o fflib, as specs e as branches) e pergunta só quatro coisas: as branches dos ambientes na ordem de promoção, a org de referência, se o time segue o SLDS e se vocês já usam uma ferramenta que cria branch, commita e abre PR. Ele grava `.reldor/reldor.config.yaml` e `.reldor/profile.md`, e coloca as pastas locais do Reldor no `.gitignore`.
+O `init` configura o Reldor num projeto de uma vez, **sem perguntar nada**. Ele descobre o que consegue (o projeto Salesforce, o `sf` CLI, a org padrão do `sf`, as specs) e grava só isso:
 
-O último ambiente é produção e fica protegido: o Reldor nunca faz deploy, e os testes do `test-radar --run` recusam rodar ali (a não ser com `--allow-production`). Depois de gravar, ele procura sinais de ferramentas do time que já fazem parte do trabalho dele e sugere o [`tools`](./tools.md).
+- `.reldor/reldor.config.yaml`: os módulos, a org padrão do `sf` como org de referência (se houver uma), o design system (`slds`, a não ser que você diga outro) e `execute: off`;
+- `.reldor/profile.md`: o perfil do projeto (veja abaixo);
+- as pastas locais do Reldor (cache, log, work) no `.gitignore`.
+
+Branches dos ambientes e org **não são perguntadas no início**: só alguns comandos precisam delas, e esses pedem na hora (por exemplo, o `retrieve` sem org diz "Qual org? Rode de novo com --org <alias>"). Para deixar anotado, use o [`env`](./env.md). Depois de gravar, ele procura sinais de ferramentas do time que já fazem parte do trabalho dele e sugere o [`tools`](./tools.md).
+
+Com `execute: off`, o Reldor não roda nada no Git nem na org: ele confere e mostra os comandos prontos para você rodar.
+
+### O profile.md
+
+É o que a IA e o time leem sobre o projeto. Tem duas partes:
+
+- **a parte automática**, entre as marcações `reldor:auto`, lida do índice do projeto (todos os arquivos): pastas de pacote, versão da API, quantas classes (e de teste), triggers, flows, LWCs e objetos, se usa fflib (quantos services, selectors e domains), trigger handlers e a base mais usada, como as classes de teste terminam, prefixos de nome mais comuns e quantas classes declaram sharing;
+- **"Padrões da equipe"**, com tópicos para o time preencher (prefixos por time, classes compartilhadas, quando usar Flow ou Apex, regras de nome). O Reldor nunca muda essa parte.
+
+O `reldor profile` relê o projeto e reescreve só a parte automática. Para preencher a parte do time, peça à IA: "me ajude a preencher o profile do Reldor". Ela mostra o que o Reldor encontrou e pergunta o resto.
 
 ## Quando usar
 
-Diga "quero usar o Reldor" num projeto novo e a IA roda por você, fazendo as perguntas no chat (ambientes, org de referência, design system e se vocês já têm uma ferramenta que cria branch, commita e abre PR: se sim, as ações de Git do Reldor ficam desligadas). No terminal: `reldor init`, ou `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds --git-actions off`.
+Diga "quero usar o Reldor" num projeto novo e a IA roda por você. No terminal: `reldor init`. Todas as opções são opcionais: `--envs "pre-uat:develop/x, uat:rc/uat, producao:master"`, `--org <alias>`, `--design-system <nome>`, `--execute on`.
 
 ## Está funcionando se
 
-- Um dev novo fica pronto em poucos minutos.
-- O `reldor status` mostra os ambientes e a spec certos logo depois.
+- Um dev novo fica pronto em um minuto, sem responder nada.
+- O `profile.md` mostra os números reais do projeto (classes, triggers, fflib).
 
 ## Perguntas comuns
 
 **Eu commito a `.reldor/`?**
 Commite `reldor.config.yaml` e `profile.md`: são do time todo. As pastas de cache, trabalho e log ficam fora do Git.
 
-**Como mudo as respostas?**
-Edite o YAML ou rode `reldor init --force`.
+**O profile.md ficou desatualizado.**
+Rode `reldor profile`. A parte do time fica como está. Um `profile.md` antigo, de antes das marcações, mantém tudo a partir de "## Padrões da equipe".
+
+**Como mudo a configuração?**
+Ambientes e org pelo [`env`](./env.md); o resto editando o YAML ou com `reldor init --force`.
 
 ## Onde se encaixa
 

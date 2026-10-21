@@ -59,6 +59,12 @@ test('radar: a class change points to the tests that use it, and checks its quer
 test('radar --run validates local changes without saving, and reports failures and coverage', () => {
   const dir = featureRepo();
   const log = path.join(dir, 'sf-args.json');
+  // Execution off (the default): the sf command is handed over and nothing runs in the org.
+  const handed = JSON.parse(reldor(dir, ['test-radar', '--run', '--org', 'uat-sandbox', '--json'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_SF_LOG: log }).stdout);
+  assert.ok(!fs.existsSync(log), 'sf was not called');
+  assert.match(handed.commands[0], /^sf project deploy start --dry-run --target-org uat-sandbox --wait 60 --test-level RunSpecifiedTests .*--tests \w+Test/);
+  fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'execute: on\n');
   const r = reldor(dir, ['test-radar', '--run', '--yes', '--org', 'uat-sandbox', '--json'], { RELDOR_SF_BIN: FAKE_SF, RELDOR_SF_LOG: log });
   const args = JSON.parse(fs.readFileSync(log, 'utf8'));
   assert.ok(args.includes('--dry-run'), 'never saves to the org');

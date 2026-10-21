@@ -67,10 +67,12 @@ descrição. Nunca inventa.
 - **Merge de metadado item a item:** um merge driver para profiles, permission sets, labels e afins, instalado em
   `.git/info/attributes` (só na sua máquina, sem alterar o repositório).
 - **Merge assistido:** faz o `git merge` na branch de merge, resolve conflitos mantendo o destino e aplicando só a sua
-  mudança, e confere se entrou só o seu. Só roda quando você pede; o commit de merge, só com confirmação.
+  mudança, e confere se entrou só o seu. O `git merge` e o commit de merge, você roda; o Reldor resolve os arquivos com confirmação.
 - **Ensaio de promoção:** simula o merge sem mudar nada; checa dependências e a ordem dos commits.
 - A cadeia de ambientes vem da configuração (ex.: develop → uat → producao), sem nada fixo no código.
-- **Ações de Git desligadas por padrão:** o Reldor não cria branch, não commita e não abre PR por conta própria.
+- **Execução desligada por padrão** (`execute: off`): o Reldor não commita, não faz merge nem checkout e não roda nada na org
+  (retrieve, testes, deploy). Ele confere e entrega os comandos (`handover` em `core/report`). Mudanças só nos arquivos pedem
+  confirmação (`core/cli/confirm.js`); sem terminal e sem `--yes`, a resposta é não.
 
 ## Pastas do repositório
 
@@ -80,13 +82,14 @@ core/
 ├─ config/        lê a configuração, valores padrão
 ├─ status/        descobre a etapa atual (usado pela IA)
 ├─ doctor/        confere a instalação e a pasta do terminal
+├─ profile/       o profile.md: a parte lida do projeto e a parte do time
 ├─ tools/         ferramentas do time: quem cuida de cada capacidade
 ├─ runs/          registro de execuções (a mesma checagem não roda duas vezes)
 ├─ spec/          encontra specs
 ├─ modules/       carrega os módulos (contrato abaixo)
 ├─ util/          execução de comandos (compatível com Windows)
 ├─ git/           snapshot, commit limpo, ordem dos commits
-├─ report/        saída no terminal
+├─ report/        saída no terminal e os comandos entregues à pessoa
 └─ log/           histórico de ações
 modules/sf/
 ├─ org/           confirmar a org, retrieve, rodar testes, proteção de produção
@@ -121,7 +124,7 @@ entram como novas pastas em `advisors/`.
 ```
 .reldor/
 ├─ reldor.config.yaml   ✅ Git (ambientes, ferramentas do time, regras)
-├─ profile.md           ✅ Git (padrões do projeto, escrito pelo time)
+├─ profile.md           ✅ Git (lido do projeto pelo reldor profile + padrões escritos pelo time)
 ├─ cache/               ❌ fora (índice, registro de execuções)
 ├─ work/                ❌ fora
 └─ log/                 ❌ fora

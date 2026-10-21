@@ -252,6 +252,11 @@ function configuredOrg(root, home = require('node:os').homedir()) {
 
 const { CAPABILITIES: capabilities, detectTools } = require('./tools');
 
+/** The automatic part of profile.md, read from the project index (see ./profile.js). */
+function profileAuto(root) {
+  return require('./profile').profileAuto(root);
+}
+
 module.exports = {
   sfCli, findSf,
-  capabilities, detectTools, alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, doctorChecks, configuredOrg, readProject };
+  capabilities, detectTools, alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, profileAuto, doctorChecks, configuredOrg, readProject };

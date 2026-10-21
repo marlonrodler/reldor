@@ -20,7 +20,6 @@ const { runTests } = require('../../modules/sf/org/sf');
 const { resolveOrg } = require('../../modules/sf/org/guard');
 const path = require('node:path');
 const fs = require('node:fs');
-const readline = require('node:readline/promises');
 
 /** Lines that say which of these capabilities another tool of the team takes care of (tools: in the config). */
 function toolNotes(config, ids) {
@@ -151,15 +150,7 @@ function sourcePathsFor(root, changes) {
   return [...out];
 }
 
-async function confirm(question) {
-  if (!process.stdin.isTTY) return true;
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    return /^s/i.test((await rl.question(`${question} (s/n): `)).trim());
-  } finally {
-    rl.close();
-  }
-}
+const { confirm } = require('./confirm');
 
 function renderRun(result, target, coverageTarget, changedClasses) {
   const out = [''];
@@ -234,8 +225,19 @@ async function testRadarCommand(root, flags) {
     process.stderr.write(`🛡️ ${target.org} é produção. O radar não roda lá por padrão.\n`);
     return 1;
   }
+  // Execution off (the default): the tests run in the org, so the person runs the command.
+  if (!require('../config').executeOn(config)) {
+    const { handover, cmdLine } = require('../report');
+    const { testArgs } = require('../../modules/sf/org/sf');
+    const sourcePaths = flags['org-code'] ? [] : sourcePathsFor(root, changes);
+    const cmd = cmdLine(['sf', ...testArgs({ org: target.org, tests: radar.tests.map((t) => t.name), sourcePaths, wait: Number(flags.wait) || 60, json: false })]);
+    const why = sourcePaths.length ? 'validação: sobe os seus arquivos sem salvar e roda só esses testes' : 'roda os testes contra o que já está na org';
+    if (flags.json) printJson({ ...result, org: target.org, commands: [cmd] });
+    else print([...out, ...handover([{ cmd, why }]), '   Depois, cole o resultado aqui (ou para a IA) para ver falhas e cobertura.']);
+    return 0;
+  }
   if (!flags.json) print(out);
-  const ok = flags.yes || (await confirm(`\n🛡️ Rodar ${radar.tests.length} teste(s) na org ${target.org}${target.environment ? ` (${target.environment})` : ''}?`));
+  const ok = await confirm(`\n🛡️ Rodar ${radar.tests.length} teste(s) na org ${target.org}${target.environment ? ` (${target.environment})` : ''}?`, flags);
   if (!ok) {
     print('Cancelado. Nada foi executado.');
     return 0;
@@ -279,7 +281,7 @@ function renderXml(results, check) {
   return out;
 }
 
-function xmlCommand(root, flags, args) {
+async function xmlCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
   const tools = require('../tools');
   const { config } = loadConfig(root);
@@ -292,6 +294,18 @@ function xmlCommand(root, flags, args) {
   const owned = tools.runs(config, 'xml-duplicates') && tools.runs(config, 'xml-order');
   const check = Boolean(flags.check) || (!owned && !flags.force);
   const notes = ['xml-duplicates', 'xml-order'].map((id) => tools.ownerNote(config, id)).filter(Boolean);
+  // Organizing changes files in the folder: show what would change and ask first.
+  if (!check) {
+    const preview = xmlOrganizer.organizeFiles(root, files, { check: true });
+    const touched = preview.filter((r) => r.changed);
+    if (touched.length) {
+      if (!flags.json) print([...renderXml(preview, true).slice(0, -2), '']);
+      if (!(await confirm(`🛡️ Organizar ${touched.length} arquivo(s) (ordenar e tirar duplicados idênticos)?`, flags))) {
+        print('Cancelado. Nada foi alterado.');
+        return 0;
+      }
+    }
+  }
   let results = xmlOrganizer.organizeFiles(root, files, { check });
   // A part another tool owns and the Reldor does not even check (skip) does not count.
   if (check) {
@@ -383,21 +397,25 @@ async function retrieveCommand(root, flags) {
     specific ? '• Retrieve específico: o que vier conta como SEU no commit.' : '• Depois do retrieve, o Reldor tira uma foto: o que vier da org fica fora do seu commit.',
   ];
   if (pendingCount) out.push('', `⚠️ Você tem ${pendingCount} arquivo(s) não commitado(s). O retrieve pode sobrescrever essas mudanças.`);
-  print(out);
-  const rl = flags.yes || !process.stdin.isTTY ? null : readline.createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    if (rl && !/^s/i.test((await rl.question(`\n🛡️ Fazer o retrieve da org ${target.org}? (s/n): `)).trim())) {
-      print('Cancelado. Nada foi alterado.');
-      return 0;
-    }
-  } finally {
-    if (rl) rl.close();
+  const sfArgs = ['project', 'retrieve', 'start', '--target-org', target.org];
+  const manyArgs = (flag, name) => (typeof flags[flag] === 'string' ? flags[flag].split(',').map((x) => x.trim()).filter(Boolean).flatMap((v) => [name, v]) : []);
+  sfArgs.push(...manyArgs('metadata', '--metadata'), ...manyArgs('source-dir', '--source-dir'));
+  if (typeof flags.manifest === 'string') sfArgs.push('--manifest', flags.manifest);
+  // Execution off (the default): the retrieve changes the folder with what is in the org, so the person runs it.
+  if (!require('../config').executeOn(config)) {
+    const { handover, cmdLine } = require('../report');
+    const steps = [{ cmd: cmdLine(['sf', ...sfArgs]), why: 'traz da org' }];
+    if (!specific || flags['as-org']) steps.push({ cmd: 'reldor snapshot', why: 'logo depois: o que veio conta como da org, fora do seu commit' });
+    if (flags.json) printJson({ org: target.org, production: target.production, commands: steps.map((s) => s.cmd) });
+    else print([...out, ...handover(steps)]);
+    return 0;
   }
-  const args = ['project', 'retrieve', 'start', '--json', '--target-org', target.org];
-  const many = (flag, name) => (typeof flags[flag] === 'string' ? flags[flag].split(',').map((x) => x.trim()).filter(Boolean).flatMap((v) => [name, v]) : []);
-  args.push(...many('metadata', '--metadata'), ...many('source-dir', '--source-dir'));
-  if (typeof flags.manifest === 'string') args.push('--manifest', flags.manifest);
-  const res = runSf(args, { cwd: root, timeout: 30 * 60000 });
+  print(out);
+  if (!(await confirm(`\n🛡️ Fazer o retrieve da org ${target.org}?`, flags))) {
+    print('Cancelado. Nada foi alterado.');
+    return 0;
+  }
+  const res = runSf([...sfArgs, '--json'], { cwd: root, timeout: 30 * 60000 });
   const { parseJson } = require('../../modules/sf/org/sf');
   const json = parseJson(res.stdout);
   if (!json || json.status !== 0) {

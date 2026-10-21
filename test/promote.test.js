@@ -89,7 +89,7 @@ test('reldor promote: profile conflict is resolvable, order, missing field, and 
   assert.equal(json(dir, ['promote', 'uat']).notInPrevious.length, 1);
 
   // With the merge driver, a plain `git merge` joins the permission set by itself.
-  reldor(dir, ['merge', 'install']);
+  reldor(dir, ['merge', 'install', '--yes']);
   git(dir, ['checkout', '-qb', 'merge/minha-develop', 'develop']);
   const merged = git(dir, ['merge', '--no-edit', 'feature/minha']);
   assert.equal(merged.status, 0, merged.stdout + merged.stderr);
@@ -163,7 +163,7 @@ test('reldor rollback: what goes back, what must be deleted, and what still uses
 
 test('reldor status warns, by itself, what would go wrong in the next environment', () => {
   const dir = scenario();
-  reldor(dir, ['merge', 'install']);
+  reldor(dir, ['merge', 'install', '--yes']);
   git(dir, ['checkout', '-qb', 'merge/minha-develop', 'develop']);
   git(dir, ['merge', '-q', '--no-edit', 'feature/minha']);
   git(dir, ['checkout', '-q', 'develop']);

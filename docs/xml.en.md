@@ -12,7 +12,7 @@ Sorted files also make merges between environments calmer: fewer lines move, so 
 
 ## When to reach for it
 
-Before a commit (the AI runs it on the files you changed), or once with `reldor xml --all` to clean a project. `reldor xml --check` only reports, changing nothing. The pre-commit guard checks duplicates (order does not block a commit).
+Before a commit (the AI runs it on the files you changed), or once with `reldor xml --all` to clean a project. Before rewriting, it lists the files and asks for confirmation (for the AI, `--yes` only after you say yes). `reldor xml --check` only reports, changing nothing. The pre-commit guard checks duplicates (order does not block a commit).
 
 ## It's working if
 

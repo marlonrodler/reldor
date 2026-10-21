@@ -48,4 +48,28 @@ function finishOut() {
   process.stdout.write(`📄 Resultado salvo em ${outFile} (${Math.max(1, Math.round(size / 1024))} KB)\n`);
 }
 
-module.exports = { ICON, line, title, print, printJson, setOut, finishOut };
+/**
+ * The hand-over: what the person runs, in order. Reldor validated; the person executes.
+ * `steps` are strings (one command each) or { cmd, why } objects.
+ */
+function handover(steps, { intro = '▶️  Para fazer, rode você (o Reldor não executa: ele só conferiu e montou os comandos):' } = {}) {
+  const out = ['', intro];
+  steps.forEach((s, i) => {
+    const step = typeof s === 'string' ? { cmd: s } : s;
+    out.push(`   ${i + 1}. ${step.cmd}${step.why ? `   # ${step.why}` : ''}`);
+  });
+  return out;
+}
+
+/** One argument for a command line the person will paste (quoted only when it needs to be). */
+function arg(value) {
+  const v = String(value);
+  return /^[\w@%+=:,./\\-]+$/.test(v) ? v : `"${v.replace(/"/g, '\\"')}"`;
+}
+
+/** A command line from its parts. */
+function cmdLine(parts) {
+  return parts.map(arg).join(' ');
+}
+
+module.exports = { ICON, line, title, print, printJson, setOut, finishOut, handover, arg, cmdLine };

@@ -2,10 +2,10 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const readline = require('node:readline/promises');
 
 const gitApi = require('../git');
-const { DEFAULTS, paths, loadConfig, saveConfig } = require('../config');
+const { DEFAULTS, loadConfig, saveConfig } = require('../config');
+const { writeProfile } = require('../profile');
 const { detectModules } = require('../modules');
 const { findSpecs } = require('../spec');
 const { logAction } = require('../log');
@@ -60,37 +60,15 @@ function ensureGitignore(root) {
   return true;
 }
 
-function writeProfile(root, { modules, designSystem, specs }) {
-  const lines = [
-    '# Perfil do projeto',
-    '',
-    'Gerado pelo `reldor init`. Revise e ajuste: este arquivo é versionado e vale para o time todo.',
-    '',
-    `- Design system de telas: ${designSystem}`,
-    `- Specs encontradas: ${specs.length ? specs.map((s) => s.path).join(', ') : 'nenhuma'}`,
-    '',
-  ];
-  for (const { mod, facts } of modules) lines.push(...mod.profileLines(facts), '');
-  lines.push(
-    '## Padrões da equipe',
-    '',
-    '<!-- Descreva aqui: prefixos por time, classes compartilhadas, critérios Flow x Apex, regras de nomes. -->',
-    '',
-  );
-  fs.writeFileSync(paths(root).profile, lines.join('\n'), 'utf8');
-}
-
-async function ask(rl, question, fallback) {
-  if (!rl) return fallback;
-  const answer = (await rl.question(`${question}${fallback ? ` [${fallback}]` : ''}: `)).trim();
-  return answer || fallback;
-}
-
+/**
+ * reldor init: detects the project and writes the config and profile.md. It asks nothing: environments and the org are
+ * only needed by some commands, and those ask when the time comes (or take --envs / --org here).
+ */
 async function initCommand(root, flags) {
   const out = [title('Reldor · configuração')];
   const existing = loadConfig(root);
   if (existing.exists && !flags.force) {
-    print([...out, '✅ O Reldor já está configurado neste projeto.', `• Arquivo: ${path.relative(root, existing.file)}`, '• Para refazer, rode: reldor init --force']);
+    print([...out, '✅ O Reldor já está configurado neste projeto.', `• Arquivo: ${path.relative(root, existing.file)}`, '• Para atualizar o profile.md com o que está no projeto hoje: reldor profile', '• Para refazer tudo: reldor init --force']);
     return 0;
   }
 
@@ -100,80 +78,51 @@ async function initCommand(root, flags) {
   const modules = detectModules(root).map((mod) => ({ mod, facts: mod.detect(root, { skipCli: Boolean(flags['no-cli']) }) }));
   const sf = modules.find((m) => m.mod.name === 'sf');
   const specs = findSpecs(root, DEFAULTS);
-  const branches = repo ? gitApi.listBranches(root) : [];
+
+  const environments = flags.envs ? parseEnvs(flags.envs) : [];
+  const referenceOrg = (typeof flags.org === 'string' && flags.org) || (sf && sf.facts.defaultOrg) || null;
+  const designSystem = typeof flags['design-system'] === 'string' ? flags['design-system'] : 'slds';
+  // Execution stays off unless the person asks: the Reldor checks and builds the commands; people run them.
+  const executeFlag = flags.execute ?? flags['git-actions'];
+  const execute = /^(on|sim|s|true)$/i.test(String(executeFlag ?? 'off')) ? 'on' : 'off';
+
+  const config = {
+    ...(flags.language ? { language: flags.language } : {}),
+    modules: modules.length ? modules.map((m) => m.mod.name) : DEFAULTS.modules,
+    ...(environments.length ? { environments } : {}),
+    ...(referenceOrg ? { reference_org: referenceOrg } : {}),
+    advisors: { design_system: designSystem },
+    execute,
+  };
+  const file = saveConfig(root, config);
+  const { file: profile } = writeProfile(root, { modules, designSystem, specs });
+  const ignored = repo ? ensureGitignore(root) : false;
+  logAction(root, 'init', { summary: `ambientes: ${environments.map((e) => e.name).join(' → ') || 'nenhum'}; org: ${referenceOrg || 'nenhuma'}` });
 
   out.push('Detectei:');
   out.push(sf ? '• Projeto Salesforce (sfdx-project.json)' : '• Nenhum projeto Salesforce (sfdx-project.json ausente)');
   if (sf) out.push(...sf.mod.statusLines(sf.facts));
   out.push(`• Specs: ${specs.length ? specs.length + ' encontrada(s)' : 'nenhuma'}`);
-  print(out);
-
-  const interactive = !flags.yes && process.stdin.isTTY;
-  const rl = interactive ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null;
-
-  try {
-    const suggested = suggestEnvs(branches);
-    const envInput = flags.envs || (await ask(rl, '\nBranches dos ambientes, em ordem de promoção (separadas por vírgula)', suggested.join(',')));
-    const environments = parseEnvs(envInput);
-
-    const orgDefault = (sf && sf.facts.defaultOrg) || null;
-    const referenceOrg = flags.org || (await ask(rl, 'Org de referência para o índice (alias do sf CLI)', orgDefault || '')) || null;
-
-    let designSystem = flags['design-system'];
-    if (!designSystem) {
-      const answer = await ask(rl, 'Seguimos com o SLDS, o padrão recomendado pela Salesforce? (s/n)', 's');
-      designSystem = /^n/i.test(answer) ? await ask(rl, 'Qual design system a equipe usa?', 'próprio') : 'slds';
-    }
-
-    let gitActions = flags['git-actions'];
-    if (!gitActions) {
-      const answer = await ask(rl, 'Vocês já usam uma ferramenta que cria branch, commita, faz merge e abre PR (ex.: o plugin de fluxo do time)? (s/n)', 's');
-      gitActions = /^n/i.test(answer) ? 'on' : 'off';
-    }
-    gitActions = /^(on|sim|s|true)$/i.test(String(gitActions)) ? 'on' : 'off';
-
-    const config = {
-      ...(flags.language ? { language: flags.language } : {}),
-      modules: modules.length ? modules.map((m) => m.mod.name) : DEFAULTS.modules,
-      environments,
-      reference_org: referenceOrg,
-      advisors: { design_system: designSystem },
-      git: { actions: gitActions },
-    };
-    const file = saveConfig(root, config);
-    writeProfile(root, { modules, designSystem, specs });
-    const ignored = repo ? ensureGitignore(root) : false;
-
-    logAction(root, 'init', {
-      summary: `ambientes: ${environments.map((e) => e.name).join(' → ') || 'nenhum'}; org: ${referenceOrg || 'nenhuma'}`,
-    });
-
-    const done = [
-      '',
-      '✅ Pronto. Criei:',
-      `• ${path.relative(root, file)} (configuração, versionada)`,
-      `• ${path.relative(root, paths(root).profile)} (perfil do projeto, versionado; revise com o time)`,
-    ];
-    if (ignored) done.push('• Linhas no .gitignore para os arquivos locais do Reldor');
-    if (environments.length) done.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}; ${environments[environments.length - 1].name} é produção e fica protegido (o test-radar --run recusa rodar ali)`);
-    else done.push('⚠️ Nenhum ambiente configurado. Rode de novo com --envs quando souber as branches.');
-    done.push(gitActions === 'on'
-      ? '• Ações de Git ligadas: o Reldor pode fazer o commit limpo, sempre pedindo confirmação'
-      : '• Ações de Git desligadas: o Reldor só confere e avisa; branch, commit, merge e PR ficam com a sua ferramenta');
-    const found = require('../tools').toolsReport(root, config).suggestions;
-    if (found.length) {
-      done.push('', `💡 Encontrei sinais de ferramentas do time que já fazem parte do que o Reldor faz (${found.length}):`);
-      for (const f of found.slice(0, 6)) done.push(`   • ${f.capability}: ${f.owner}`);
-      done.push('   Para o Reldor não repetir esse trabalho, confira e decida com: reldor tools');
-    }
-    done.push('', '💡 Proteção nos commits (inclusive os feitos pela sua ferramenta): reldor hook install');
-    done.push('💡 Conflito de profile resolvido item a item no git merge: reldor merge install');
-    done.push('', '➡️  Próximo passo: rode "reldor status" ou peça à sua IA: "quero usar o Reldor".');
-    print(done);
-    return 0;
-  } finally {
-    if (rl) rl.close();
+  out.push(
+    '',
+    '✅ Pronto. Criei:',
+    `• ${path.relative(root, file)}: a configuração (só o que foi detectado; vai no commit para o time usar a mesma)`,
+    `• ${path.relative(root, profile)}: o perfil do projeto, lido dos arquivos (classes, triggers, fflib, nomes); a parte "Padrões da equipe" é do time`,
+  );
+  if (ignored) out.push('• Linhas no .gitignore para os arquivos locais do Reldor (cache, log, work)');
+  out.push(referenceOrg ? `• Org de referência: ${referenceOrg} (a org padrão do sf CLI)` : '• Org: nenhuma ainda. Quando um comando precisar, ele pergunta (ou: reldor env --org <alias>).');
+  if (environments.length) out.push(`• Ambientes: ${environments.map((e) => `${e.name} (${e.branch})`).join(' → ')}`);
+  else out.push('• Ambientes: nenhum ainda. Só fazem falta para ver onde a sua branch já está e para o ensaio de promoção (reldor env set).');
+  out.push('• Execução desligada: o Reldor confere e monta os comandos de Git e de org; quem roda é você.');
+  const found = require('../tools').toolsReport(root, config).suggestions;
+  if (found.length) {
+    out.push('', `💡 Encontrei sinais de ferramentas do time que já fazem parte do que o Reldor faz (${found.length}):`);
+    for (const f of found.slice(0, 6)) out.push(`   • ${f.capability}: ${f.owner}`);
+    out.push('   Para o Reldor não repetir esse trabalho, confira e decida com: reldor tools');
   }
+  out.push('', '➡️  Próximo passo: rode "reldor status" ou peça à sua IA: "quero usar o Reldor".');
+  print(out);
+  return 0;
 }
 
-module.exports = { initCommand, parseEnvs, suggestEnvs, envName };
+module.exports = { initCommand, parseEnvs, suggestEnvs, envName, ensureGitignore };

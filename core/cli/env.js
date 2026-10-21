@@ -11,9 +11,10 @@ function show(root) {
   const envs = config.environments || [];
   const prod = productionEnv(config);
   const out = ['\n🛡️  Cadeia de ambientes (na ordem de promoção)', ''];
+  const refOrg = config.reference_org ? [`• Org de referência (retrieve, testes, deploy quando nenhuma é informada): ${config.reference_org}`] : [];
   if (!envs.length) {
-    out.push('Nenhum ambiente configurado.', '', 'Para configurar: reldor env set "pre-uat:develop/x, uat:rc/uat, producao:master"');
-    return { out, data: { environments: [] } };
+    out.push('Nenhum ambiente configurado. Só faz falta para conferir em quais ambientes a sua branch já está e para o ensaio de promoção.', ...refOrg, '', 'Para configurar: reldor env set "pre-uat:develop/x, uat:rc/uat, producao:master"');
+    return { out, data: { environments: [], reference_org: config.reference_org || null } };
   }
   envs.forEach((e, i) => {
     const ok = gitApi.isRepo(root) ? Boolean(gitApi.resolveBranch(root, e.branch)) : true;
@@ -24,8 +25,9 @@ function show(root) {
   out.push('', `• As branches de desenvolvimento nascem de: ${baseBranch(config)}`);
   out.push(`• Nome sugerido da branch de merge: ${mergeTpl} (ex.: ${branchName(mergeTpl, { feature: 'feature-123', env: envs[0].name })})`);
   out.push(`• Nome sugerido da branch de rollback: ${config.git?.rollback_branch || 'rollback/{id}'}`);
-  out.push('', 'Para mudar: reldor env set "<nome>:<branch>, ..."  ·  --base <branch>  ·  --merge-branch "<padrão>"  ·  --production <nome>');
-  return { out, data: { environments: envs, production: prod ? prod.name : null, base_branch: baseBranch(config), merge_branch: mergeTpl, rollback_branch: config.git?.rollback_branch || 'rollback/{id}' } };
+  out.push(...refOrg);
+  out.push('', 'Para mudar: reldor env set "<nome>:<branch>, ..."  ·  --org <alias>  ·  --org-for "<nome>:<alias>"  ·  --base <branch>  ·  --production <nome>');
+  return { out, data: { reference_org: config.reference_org || null, environments: envs, production: prod ? prod.name : null, base_branch: baseBranch(config), merge_branch: mergeTpl, rollback_branch: config.git?.rollback_branch || 'rollback/{id}' } };
 }
 
 /**
@@ -65,6 +67,21 @@ function envCommand(root, flags, args) {
         e.deploy = 'blocked';
       } else delete e.production;
     }
+    changed = true;
+  }
+  // --org <alias>: the org used when a command needs one and none is given. --org-for "uat:alias": an environment's org.
+  if (typeof flags.org === 'string') {
+    raw.reference_org = flags.org;
+    changed = true;
+  }
+  if (typeof flags['org-for'] === 'string') {
+    const [name, alias] = flags['org-for'].split(':').map((x) => x.trim());
+    const e = (raw.environments || []).find((x) => x.name === name);
+    if (!e || !alias) {
+      print(`⚠️ Use: reldor env --org-for "<ambiente>:<alias>" (o ambiente precisa estar na cadeia).`);
+      return 1;
+    }
+    e.org = alias;
     changed = true;
   }
   for (const [flag, key] of [['base', 'base_branch'], ['merge-branch', 'merge_branch'], ['rollback-branch', 'rollback_branch']]) {

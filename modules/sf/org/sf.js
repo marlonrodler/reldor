@@ -65,11 +65,20 @@ function fromApexRun(json) {
  *   so the tests see YOUR local changes;
  * - without them: a plain test run against what is already in the org.
  */
-function runTests(root, { org, tests, sourcePaths = [], wait = 60 }) {
-  const args = sourcePaths.length
-    ? ['project', 'deploy', 'start', '--dry-run', '--json', '--target-org', org, '--wait', String(wait), '--test-level', 'RunSpecifiedTests',
+/**
+ * The sf command that runs the tests without saving anything: a validation deploy (--dry-run) of the changed files
+ * with RunSpecifiedTests, or, without files, an Apex test run against what is already in the org.
+ */
+function testArgs({ org, tests, sourcePaths = [], wait = 60, json = true }) {
+  const out = json ? ['--json'] : [];
+  return sourcePaths.length
+    ? ['project', 'deploy', 'start', '--dry-run', ...out, '--target-org', org, '--wait', String(wait), '--test-level', 'RunSpecifiedTests',
       ...sourcePaths.flatMap((p) => ['--source-dir', p]), ...tests.flatMap((t) => ['--tests', t])]
-    : ['apex', 'run', 'test', '--json', '--target-org', org, '--wait', String(wait), '--code-coverage', '--result-format', 'json', '--class-names', tests.join(',')];
+    : ['apex', 'run', 'test', ...out, '--target-org', org, '--wait', String(wait), '--code-coverage', '--result-format', json ? 'json' : 'human', '--class-names', tests.join(',')];
+}
+
+function runTests(root, { org, tests, sourcePaths = [], wait = 60 }) {
+  const args = testArgs({ org, tests, sourcePaths, wait });
   const res = runSf(args, { cwd: root, timeout: (wait + 5) * 60000 });
   const json = parseJson(res.stdout);
   if (!json) return { ok: false, mode: sourcePaths.length ? 'validate' : 'run', error: res.stderr || res.stdout || 'sem resposta do sf CLI' };
@@ -77,4 +86,4 @@ function runTests(root, { org, tests, sourcePaths = [], wait = 60 }) {
   return { ok: true, mode: sourcePaths.length ? 'validate' : 'run', ...(sourcePaths.length ? fromDeploy(json) : fromApexRun(json)) };
 }
 
-module.exports = { runSf, runTests, fromDeploy, fromApexRun, parseJson };
+module.exports = { testArgs, runSf, runTests, fromDeploy, fromApexRun, parseJson };

@@ -58,7 +58,7 @@ Save `run` for that capability (`reldor tools set <capability> run`). That recor
 In `.reldor/cache/runs.json`, outside Git. Deleting it only makes the checks run again.
 
 **What about commits, merges and PRs?**
-Those have their own switch: `git.actions` (off by default). `tools` only shows how it is set.
+Those have their own switch: `execute` (off by default: Reldor only builds the Git and org commands). `tools` only shows how it is set.
 
 ## Where it fits
 

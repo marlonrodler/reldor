@@ -122,6 +122,40 @@ function stageCleanCommit(root, snapshot, plan) {
   return { staged, failed };
 }
 
+/**
+ * Only your lines as one patch file, for the person to apply with `git apply --cached`: the same result as
+ * stageCleanCommit, without Reldor touching the Git index. Each file is checked on a throwaway index first, so the
+ * files whose lines touch the org's lines are reported before anything is run. Returns { file, staged, failed }.
+ */
+function writeCleanPatch(root, snapshot, plan, file) {
+  const index = path.join(gitDir(root), 'reldor-check-index');
+  const env = { GIT_INDEX_FILE: index };
+  const staged = [];
+  const failed = [];
+  let text = '';
+  try {
+    git(root, ['read-tree', plan.head], { env });
+    const add = (from, files) => {
+      for (const f of files) {
+        const patch = git(root, ['diff', '--binary', '--full-index', '--no-renames', from, plan.now, '--', f], { raw: true });
+        if (!patch.stdout) continue;
+        const res = git(root, ['apply', '--cached', '--3way', '--whitespace=nowarn', '-'], { input: patch.stdout, env });
+        if (res.ok) {
+          staged.push(f);
+          text += patch.stdout;
+        } else failed.push(f);
+      }
+    };
+    add(snapshot.tree, [...plan.mine, ...plan.mixed]);
+    add(plan.head, plan.whole);
+  } finally {
+    fs.rmSync(index, { force: true });
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+  return { file, staged, failed };
+}
+
 /** After the commit, move the snapshot forward so the committed lines don't show up again. */
 function advanceSnapshot(root, snapshot, plan, failed) {
   const index = path.join(gitDir(root), 'reldor-tmp-index');
@@ -147,4 +181,4 @@ function advanceSnapshot(root, snapshot, plan, failed) {
   }
 }
 
-module.exports = { takeSnapshot, loadSnapshot, clearSnapshot, planCleanCommit, stageCleanCommit, advanceSnapshot, workingTree, REF };
+module.exports = { takeSnapshot, loadSnapshot, clearSnapshot, planCleanCommit, stageCleanCommit, writeCleanPatch, advanceSnapshot, workingTree, REF };

@@ -4,6 +4,7 @@
 const { findProjectRoot } = require('../config');
 const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
+const { profileCommand } = require('./profile');
 const { logCommand } = require('./log');
 const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, qualityCommand } = require('./sf-commands');
 const { snapshotCommand, commitCommand, cleanCommand, hookCommand, mergeCommand, mergeDriverCommand } = require('./git-commands');
@@ -13,6 +14,7 @@ const { reviewCommand } = require('./review');
 const { envCommand } = require('./env');
 const { doctorCommand } = require('./doctor');
 const { toolsCommand } = require('./tools');
+const { deployCommand } = require('./deploy');
 const runs = require('../runs');
 const pkg = require('../../package.json');
 
@@ -26,11 +28,13 @@ const COMMANDS = {
   clean: { run: cleanCommand, main: true, help: 'Limpar antes do commit: deixa na pasta só o seu (--dry-run, --undo)' },
   merge: { run: mergeCommand, main: true, help: 'Merge assistido na branch de merge: reldor merge <sua-branch> (--check, --continue, --abort)' },
   promote: { run: promoteCommand, main: true, help: 'Subir: ensaio para um ambiente (ordem dos commits, dependências)' },
+  deploy: { run: deployCommand, main: true, help: 'Subir: monta os comandos de validação e de deploy dos seus arquivos (não executa)' },
   rollback: { run: rollbackCommand, main: true, help: 'Desfazer: plano de rollback de uma PR (não altera nada)' },
   tools: { run: toolsCommand, help: 'Ferramentas do time: quem cuida de cada coisa, para o Reldor não repetir (set <capacidade> run|verify|skip)' },
   doctor: { run: doctorCommand, help: 'Confere a instalação e a pasta do terminal, e diz o próximo passo (--json)' },
-  env: { run: envCommand, help: 'Cadeia de ambientes e branches: ver e mudar (set "nome:branch, ...", --base, --merge-branch, --production)' },
-  init: { run: initCommand, help: 'Configura o Reldor neste projeto (--yes, --envs, --org, --design-system, --git-actions on|off)' },
+  env: { run: envCommand, help: 'Cadeia de ambientes e org: ver e mudar (set "nome:branch, ...", --org <alias>, --org-for "nome:alias", --base, --production)' },
+  init: { run: initCommand, help: 'Configura o Reldor neste projeto, sem perguntas (opcionais: --envs, --org, --design-system, --execute on|off)' },
+  profile: { run: profileCommand, help: 'Atualiza o profile.md com o que está no projeto hoje (a parte do time fica como está)' },
   log: { run: logCommand, help: 'Histórico de ações do Reldor (--json)' },
   index: { run: indexCommand, help: 'Monta ou atualiza o índice do projeto (--full, --json)' },
   'test-radar': { run: testRadarCommand, help: 'Testes afetados pelas mudanças (--run --org <alias> roda sem salvar)' },
@@ -40,7 +44,7 @@ const COMMANDS = {
   xml: { run: xmlCommand, help: 'Ordena e remove duplicados em profiles, permission sets, labels... (--all, --check)' },
   retrieve: { run: retrieveCommand, help: 'Retrieve com confirmação da org e foto para o clean (--metadata, --manifest, --org)' },
   snapshot: { run: snapshotCommand, help: 'Foto depois de um retrieve feito fora do Reldor (--clear para apagar)' },
-  commit: { run: commitCommand, help: 'Commit limpo, se as ações de Git estiverem ligadas (-m, --stage, --dry-run)' },
+  commit: { run: commitCommand, help: 'Commit limpo: separa só as suas linhas e entrega os comandos (-m, --include, --dry-run)' },
   hook: { run: hookCommand, help: 'Gancho pre-commit do Reldor (install | uninstall)' },
   precommit: { run: precommitCommand, help: 'Checagem usada pelo gancho pre-commit', hidden: true },
   collisions: { run: collisionsCommand, help: 'Radar de colisão (opcional): PRs abertas que mexem nos seus arquivos', hidden: true },

@@ -12,7 +12,7 @@ Arquivos ordenados também deixam os merges entre ambientes mais tranquilos: men
 
 ## Quando usar
 
-Antes de um commit (a IA roda nos arquivos que você mudou), ou uma vez com `reldor xml --all` para limpar um projeto. O `reldor xml --check` só aponta, sem mudar nada. O gancho pre-commit confere os duplicados (a ordem não barra commit).
+Antes de um commit (a IA roda nos arquivos que você mudou), ou uma vez com `reldor xml --all` para limpar um projeto. Antes de reescrever, ele mostra os arquivos e pede confirmação (para a IA, `--yes` só depois que você disser sim). O `reldor xml --check` só aponta, sem mudar nada. O gancho pre-commit confere os duplicados (a ordem não barra commit).
 
 ## Está funcionando se
 

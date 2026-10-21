@@ -6,7 +6,8 @@
 modules:
   - sf
 
-# Cadeia de ambientes, na ordem de promoção. Nomes, branches e quantidade são livres.
+# Cadeia de ambientes, na ordem de promoção. Nomes, branches e quantidade são livres. Opcional: só faz falta para
+# ver onde a sua branch já está e para o ensaio de promoção.
 # Para ver e mudar sem editar à mão: reldor env  /  reldor env set "nome:branch, ..."
 environments:
   - name: pre-uat
@@ -20,8 +21,13 @@ environments:
     org: production
     production: true        # qual ambiente é produção (padrão: o último); o test-radar --run recusa rodar ali
 
-# Org usada no retrieve e no test-radar --run quando nenhuma é informada
+# Org usada no retrieve, no test-radar --run e no deploy quando nenhuma é informada (reldor env --org <alias>)
 reference_org: uat-sandbox
+
+# Execução: off (padrão) = o Reldor confere e monta os comandos de Git e de org (commit, stash, merge, retrieve, testes,
+# deploy); quem roda é você. Mudanças só nos arquivos (xml, gancho, conflitos) pedem confirmação.
+# on = o Reldor também roda esses comandos, sempre pedindo confirmação.
+execute: off
 
 index:
   refresh_hours: 24         # idade máxima do índice salvo antes de reler o projeto
@@ -31,8 +37,6 @@ spec:
   path: .kiro/specs
 
 git:
-  actions: off              # off: o Reldor só confere e avisa (branch, commit, merge e PR ficam com a ferramenta do time)
-                            # on: o Reldor também pode fazer o commit limpo (reldor commit), sempre com confirmação
   base_branch: null         # de onde nascem as branches de desenvolvimento (padrão: a branch de produção)
   merge_branch: merge/{feature}-{env}      # nome sugerido para a branch de merge
   rollback_branch: rollback/{id}           # nome sugerido para a branch de rollback
@@ -40,7 +44,7 @@ git:
 
 # Conselheiros
 advisors:
-  design_system: slds       # perguntado no init e anotado no profile.md para o conselheiro de telas
+  design_system: slds       # padrão slds; anotado no profile.md para o conselheiro de telas
 
 # Ferramentas do time: o que outra ferramenta já faz, para o Reldor não repetir (reldor tools)
 #   run    o Reldor faz (padrão)

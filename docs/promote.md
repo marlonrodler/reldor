@@ -20,7 +20,7 @@ Sem o nome do ambiente, ele escolhe o primeiro ambiente aonde a sua branch ainda
 
 ## Merge inteligente
 
-O `reldor merge install` liga, neste repositório e só na sua máquina, um driver de merge do Git para profiles, permission sets, muting permission sets, labels, traduções, sharing rules, value sets e `package.xml`. Ele roda dentro do `git merge` normal (inclusive pelo VS Code):
+O `reldor merge install` liga, depois de pedir confirmação, neste repositório e só na sua máquina, um driver de merge do Git para profiles, permission sets, muting permission sets, labels, traduções, sharing rules, value sets e `package.xml`. Ele roda dentro do `git merge` normal (inclusive pelo VS Code):
 
 - itens mudados por um lado só são juntados;
 - só existe conflito de verdade quando os dois lados mudaram **o mesmo item** de jeitos diferentes, e só esse item recebe as marcações de conflito;
