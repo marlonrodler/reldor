@@ -157,6 +157,7 @@ Você não decora comandos: diz o que quer e a IA roda o certo.
 |---|---|---|
 | **E agora?** | "e agora?" | [`status`](./docs/status.md): onde você está, avisos se subir agora, próximo passo |
 | **Entender** | "o que acontece quando uma Oportunidade é fechada?", "onde isso é usado?", "me ajuda a escrever a task" | [`explain`](./docs/explain.md), [`usages`](./docs/usages.md), [`refine`](./docs/refine.md) e os conselheiros |
+| **Liberar** | "esse valor já existe?", "o campo não aparece" | [`access`](./docs/access.md): o que já está e onde falta liberar (record type, layout, acesso, path, tradução, regras) |
 | **Criar** | "já existe um método para isso?" | [`helpers`](./docs/helpers.md): o que já existe, compartilhado primeiro; se não existir, a IA propõe um método genérico que todo time possa usar |
 | **Revisar** | "posso commitar?" | [`review`](./docs/review.md): segurança, qualidade e código repetido, campo fora da query, testes que podem quebrar e XML, num resumo só |
 | **Limpar** | "vou commitar, limpa o que não é meu" | [`clean`](./docs/clean.md): separa o seu do que veio da org e mostra os comandos para deixar na pasta só o seu |
@@ -244,7 +245,8 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor helpers`](./docs/helpers.md) | Antes de criar um método: o que já existe (compartilhado primeiro) e métodos iguais em times diferentes | ✅ |
 | [`reldor me`](./docs/helpers.md) | O seu time e o prefixo dele, só na sua máquina | ✅ |
 | `reldor log` | Tudo o que o Reldor fez, do mais recente ao mais antigo | ✅ |
-| [`reldor refine`](./docs/refine.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho | ✅ |
+| [`reldor refine`](./docs/refine.md) | Os fatos por trás da ideia de uma task: impacto, pontos de atenção, perguntas, tamanho (texto longo por `--file`) | ✅ |
+| [`reldor access`](./docs/access.md) | Já existe, mas está liberado? Onde falta liberar um valor de picklist, campo, objeto ou classe: record type, layout, FLS, path, tradução, regras | ✅ |
 | [`reldor test-radar`](./docs/test-radar.md) | Testes que podem quebrar com as suas mudanças, e roda sem salvar | ✅ |
 | [`reldor check`](./docs/check.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
 | [`reldor security`](./docs/security.md) | Revisão de segurança das mudanças: SOQL injection, CRUD/FLS, sharing, logs sensíveis, segredos, XSS, flows, acesso de convidado | ✅ |

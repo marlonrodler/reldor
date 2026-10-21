@@ -6,7 +6,7 @@ Objetivo: encontrar o que falta **antes** de codar, porque spec ruim gera códig
 
 ## Passos
 1. Leia a spec (requisitos, design e tarefas).
-2. Rode `reldor refine "<o objetivo da spec, em uma frase>" --json` para saber quais objetos, campos e automações ela toca
+2. Rode `reldor refine --file <arquivo da spec> --objects <os objetos que a spec cita> --json` para saber quais objetos, campos e automações ela toca
    (e `reldor explain <Objeto> --json` para a ordem de execução de um objeto que ela muda).
 3. Verifique as lacunas abaixo. Liste **só as que existem**.
 

@@ -157,6 +157,7 @@ You don't memorize commands: you say what you want and the AI runs the right one
 |---|---|---|
 | **What now?** | "what now?" | [`status`](./docs/status.en.md): where you are, warnings if you went up now, next step |
 | **Understand** | "what happens when an Opportunity is closed?", "where is this used?", "help me write the task" | [`explain`](./docs/explain.en.md), [`usages`](./docs/usages.en.md), [`refine`](./docs/refine.en.md) and the advisors |
+| **Enable** | "does this value exist already?", "the field doesn't show up" | [`access`](./docs/access.en.md): what is already there and where it still has to be enabled (record type, layout, access, path, translation, rules) |
 | **Create** | "is there already a method for this?" | [`helpers`](./docs/helpers.en.md): what already exists, shared first; if not, the AI suggests a generic method every team can use |
 | **Review** | "can I commit?" | [`review`](./docs/review.en.md): security, quality and repeated code, fields outside the query, tests that can break and XML, in one summary |
 | **Clean** | "I'm going to commit, clean what is not mine" | [`clean`](./docs/clean.en.md): separates your work from what came from the org and shows the commands to leave only yours in the folder |
@@ -245,6 +246,7 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor usages`](./docs/usages.en.md) | Where something is used, before you change or delete it | ✅ |
 | `reldor log` | Everything Reldor did, newest first | ✅ |
 | [`reldor refine`](./docs/refine.en.md) | The facts behind a task idea: impact, attention points, open questions, size | ✅ |
+| [`reldor access`](./docs/access.en.md) | It exists, but is it enabled? Where a picklist value, field, object or class still has to be enabled: record type, layout, FLS, path, translation, rules | ✅ |
 | [`reldor test-radar`](./docs/test-radar.en.md) | Tests that can break with your changes, and runs them without saving | ✅ |
 | [`reldor check`](./docs/check.en.md) | Fields read outside the query (SOQL or selector) | ✅ |
 | [`reldor security`](./docs/security.en.md) | Security review of your changes: SOQL injection, CRUD/FLS, sharing, sensitive logs, secrets, XSS, flows, guest access | ✅ |

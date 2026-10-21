@@ -10,7 +10,8 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "já existe um método para…?" / antes de criar um método | `reldor helpers <palavras> --json` | Compartilhado primeiro; se não existir, proponha um método genérico |
 | "meu time é…" | `reldor me --team <nome> --prefix <PREFIXO>` (com o "sim") | O que é do time, exemplos do padrão, o que é compartilhado |
 | "onde os times repetem código?" | `reldor helpers --similar --json` | Cada grupo vira candidato a um método genérico |
-| "quero criar uma task para…" / "refina essa task" | `reldor refine "<ideia>" --json` | Siga o conselheiro reldor-task-refine |
+| "quero criar uma task para…" / "refina essa task" | grave o texto em `.reldor/work/task.md` → `reldor refine --file .reldor/work/task.md --objects ... --fields ... --values "Obj.Campo=Valor" --json` | Siga o conselheiro reldor-task-refine |
+| "esse valor já existe?" / "onde falta liberar?" / "o campo não aparece" | `reldor access <Obj.Campo> [--value "<valor>"] [--rt <RT>] [--perms <P>] --json` | O que já está e onde falta liberar (record type, layout, FLS, path, tradução, regras) |
 | "o que acontece quando…" | `reldor explain <Objeto> --event <insert\|update\|delete> --json` | Mostre a cadeia na ordem; marque o que é condicional |
 | "como testo…" | `reldor explain <Objeto> --event <evento> --json` | Monte o roteiro: ação → o que dispara → o que validar |
 | "documenta o fluxo de…" | `reldor explain` para cada evento | Escreva o documento a partir do resultado |

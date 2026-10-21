@@ -14,6 +14,9 @@ The [task-refine](./advisors/task-refine.en.md) advisor turns this into the writ
 
 Say "I want to create a task to..." or "refine this task", or run `reldor refine "<idea>"`. Reach for it **before** the task goes to the board, especially when someone who does not code writes it.
 
+
+With the AI, the path is different, to cut noise: it **saves the task text** to `.reldor/work/task.md` (long text on the command line breaks the terminal), **interprets first** which objects, fields and values the task asks for, and runs `reldor refine --file .reldor/work/task.md --objects Obj1,Obj2 --fields Obj.Field --values "Obj.Field=Value"`. With `--objects` or `--fields`, loose words in the text don't become objects: they show up only as "maybe". Each picklist value mentioned comes with the [`access`](./access.en.md) command, which shows whether the value already exists and where it still has to be enabled.
+
 ## It's working if
 
 - Questions are answered in refinement, not in the middle of development.

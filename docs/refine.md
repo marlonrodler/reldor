@@ -14,6 +14,8 @@ O conselheiro [task-refine](./advisors/task-refine.md) transforma isso na task e
 
 Diga "quero criar uma task para..." ou "refina essa task", ou rode `reldor refine "<ideia>"`. Use **antes** de a task ir para o quadro, principalmente quando quem escreve não programa.
 
+Com a IA, o caminho é outro, para ter menos ruído: ela **grava o texto** da task em `.reldor/work/task.md` (texto longo na linha de comando quebra o terminal), **interpreta primeiro** quais objetos, campos e valores a task pede, e roda `reldor refine --file .reldor/work/task.md --objects Obj1,Obj2 --fields Obj.Campo --values "Obj.Campo=Valor"`. Com `--objects` ou `--fields`, palavras soltas do texto não viram objeto: aparecem só como "talvez". Cada valor de picklist citado traz o comando do [`access`](./access.md), que mostra se o valor já existe e onde falta liberar.
+
 ## Está funcionando se
 
 - As perguntas são respondidas no refinamento, e não no meio do desenvolvimento.
