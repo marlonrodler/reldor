@@ -3,7 +3,8 @@
 /**
  * Loads technology modules by name. The core only calls the module contract:
  *   name, label, detect(root) -> facts, statusLines(facts) -> string[], profileLines(facts) -> string[],
- *   and optionally doctorChecks(root, { inProject }) -> checks for `reldor doctor`,
+ *   and optionally profileAuto(root) -> { facts, lines } (the automatic part of profile.md, from a full read),
+ *   doctorChecks(root, { inProject }) -> checks for `reldor doctor`,
  *   capabilities -> [{ id, label, kind, modes, where }] and detectTools(root) -> signs of other tools (`reldor tools`)
  * so a new module (mobile, web) plugs in without changing the core.
  */

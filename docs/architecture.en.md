@@ -66,11 +66,13 @@ AI asks for the task or a description. It never makes one up.
 - **Clean commit:** a snapshot after the retrieve; the commit takes only the "snapshot → now" difference, line by line.
 - **Item-by-item metadata merge:** a merge driver for profiles, permission sets, labels and the like, installed in
   `.git/info/attributes` (only on your machine, nothing in the repository changes).
-- **Assisted merge:** runs `git merge` on the merge branch, resolves conflicts keeping the target and applying only your
-  change, and checks that only yours went in. It runs only when you ask; the merge commit, only with confirmation.
+- **Assisted merge:** on the merge branch, resolves conflicts keeping the target and applying only your change, and checks
+  that only yours went in. You run `git merge` and the merge commit; Reldor resolves the files with confirmation.
 - **Promotion rehearsal:** simulates the merge without changing anything; checks dependencies and commit order.
 - The environment chain comes from the config (e.g. develop → uat → producao), nothing hard-coded.
-- **Git actions off by default:** Reldor does not create branches, commit or open PRs on its own.
+- **Execution off by default** (`execute: off`): Reldor does not commit, merge or check out, and runs nothing in the org
+  (retrieve, tests, deploy). It checks and hands over the commands (`handover` in `core/report`). Changes to files only ask
+  for confirmation (`core/cli/confirm.js`); with no terminal and no `--yes`, the answer is no.
 
 ## Repository folders
 
@@ -80,13 +82,14 @@ core/
 ├─ config/        reads the config, defaults
 ├─ status/        finds the current stage (used by the AI)
 ├─ doctor/        checks the installation and the terminal's folder
+├─ profile/       profile.md: the part read from the project and the team's part
 ├─ tools/         team tools: who takes care of each capability
 ├─ runs/          run ledger (the same check never runs twice)
 ├─ spec/          finds specs
 ├─ modules/       loads modules (contract below)
 ├─ util/          running commands (Windows-friendly)
 ├─ git/           snapshot, clean commit, commit order
-├─ report/        terminal output
+├─ report/        terminal output and the commands handed to the person
 └─ log/           action history
 modules/sf/
 ├─ org/           confirm the org, retrieve, run tests, production protection
@@ -121,7 +124,7 @@ advisors are new folders in `advisors/`.
 ```
 .reldor/
 ├─ reldor.config.yaml   ✅ Git (environments, team tools, rules)
-├─ profile.md           ✅ Git (project patterns, written by the team)
+├─ profile.md           ✅ Git (read from the project by reldor profile + standards written by the team)
 ├─ cache/               ❌ out (index, run ledger)
 ├─ work/                ❌ out
 └─ log/                 ❌ out

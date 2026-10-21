@@ -94,7 +94,7 @@ test('tools: verify = the Reldor checks but never redoes the work, and points to
   assert.match(pc.stderr, /gancho do time/);
 
   // --force: the person asked the Reldor to do it anyway.
-  reldor(dir, ['xml', '--force']);
+  reldor(dir, ['xml', '--force', '--yes']);
   assert.notEqual(fs.readFileSync(path.join(dir, PS), 'utf8'), before);
 });
 

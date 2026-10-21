@@ -17,7 +17,7 @@ The PR number is found in the merge commit messages ("Merge pull request #123", 
 
 ## When to reach for it
 
-Say "I need to roll back PR 123". The AI shows the plan and the risks. With Git actions off (the default), the steps are a reference for your own flow; with them on, it runs a step only after you confirm. Reldor never deploys.
+Say "I need to roll back PR 123". The AI shows the plan and the risks. Reldor runs no step of the rollback: the steps are for you, or your own flow, to run. Reldor never deploys.
 
 ## It's working if
 

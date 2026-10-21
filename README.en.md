@@ -128,7 +128,9 @@ With the project open, open a **new chat** in your AI and say:
 
 > I want to use Reldor
 
-From here on **you don't run commands**: the AI runs them for you and explains the result. It detects the project, asks only what it cannot detect (environment branches, reference org, design system, whether you already have a tool that commits and opens PRs) and tells you the next step. This creates the `.reldor/` folder **in that project**: commit it, it is for the whole team. Do it once per project. You can change the environment chain (names, branches, order, which one is production) any time with [`reldor env`](./docs/env.en.md).
+From here on the AI runs the commands that **read** and explains the result. The first time, it runs [`reldor init`](./docs/init.en.md), which asks nothing: it detects the project and creates the `.reldor/` folder **in that project**, with the config (only what was detected) and `profile.md` (what Reldor read from the project: classes, triggers, fflib, naming, plus a part for the team to write its own standards). Commit that folder, it is for the whole team. Environment branches and the org are asked for only when a command needs them; to write them down, use [`reldor env`](./docs/env.en.md).
+
+Anything that touches Git or the org (commit, stash, merge, retrieve, tests, deploy) **Reldor does not run**: it checks and shows the ready commands, and you or your tool run them. Changes to files only (sorting an XML, installing the hook) ask for your confirmation first.
 
 <details>
 <summary><b>Something went wrong?</b></summary>
@@ -141,6 +143,7 @@ From here on **you don't run commands**: the AI runs them for you and explains t
   Or through the screen: Start menu → "Edit environment variables for your account" → Path → New.
 - **"running scripts is disabled on this system"** or **"language mode"** (PowerShell restricted by IT): use `reldor.cmd doctor` instead of `reldor doctor`, or run it in Command Prompt (cmd). Changing PowerShell's policy is your IT team's call.
 - **`doctor` says it is Reldor's own folder, or that it found no project**: the terminal is in the wrong folder. Open the project folder in VS Code and open a new terminal.
+- **In the AI chat, the command runs but the answer does not show** (some AI terminals on Windows lose the output): the skill already knows to ask for the result in a file with `--out` (e.g. `reldor status --json --out .reldor/work/status.json`). You can use it in the terminal too.
 - **The AI says it doesn't know Reldor**: the plugin isn't installed (step 3), or the chat was opened before installing. Open a new chat.
 - **`npm install` warned about vulnerabilities**: update Reldor (table in step 2). Don't run `npm audit fix --force` on your own.
 
@@ -155,14 +158,15 @@ You don't memorize commands: you say what you want and the AI runs the right one
 | **What now?** | "what now?" | [`status`](./docs/status.en.md): where you are, warnings if you went up now, next step |
 | **Understand** | "what happens when an Opportunity is closed?", "where is this used?", "help me write the task" | [`explain`](./docs/explain.en.md), [`usages`](./docs/usages.en.md), [`refine`](./docs/refine.en.md) and the advisors |
 | **Review** | "can I commit?" | [`review`](./docs/review.en.md): security, quality and repeated code, fields outside the query, tests that can break and XML, in one summary |
-| **Clean** | "I'm going to commit, clean what is not mine" | [`clean`](./docs/clean.en.md): leaves only your work in the folder; then you commit with your own tool |
-| **Merge** | "merge my branch" (on the merge branch) | [`merge`](./docs/merge.en.md): resolves conflicts keeping the target and applying only your change, then checks that only yours went in |
+| **Clean** | "I'm going to commit, clean what is not mine" | [`clean`](./docs/clean.en.md): separates your work from what came from the org and shows the commands to leave only yours in the folder |
+| **Merge** | "merge my branch" (on the merge branch) | [`merge`](./docs/merge.en.md): checks first, shows the `git merge` for you to run, resolves the file conflicts keeping the target and applying only your change, then checks that only yours went in |
 | **Go up** | "is it ready for pre-UAT?" | [`promote`](./docs/promote.en.md): commit order and missing dependencies before the PR |
+| **Deploy** | "build the deploy to my sandbox" | [`deploy`](./docs/deploy.en.md): the validation and deploy commands for your files, with the radar's tests; you run them |
 | **Undo** | "I need to roll back PR 123" | [`rollback`](./docs/rollback.en.md): revert, `destructiveChanges.xml` and risks |
 
 Once installed (`reldor hook install`), a pre-commit hook runs on every commit, including the ones made by other tools.
 
-**Starting out?** In the first week, use only the moments that read (What now?, Understand, Review): they change nothing. The ones that change things (Clean, Merge) always show what they will do and ask for confirmation.
+**Starting out?** In the first week, use only the moments that read (What now?, Understand, Review): they change nothing. In the others (Clean, Merge, Deploy), Reldor checks and hands you the commands; you decide whether and when to run them.
 
 ## Why Reldor exists
 
@@ -192,7 +196,7 @@ Once installed (`reldor hook install`), a pre-commit hook runs on every commit, 
 
 **The problem.** A retrieve mixes the org with your work, and the commit takes it all. A promotion fails because a field only exists in develop, or because a commit did not go through the previous environment.
 
-**The solution.** [`clean`](./docs/clean.en.md) leaves only your work in the folder before any tool commits, and the [clean commit](./docs/commit.en.md) takes only your lines. A [promotion rehearsal](./docs/promote.en.md) finds commits out of order and missing dependencies before the pull request. And a [rollback plan](./docs/rollback.en.md) brings the revert, the `destructiveChanges.xml` and the risks.
+**The solution.** [`clean`](./docs/clean.en.md) separates your work from what came from the org and hands you the commands to leave only yours in the folder, before any tool commits; the [clean commit](./docs/commit.en.md) does the same to take only your lines. A [promotion rehearsal](./docs/promote.en.md) finds commits out of order and missing dependencies before the pull request. And a [rollback plan](./docs/rollback.en.md) brings the revert, the `destructiveChanges.xml` and the risks.
 
 ### #5: Security holes and copied code nobody saw
 
@@ -230,7 +234,8 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor review`](./docs/review.en.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
 | [`reldor tools`](./docs/tools.en.md) | Team tools: who takes care of each thing, so Reldor only checks or stays out | ✅ |
 | [`reldor doctor`](./docs/doctor.en.md) | Checks the installation and the terminal's folder, and gives the next step | ✅ |
-| [`reldor init`](./docs/init.en.md) | Sets Reldor up in a project, asking only what it can't detect | ✅ |
+| [`reldor init`](./docs/init.en.md) | Sets Reldor up in a project without asking anything: saves only what it detected | ✅ |
+| [`reldor profile`](./docs/init.en.md#profilemd) | Refreshes `profile.md` with what is in the project today, without touching the team's part | ✅ |
 | [`reldor status`](./docs/status.en.md) | Where you are: branch, pending files, environments, spec, next step | ✅ |
 | [`reldor index`](./docs/index-command.en.md) | Builds the project index; reads again only what changed | ✅ |
 | [`reldor explain`](./docs/explain.en.md) | Reverse engineering: automations in the order of execution | ✅ |
@@ -240,14 +245,15 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor test-radar`](./docs/test-radar.en.md) | Tests that can break with your changes, and runs them without saving | ✅ |
 | [`reldor check`](./docs/check.en.md) | Fields read outside the query (SOQL or selector) | ✅ |
 | [`reldor security`](./docs/security.en.md) | Security review of your changes: SOQL injection, CRUD/FLS, sharing, sensitive logs, secrets, XSS, flows, guest access | ✅ |
-| [`reldor retrieve`](./docs/commit.en.md) | Retrieve with org confirmation; takes the snapshot for the clean commit | ✅ |
-| [`reldor clean`](./docs/clean.en.md) | Before committing: leaves only your work in the folder; the org part goes to a stash | ✅ |
-| [`reldor commit`](./docs/commit.en.md) | Clean commit: only your lines, even in files the retrieve also changed | ✅ |
+| [`reldor retrieve`](./docs/commit.en.md) | Builds the retrieve command for the right org and takes the snapshot for the clean commit | ✅ |
+| [`reldor clean`](./docs/clean.en.md) | Before committing: separates your work from the org's and hands you the commands (the org part goes to a stash) | ✅ |
+| [`reldor commit`](./docs/commit.en.md) | Clean commit: prepares only your lines, even in files the retrieve also changed, and hands you the commands | ✅ |
+| [`reldor deploy`](./docs/deploy.en.md) | Builds the validation and deploy commands for your files, with the radar's tests; never runs them | ✅ |
 | [`reldor quality`](./docs/quality.en.md) | Code your change repeats (copied blocks, queries, methods, texts) plus PMD and CPD | ✅ |
 | [`reldor xml`](./docs/xml.en.md) | Sorts and removes duplicates in profiles, permission sets, labels, sharing rules, package.xml | ✅ |
 | [`reldor hook install`](./docs/commit.en.md) | Pre-commit guard, also for commits made by hand | ✅ |
 | [`reldor promote`](./docs/promote.en.md) | Promotion rehearsal: commit order, other people's commits, missing dependencies | ✅ |
-| [`reldor merge`](./docs/merge.en.md) | Assisted merge into the merge branch: resolves conflicts, checks that only yours went in | ✅ |
+| [`reldor merge`](./docs/merge.en.md) | Assisted merge into the merge branch: checks, hands you the `git merge`, resolves conflicts in the files, checks that only yours went in | ✅ |
 | [`reldor rollback`](./docs/rollback.en.md) | Rollback plan for a PR: revert, `destructiveChanges.xml`, risks | ✅ |
 
 ### Skills (for the AI)
@@ -265,8 +271,8 @@ All skills are **model-invoked**: the AI reaches for them when the conversation 
 - Reads **metadata only**, never records. When an answer depends on data (a custom setting, for example), it hands you the SOQL to check.
 - **Keeps no credentials**: org access is your `sf` CLI's.
 - Every action is written to a **local history** (`reldor log`).
-- **Git actions are off by default**: Reldor checks and advises, and does not create branches, commit or open PRs on its own; that stays with your own flow (for example, your team's workflow plugin). The assisted merge runs only when you ask. `reldor init` asks; turn them on only if you have no such tool.
-- **Never deploys.** In the org, it only does the retrieve you ask for and runs the `test-radar --run` tests as a validation that saves nothing; tests refuse production unless you ask with `--allow-production`.
+- **Execution is off by default** (`execute: off`): Reldor does not commit, stash, merge or check out, and runs nothing in the org (retrieve, tests, deploy). It checks and shows the ready commands; you or your flow run them (for example, your team's tool that creates branches and opens PRs). Changes to files only (sorting XML, resolving a conflict in a file, installing the hook or the merge driver) ask for confirmation first. Teams that want Reldor to run the commands turn it on with `execute: on`, and each one still asks for confirmation.
+- **Never deploys.** [`reldor deploy`](./docs/deploy.en.md) only builds the commands. For production, only the validation: the deploy goes through the team's pipeline.
 - **Sends your code to no service.** Outside your machine, it only talks to your org through the `sf` CLI and, if installed, to GitHub through `gh` (to read open PRs).
 - Nothing about a client lives in Reldor: environments, patterns and team tools stay in the `.reldor/` of the client's own repository.
 
@@ -275,7 +281,7 @@ All skills are **model-invoked**: the AI reaches for them when the conversation 
 A generic **core** plus one **module** per technology. Salesforce is the first module; mobile or web can follow without touching the core. Details in [architecture](./docs/architecture.en.md); the words we use are in the [glossary](./GLOSSARY.en.md); decisions are in [docs/adr](./docs/adr).
 
 ```
-core/        cli, config, status, doctor, tools, runs, spec, git, log, report
+core/        cli, config, status, doctor, profile, tools, runs, spec, git, log, report
 modules/sf/  indexer, explain, checks, test-radar, refine, xml, security, quality, merge, promote, rollback, metadata, org, tools, advisors
 skills/      the AI's instructions, shared by Kiro and Claude Code
 adapters/    thin per-IDE manifests

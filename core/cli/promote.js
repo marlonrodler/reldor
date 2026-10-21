@@ -53,13 +53,9 @@ function renderPromote(r, actions = false, config = {}) {
     out.push('   ➜ Se o item é da sua feature, falta commitar na sua branch. Se é de outra pessoa, a feature dela precisa chegar antes neste ambiente: combinem a ordem.');
   }
   out.push('');
-  if (!actions) {
-    out.push(problems ? `Quando estiver tudo certo, siga o seu fluxo (ex.: o plugin de fluxo do time) para levar a branch a ${r.env}.` : `✅ Pronto para ${r.env}. Pode seguir o seu fluxo (ex.: o plugin de fluxo do time): branch de merge, merge e PR para ${r.branch}.`);
-  } else {
-    if (!problems) out.push(`✅ Pronto para ${r.env}. Próximo passo, no fluxo do time:`);
-    else out.push('Quando estiver tudo certo, o próximo passo é:');
-    out.push(`   git checkout -b ${branchName(config.git?.merge_branch || 'merge/{feature}-{env}', { feature: String(r.source).replace(/\//g, '-'), env: r.env })} ${r.targetRef}`, `   reldor merge ${r.source}   (merge assistido: resolve os conflitos e confere se entrou só o seu)`, `   e abra a PR para ${r.branch}.`);
-  }
+  // The ensaio never changes anything: the next steps are for the person (or the team's tool) to run.
+  out.push(problems ? 'Quando estiver tudo certo, o próximo passo (rode você ou pela ferramenta do time):' : `✅ Pronto para ${r.env}. Próximo passo (rode você ou pela ferramenta do time):`);
+  out.push(`   1. git checkout -b ${branchName(config.git?.merge_branch || 'merge/{feature}-{env}', { feature: String(r.source).replace(/\//g, '-'), env: r.env })} ${r.targetRef}`, `   2. reldor merge ${r.source}   (confere e monta o git merge; se o Git parar com conflito, reldor merge --resolve)`, `   3. abra a PR para ${r.branch}.`);
   out.push('', 'ℹ️  Conflito de merge se resolve na branch de merge. Correção de código vai na sua branch de desenvolvimento.');
   return out;
 }
@@ -79,7 +75,7 @@ function promoteCommand(root, flags, args) {
   const report = rehearse(root, config, { env, source: flags.branch || 'HEAD' });
   logAction(root, 'promote', { summary: `${report.source} → ${report.env}: ${report.commits.length} commit(s), ${report.conflicts.length} conflito(s), ${report.missing.length} dependência(s)` });
   if (flags.json) printJson(report);
-  else print(renderPromote(report, require('../config').gitActionsOn(config), config));
+  else print(renderPromote(report, require('../config').executeOn(config), config));
   return 0;
 }
 

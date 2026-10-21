@@ -21,6 +21,8 @@ O `reldor env` mostra a cadeia e deixa mudar:
 |---|---|
 | A cadeia (a ordem é a ordem de promoção) | `reldor env set "pre-uat:develop/x, uat:rc/uat, prod:master"` |
 | Qual ambiente é produção (protegido) | `reldor env --production prod` (padrão: o último) |
+| A org usada quando nenhuma é informada (retrieve, testes, deploy) | `reldor env --org <alias>` (o alias do sf CLI) |
+| A org de um ambiente | `reldor env --org-for "uat:<alias>"` |
 | De onde nascem as branches de desenvolvimento | `reldor env --base master` (padrão: a branch de produção) |
 | Padrão do nome da branch de merge | `reldor env --merge-branch "merge/{env}/{feature}"` |
 | Padrão do nome da branch de rollback | `reldor env --rollback-branch "rollback/{id}"` |

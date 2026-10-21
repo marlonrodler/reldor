@@ -35,7 +35,7 @@ function renderRollback(r, config, root) {
   if (r.unknown.length) out.push('', `ℹ️  Arquivos que o Reldor não sabe mapear para metadado (confira à mão): ${r.unknown.join(', ')}`);
 
   const hashes = r.commits.map((c) => c.short).join(' ');
-  out.push('', require('../config').gitActionsOn(config) ? '📋 Passo a passo, no fluxo do time:' : '📋 O que precisa ser feito (pelo seu fluxo ou à mão; o Reldor não executa):');
+  out.push('', '📋 O que precisa ser feito (rode você ou pelo seu fluxo; o Reldor não executa nada do rollback):');
   out.push(`   1. git checkout -b ${branchName(config.git?.rollback_branch || 'rollback/{id}', { id: r.id })} ${start ? gitApi.resolveBranch(root, start) || start : 'master'}`);
   out.push(`   2. git revert --no-edit ${hashes || r.merge}`);
   out.push('      (reverter os commits da feature, e não o merge, faz o rollback passar pela esteira em ordem)');

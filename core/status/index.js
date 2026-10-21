@@ -1,7 +1,7 @@
 'use strict';
 
 const gitApi = require('../git');
-const { loadConfig, gitActionsOn, baseBranch } = require('../config');
+const { loadConfig, executeOn, baseBranch } = require('../config');
 const { findSpecs, specForBranch } = require('../spec');
 const { loadModules } = require('../modules');
 
@@ -60,7 +60,9 @@ function buildStatus(root, options = {}) {
   const status = {
     root,
     config: { exists, file },
-    git: { repo, branch, pending, actions: gitActionsOn(config) ? 'on' : 'off' },
+    // execute: off (the default) = Reldor never changes Git or the org; it checks and hands over the commands.
+    execute: executeOn(config) ? 'on' : 'off',
+    git: { repo, branch, pending, actions: executeOn(config) ? 'on' : 'off' },
     environments: repo ? environmentStatus(root, config.environments || [], branch, baseBranch(config)) : { configured: false, items: [] },
     spec: { current: specForBranch(specs, branch), available: specs.slice(0, 5) },
     modules: modules.map(({ mod, facts }) => ({ name: mod.name, label: mod.label, facts })),

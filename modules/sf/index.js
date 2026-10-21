@@ -24,23 +24,54 @@ function matches(root) {
   return fs.existsSync(path.join(root, 'sfdx-project.json'));
 }
 
-function sfCli() {
-  const res = run('sf', ['--version'], { timeout: 30000 });
-  if (!res.ok) return { installed: false };
-  const match = res.stdout.match(/@salesforce\/cli\/(\S+)/);
-  return { installed: true, version: match ? match[1] : res.stdout.split('\n')[0] };
+/** The sf CLI on the PATH, found without running it (running `sf` takes seconds, more on Windows). */
+function findSf(env = process.env) {
+  const names = process.platform === 'win32' ? ['sf.cmd', 'sf.exe', 'sf.ps1', 'sf'] : ['sf'];
+  for (const dir of String(env.PATH || env.Path || '').split(path.delimiter).filter(Boolean)) {
+    for (const n of names) {
+      const full = path.join(dir, n);
+      try {
+        if (fs.statSync(full).isFile()) return full;
+      } catch {
+        /* not here */
+      }
+    }
+  }
+  return null;
 }
 
-function defaultOrg(root) {
-  const res = run('sf', ['config', 'get', 'target-org', '--json'], { cwd: root, timeout: 30000 });
-  if (!res.ok) return null;
+/** Version of the sf CLI read from its package.json next to the executable, or null. */
+function sfVersion(file) {
+  const tries = [];
   try {
-    const json = JSON.parse(res.stdout);
-    const value = json?.result?.[0]?.value;
-    return value || null;
+    let dir = path.dirname(fs.realpathSync(file));
+    for (let i = 0; i < 4; i += 1) {
+      tries.push(path.join(dir, 'package.json'), path.join(dir, 'node_modules', '@salesforce', 'cli', 'package.json'), path.join(dir, 'client', 'package.json'));
+      dir = path.dirname(dir);
+    }
   } catch {
     return null;
   }
+  for (const f of tries) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(f, 'utf8'));
+      if (pkg.name === '@salesforce/cli') return pkg.version;
+    } catch {
+      /* next */
+    }
+  }
+  return null;
+}
+
+/** Is the sf CLI installed, and which version (fast: no process is started). */
+function sfCli(env = process.env) {
+  const file = findSf(env);
+  return file ? { installed: true, version: sfVersion(file) } : { installed: false };
+}
+
+/** The default org, read from the environment and the sf config files (no process is started). */
+function defaultOrg(root) {
+  return process.env.SF_TARGET_ORG || configuredOrg(root);
 }
 
 /** Walks the package directories looking for Apex framework markers. Bounded to stay fast. */
@@ -221,5 +252,11 @@ function configuredOrg(root, home = require('node:os').homedir()) {
 
 const { CAPABILITIES: capabilities, detectTools } = require('./tools');
 
+/** The automatic part of profile.md, read from the project index (see ./profile.js). */
+function profileAuto(root) {
+  return require('./profile').profileAuto(root);
+}
+
 module.exports = {
-  capabilities, detectTools, alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, doctorChecks, configuredOrg, readProject };
+  sfCli, findSf,
+  capabilities, detectTools, alerts, name, label, projectMarker, matches, detect, statusLines, profileLines, profileAuto, doctorChecks, configuredOrg, readProject };

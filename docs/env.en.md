@@ -21,6 +21,8 @@ The environment chain is **configuration, not code**. Each project says, in `.re
 |---|---|
 | The chain (order = promotion order) | `reldor env set "pre-uat:develop/x, uat:rc/uat, prod:master"` |
 | Which environment is production (protected) | `reldor env --production prod` (default: the last one) |
+| The org used when none is given (retrieve, tests, deploy) | `reldor env --org <alias>` (the sf CLI alias) |
+| An environment's org | `reldor env --org-for "uat:<alias>"` |
 | Where development branches start | `reldor env --base master` (default: the production branch) |
 | Merge branch name pattern | `reldor env --merge-branch "merge/{env}/{feature}"` |
 | Rollback branch name pattern | `reldor env --rollback-branch "rollback/{id}"` |

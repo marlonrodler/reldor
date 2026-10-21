@@ -8,7 +8,7 @@ O `test-radar` olha o que a sua feature mudou (commits desde produção e o que 
 
 Ele também confere as queries das classes alteradas: um campo customizado lido de um registro que a classe consultou, mas que não está na SOQL nem no selector. É o erro "SObject row was retrieved via SOQL without querying the requested field", pego antes de chegar em UAT.
 
-Com `--run`, ele roda esses testes **sem salvar nada**: um deploy de validação (`--dry-run`) dos seus arquivos alterados com `RunSpecifiedTests`, então os testes enxergam as suas mudanças locais. Ele confirma a org antes e recusa produção.
+Com `--run`, ele roda esses testes **sem salvar nada**: um deploy de validação (`--dry-run`) dos seus arquivos alterados com `RunSpecifiedTests`, então os testes enxergam as suas mudanças locais. Ele recusa produção e, com a execução desligada (o padrão), **não roda nada na org**: mostra o comando `sf project deploy start --dry-run ... --test-level RunSpecifiedTests --tests ...` pronto para você rodar. Com `execute: on`, ele roda depois de confirmar a org.
 
 ## Quando usar
 

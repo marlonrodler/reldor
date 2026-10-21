@@ -2,6 +2,30 @@
 
 # Changelog
 
+## 0.20.0
+
+- **Execution off** (`execute: off`, the default): Reldor runs nothing in Git or in the org. `commit`, `clean`, `merge`,
+  `retrieve`, `test-radar --run` and `rollback` check and hand over the ready commands, for the person to run. Commit and
+  clean take only your lines in an already checked patch. `execute: on` (or the old `git.actions: on`) makes Reldor run
+  them, always with confirmation.
+- Confirmation for file changes: `xml`, `merge --resolve` (new), `hook install` and `merge install` show what they will
+  change and ask for a "yes". With no terminal (an AI) and no `--yes`, the answer is no.
+- `reldor deploy` (new): builds the validation (`--dry-run` with the radar's tests), the quick deploy and the direct deploy
+  of the changed files. Never runs them. In production, only the validation; deleted files are listed.
+- `reldor init` asks nothing: it saves only what it detected. Environments and the org are asked for when a command needs
+  them (`reldor env --org <alias>`, `--org-for "<environment>:<alias>"`).
+- `profile.md` read from the project index (every file): classes, tests, triggers, flows, LWCs, objects, fflib with
+  services, selectors and domains, trigger handlers, test suffix, prefixes and sharing. `reldor profile` (new) refreshes
+  that part without touching "Padrões da equipe", which now has topics for the team to fill in, with the AI's help.
+
+## 0.19.2
+
+- `status` (and everything that detects the project) no longer runs `sf` to know whether it exists and which org is the
+  default: it finds `sf` on the PATH and reads the version and the org from its files. From ~10 seconds to under 1 (more on
+  Windows).
+- `--out <file>` on any command: the result goes to the file and the terminal shows one line. For AI terminals that lose
+  output; the skill and the power use it by themselves when the output does not come back.
+
 ## 0.19.1
 
 - Kiro: the plugin also ships the older power format (`POWER.md` and `steering/`), generated from the same skills. Kiro versions

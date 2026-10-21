@@ -2,6 +2,29 @@
 
 # Histórico de versões
 
+## 0.20.0
+
+- **Execução desligada** (`execute: off`, o padrão): o Reldor não roda nada no Git nem na org. `commit`, `clean`, `merge`,
+  `retrieve`, `test-radar --run` e `rollback` conferem e entregam os comandos prontos, para a pessoa rodar. O commit e o
+  clean levam só as suas linhas num patch já conferido. `execute: on` (ou o antigo `git.actions: on`) faz o Reldor rodar,
+  sempre com confirmação.
+- Confirmação para mudanças em arquivos: `xml`, `merge --resolve` (novo), `hook install` e `merge install` mostram o que
+  vão mudar e pedem um "sim". Sem terminal (uma IA) e sem `--yes`, a resposta é não.
+- `reldor deploy` (novo): monta a validação (`--dry-run` com os testes do radar), o quick deploy e o deploy direto dos
+  arquivos alterados. Nunca executa. Em produção, só a validação; arquivos apagados são listados.
+- `reldor init` não pergunta nada: grava só o que detectou. Ambientes e org são pedidos quando um comando precisa
+  (`reldor env --org <alias>`, `--org-for "<ambiente>:<alias>"`).
+- `profile.md` lido do índice do projeto (todos os arquivos): classes, testes, triggers, flows, LWCs, objetos, fflib com
+  services, selectors e domains, trigger handlers, sufixo dos testes, prefixos e sharing. `reldor profile` (novo) atualiza
+  essa parte sem mexer em "Padrões da equipe", que agora traz tópicos para o time preencher, com ajuda da IA.
+
+## 0.19.2
+
+- `status` (e tudo que detecta o projeto) não roda mais o `sf` para saber se ele existe e qual a org padrão: procura o `sf` no
+  PATH e lê a versão e a org dos arquivos dele. De ~10 segundos para menos de 1 (mais no Windows).
+- `--out <arquivo>` em qualquer comando: o resultado vai para o arquivo e o terminal mostra uma linha. Para terminais de IA
+  que perdem a saída; a skill e o power usam isso sozinhos quando a saída não volta.
+
 ## 0.19.1
 
 - Kiro: o plugin traz também o formato antigo de power (`POWER.md` e `steering/`), gerado das mesmas skills. Versões do Kiro que

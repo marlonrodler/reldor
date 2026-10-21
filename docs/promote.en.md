@@ -20,7 +20,7 @@ Without an environment name, it picks the first environment your branch has not 
 
 ## Smart merge
 
-`reldor merge install` turns on, for this repository and only on your machine, a Git merge driver for profiles, permission sets, muting permission sets, labels, translations, sharing rules, value sets and `package.xml`. It runs inside the normal `git merge` (also from VS Code):
+`reldor merge install` turns on, after asking for confirmation, for this repository and only on your machine, a Git merge driver for profiles, permission sets, muting permission sets, labels, translations, sharing rules, value sets and `package.xml`. It runs inside the normal `git merge` (also from VS Code):
 
 - items changed on only one side are joined;
 - a real conflict happens only when both sides changed **the same item** differently, and only that item gets conflict markers;

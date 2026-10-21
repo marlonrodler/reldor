@@ -4,27 +4,45 @@
 
 ## What it does
 
-`init` sets Reldor up in a project in one step. It detects what it can on its own (the Salesforce project, the `sf` CLI, the default org, fflib, existing specs and branches) and asks only four things: the environment branches in promotion order, the reference org, whether the team follows SLDS, and whether you already use a tool that creates branches, commits and opens PRs. It writes `.reldor/reldor.config.yaml` and `.reldor/profile.md`, and adds Reldor's local folders to `.gitignore`.
+`init` sets Reldor up in a project in one go, **without asking anything**. It finds what it can (the Salesforce project, the `sf` CLI, the `sf` default org, the specs) and saves only that:
 
-The last environment is production and stays protected: Reldor never deploys, and the `test-radar --run` tests refuse to run there (unless `--allow-production`). After saving, it looks for signs of team tools that already do part of its work and suggests [`tools`](./tools.en.md).
+- `.reldor/reldor.config.yaml`: the modules, the `sf` default org as the reference org (if there is one), the design system (`slds`, unless you say otherwise) and `execute: off`;
+- `.reldor/profile.md`: the project profile (see below);
+- Reldor's local folders (cache, log, work) in `.gitignore`.
+
+Environment branches and the org are **not asked up front**: only some commands need them, and those ask at that moment (for example, `retrieve` without an org says "Which org? Run again with --org <alias>"). To write them down, use [`env`](./env.en.md). After saving, it looks for signs of team tools that already do part of its work and suggests [`tools`](./tools.en.md).
+
+With `execute: off`, Reldor runs nothing in Git or in the org: it checks and shows the ready commands for you to run.
+
+### profile.md
+
+It is what the AI and the team read about the project. It has two parts:
+
+- **the automatic part**, between the `reldor:auto` markers, read from the project index (every file): package folders, API version, how many classes (and test classes), triggers, flows, LWCs and objects, whether it uses fflib (how many services, selectors and domains), trigger handlers and the most used base, how test classes end, the most common name prefixes and how many classes declare sharing;
+- **"Padrões da equipe"** (team standards), with topics for the team to fill in (prefixes per team, shared classes, when to use Flow or Apex, naming rules). Reldor never changes this part.
+
+`reldor profile` rereads the project and rewrites only the automatic part. To fill in the team's part, ask the AI: "help me fill in the Reldor profile". It shows what Reldor found and asks for the rest.
 
 ## When to reach for it
 
-Say "I want to use Reldor" in a new project and the AI runs it for you, asking the questions in the chat (environments, reference org, design system, and whether you already have a tool that creates branches, commits and opens PRs: if yes, Reldor's Git actions stay off). In the terminal: `reldor init`, or `reldor init --yes --envs develop,rc/uat,master --org uat --design-system slds --git-actions off`.
+Say "I want to use Reldor" in a new project and the AI runs it for you. In the terminal: `reldor init`. Every option is optional: `--envs "pre-uat:develop/x, uat:rc/uat, prod:master"`, `--org <alias>`, `--design-system <name>`, `--execute on`.
 
 ## It's working if
 
-- A new developer is ready in a few minutes.
-- `reldor status` shows the right environments and spec right after.
+- A new dev is ready in a minute, without answering anything.
+- `profile.md` shows the project's real numbers (classes, triggers, fflib).
 
 ## Common questions
 
 **Do I commit `.reldor/`?**
-Commit `reldor.config.yaml` and `profile.md`: they belong to the whole team. The cache, work and log folders stay out of Git.
+Commit `reldor.config.yaml` and `profile.md`: they are for the whole team. The cache, work and log folders stay out of Git.
 
-**How do I change the answers?**
-Edit the YAML, or run `reldor init --force`.
+**profile.md is out of date.**
+Run `reldor profile`. The team's part stays as it is. An old `profile.md`, from before the markers, keeps everything from "## Padrões da equipe" on.
+
+**How do I change the config?**
+Environments and org with [`env`](./env.en.md); the rest by editing the YAML or with `reldor init --force`.
 
 ## Where it fits
 
-It runs once per project. Everything else reads what it writes.
+Runs once per project. Everything else reads what it saves.
