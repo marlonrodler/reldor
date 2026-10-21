@@ -133,8 +133,13 @@ A partir daqui **você não roda comandos**: a IA roda por você e explica o res
 <details>
 <summary><b>Deu problema?</b></summary>
 
-- **"reldor não é reconhecido como comando"**: feche e abra o terminal (ou o VS Code inteiro). Se continuar, rode `npm prefix -g` e confira se essa pasta está no PATH.
-- **"a execução de scripts foi desabilitada neste sistema"** (PowerShell): use `reldor.cmd doctor` no lugar de `reldor doctor`, ou rode no Prompt de Comando (cmd). Mudar a política de execução do PowerShell é decisão da sua equipe de TI.
+- **"reldor não é reconhecido como comando"**: feche e abra o terminal (ou o VS Code inteiro). Se continuar, confira se está instalado com `npm ls -g reldor`. Se estiver, falta a pasta do npm no PATH da sua conta. Para colocar, no **Prompt de Comando (cmd)**:
+  1. `npm prefix -g` mostra a pasta (algo como `C:\Users\<você>\AppData\Roaming\npm`);
+  2. `reg query HKCU\Environment /v Path` mostra o PATH da sua conta;
+  3. `setx PATH "<o valor do passo 2>;<a pasta do passo 1>"` (se o passo 2 disser que não existe valor, só `setx PATH "<a pasta do passo 1>"`). Não use `%PATH%` aqui: ele copia o PATH do sistema para a sua conta;
+  4. feche e abra o terminal.
+  Ou pela tela: menu Iniciar → "Editar as variáveis de ambiente para sua conta" → Path → Novo.
+- **"a execução de scripts foi desabilitada neste sistema"** ou **"modo de linguagem"** (PowerShell restrito pela TI): use `reldor.cmd doctor` no lugar de `reldor doctor`, ou rode no Prompt de Comando (cmd). Mudar a política do PowerShell é decisão da sua equipe de TI.
 - **O `doctor` diz que é a pasta do próprio Reldor, ou que não achou o projeto**: o terminal está na pasta errada. Abra a pasta do projeto no VS Code e abra um terminal novo.
 - **A IA diz que não conhece o Reldor**: o plugin não está instalado (passo 3) ou o chat foi aberto antes da instalação. Abra um chat novo.
 - **O `npm install` avisou de vulnerabilidades**: atualize o Reldor (tabela do passo 2). Não rode `npm audit fix --force` por conta própria.

@@ -93,3 +93,15 @@ test('the Kiro plugin in plugins/kiro/reldor is up to date (run npm run build:ad
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test('the Kiro plugin also has POWER.md and steering files, for Kiro versions that need the older format', () => {
+  const power = fs.readFileSync(path.join(KIRO_COMMITTED, 'POWER.md'), 'utf8');
+  assert.match(power, /^---\nname: "reldor"\ndisplayName: "Reldor"\ndescription: ".+"\nkeywords: \[.+\]\nauthor: ".+"\n---\n/);
+  assert.match(power, /# Onboarding/);
+  assert.match(power, /reldor status --json/, 'the router instructions are inside');
+  for (const f of ['reldor-guide.md', 'reldor-task-refine.md', 'reldor-spec-review.md', 'reldor-lwc-ux.md', 'reldor-automation-design.md']) {
+    assert.ok(fs.existsSync(path.join(KIRO_COMMITTED, 'steering', f)), f);
+    assert.ok(power.includes(f), `POWER.md lists ${f}`);
+  }
+  assert.ok(!/^---/.test(fs.readFileSync(path.join(KIRO_COMMITTED, 'steering', 'reldor-task-refine.md'), 'utf8')), 'steering files carry no skill frontmatter');
+});

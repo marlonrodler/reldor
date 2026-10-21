@@ -72,5 +72,6 @@ You can also click **Try the power** in the Powers panel: Kiro opens a chat with
 - **I can't find the ghost icon with a lightning bolt.** It is on the vertical icon bar on the left, with the file explorer and search. If it is not there, update Kiro: powers came in the newer versions.
 - **"Import power from GitHub" failed.** Check that the link ends in `plugins/kiro/reldor`. If Kiro cannot reach GitHub (a company network, for example), use way B.
 - **"Import power from a folder" did not accept the folder.** It is the wrong folder. The right one has `plugin.json` inside: `...\reldor\plugins\kiro\reldor`.
+- **"POWER.md not found for power 'reldor'".** Your Kiro version uses the older power format. From version 0.19.1 Reldor ships both formats: in the Powers panel, remove **reldor** and import it again from the same link.
 - **The AI says it doesn't know Reldor.** Open a new chat. If it persists, check that **reldor** is in the Powers panel list.
 - **The AI knows Reldor, but the command fails.** The `reldor` command is missing on the computer. In a terminal, run `reldor doctor`. If it is not recognized, go back to step 2 of the README.

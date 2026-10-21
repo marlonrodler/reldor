@@ -2,6 +2,13 @@
 
 # Histórico de versões
 
+## 0.19.1
+
+- Kiro: o plugin traz também o formato antigo de power (`POWER.md` e `steering/`), gerado das mesmas skills. Versões do Kiro que
+  pediam `POWER.md` passam a ativar o Reldor. Para atualizar, remova o power e importe de novo.
+- Instalação no Windows: o README explica como pôr a pasta do npm no PATH pelo cmd e o que fazer com o PowerShell restrito
+  (`reldor.cmd`). A skill e o power sabem o mesmo.
+
 ## 0.19.0
 
 - `reldor tools`: o Reldor convive com as ferramentas do time. Cada coisa que ele faz é uma capacidade (`xml-duplicates`,

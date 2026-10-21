@@ -1,8 +1,28 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "reldor",
-  "description": "Reldor — o guardião do desenvolvimento Salesforce: contexto da org, conselheiros, testes e promoção entre ambientes.",
-  "author": { "name": "Marlon Rodler" },
-  "keywords": ["salesforce", "apex", "lwc", "git", "deploy"],
-  "license": "UNLICENSED"
+  "description": "Reldor — o guardião do desenvolvimento Salesforce: entende a org antes de codar (explain, usages, refine), testes afetados, revisão antes do commit, merge de profiles e promoção entre ambientes.",
+  "author": {
+    "name": "Marlon Rodler"
+  },
+  "keywords": [
+    "reldor",
+    "salesforce",
+    "apex",
+    "lwc",
+    "flow",
+    "trigger",
+    "profile",
+    "permission set",
+    "task",
+    "refinar",
+    "commit",
+    "merge",
+    "deploy",
+    "teste",
+    "uat",
+    "rollback"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "homepage": "https://github.com/marlonrodler/reldor"
 }
