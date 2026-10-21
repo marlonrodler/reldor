@@ -2,6 +2,14 @@
 
 # Changelog
 
+## 0.19.2
+
+- `status` (and everything that detects the project) no longer runs `sf` to know whether it exists and which org is the
+  default: it finds `sf` on the PATH and reads the version and the org from its files. From ~10 seconds to under 1 (more on
+  Windows).
+- `--out <file>` on any command: the result goes to the file and the terminal shows one line. For AI terminals that lose
+  output; the skill and the power use it by themselves when the output does not come back.
+
 ## 0.19.1
 
 - Kiro: the plugin also ships the older power format (`POWER.md` and `steering/`), generated from the same skills. Kiro versions

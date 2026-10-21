@@ -2,6 +2,13 @@
 
 # Histórico de versões
 
+## 0.19.2
+
+- `status` (e tudo que detecta o projeto) não roda mais o `sf` para saber se ele existe e qual a org padrão: procura o `sf` no
+  PATH e lê a versão e a org dos arquivos dele. De ~10 segundos para menos de 1 (mais no Windows).
+- `--out <arquivo>` em qualquer comando: o resultado vai para o arquivo e o terminal mostra uma linha. Para terminais de IA
+  que perdem a saída; a skill e o power usam isso sozinhos quando a saída não volta.
+
 ## 0.19.1
 
 - Kiro: o plugin traz também o formato antigo de power (`POWER.md` e `steering/`), gerado das mesmas skills. Versões do Kiro que

@@ -141,6 +141,7 @@ A partir daqui **você não roda comandos**: a IA roda por você e explica o res
   Ou pela tela: menu Iniciar → "Editar as variáveis de ambiente para sua conta" → Path → Novo.
 - **"a execução de scripts foi desabilitada neste sistema"** ou **"modo de linguagem"** (PowerShell restrito pela TI): use `reldor.cmd doctor` no lugar de `reldor doctor`, ou rode no Prompt de Comando (cmd). Mudar a política do PowerShell é decisão da sua equipe de TI.
 - **O `doctor` diz que é a pasta do próprio Reldor, ou que não achou o projeto**: o terminal está na pasta errada. Abra a pasta do projeto no VS Code e abra um terminal novo.
+- **No chat da IA, o comando roda mas a resposta não aparece** (alguns terminais de IA no Windows perdem a saída): a skill já sabe pedir o resultado num arquivo com `--out` (ex.: `reldor status --json --out .reldor/work/status.json`). Você também pode usar isso no terminal.
 - **A IA diz que não conhece o Reldor**: o plugin não está instalado (passo 3) ou o chat foi aberto antes da instalação. Abra um chat novo.
 - **O `npm install` avisou de vulnerabilidades**: atualize o Reldor (tabela do passo 2). Não rode `npm audit fix --force` por conta própria.
 

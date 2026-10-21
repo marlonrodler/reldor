@@ -382,3 +382,24 @@ test('XML: numeric entities such as &#39; are read as the character', () => {
   const { parseXml } = require('../modules/sf/indexer/xml');
   assert.equal(parseXml("<a><b>that&#39;s &amp; &#x41;</b></a>").a.b, "that's & A");
 });
+
+test('sf CLI found on the PATH without running it, and --out writes the result to a file', () => {
+  const p = require('node:path');
+  const fs2 = require('node:fs');
+  const os2 = require('node:os');
+  const { sfCli } = require('../modules/sf');
+  const dir = fs2.mkdtempSync(p.join(os2.tmpdir(), 'reldor-sf-'));
+  const pkgDir = p.join(dir, 'node_modules', '@salesforce', 'cli');
+  fs2.mkdirSync(pkgDir, { recursive: true });
+  fs2.writeFileSync(p.join(pkgDir, 'package.json'), '{"name":"@salesforce/cli","version":"2.99.1"}');
+  const exe = p.join(dir, process.platform === 'win32' ? 'sf.cmd' : 'sf');
+  fs2.writeFileSync(exe, '');
+  assert.deepEqual(sfCli({ PATH: dir }), { installed: true, version: '2.99.1' });
+  assert.deepEqual(sfCli({ PATH: p.join(dir, 'nada') }), { installed: false });
+
+  const out = p.join(dir, 'out', 'status.json');
+  const r = require('node:child_process').spawnSync(process.execPath, [p.join(__dirname, '..', 'core', 'cli', 'index.js'), 'status', '--json', '--quick', '--out', out], { cwd: p.join(__dirname, 'fixtures', 'sample-sf'), encoding: 'utf8' });
+  assert.match(r.stdout, /Resultado salvo em/);
+  assert.ok(JSON.parse(fs2.readFileSync(out, 'utf8')).git, 'the file has the whole JSON');
+  fs2.rmSync(dir, { recursive: true, force: true });
+});

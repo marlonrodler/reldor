@@ -104,7 +104,16 @@ async function main(argv = process.argv.slice(2)) {
   }
   const root = findProjectRoot(flags.cwd || process.cwd());
   runs.setFresh(Boolean(flags.fresh));
-  return entry.run(root, flags, args);
+  if (typeof flags.out === 'string') {
+    const fs = require('node:fs');
+    fs.rmSync(require('node:path').resolve(flags.out), { force: true });
+    require('../report').setOut(flags.out);
+  }
+  try {
+    return await entry.run(root, flags, args);
+  } finally {
+    require('../report').finishOut();
+  }
 }
 
 if (require.main === module) {

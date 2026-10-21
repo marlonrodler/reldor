@@ -31,6 +31,7 @@ não foram decididos (`suggestions`). Os comandos do Reldor já seguem isso sozi
 ## Se o comando falhar
 - `reldor` não reconhecido: o Reldor não está instalado neste computador. Explique e, com a confirmação da pessoa, rode `npm install -g github:marlonrodler/reldor`; depois peça para ela abrir um terminal novo.
 - "execução de scripts desabilitada" ou "modo de linguagem" restrito (PowerShell): use `reldor.cmd` no lugar de `reldor`, ou o caminho completo (`<npm prefix -g>\reldor.cmd`). Não mude a política do PowerShell: é decisão da TI.
+- O terminal não devolveu a saída (aparece só o comando, ou a saída sai vazia ou cortada): não rode o mesmo comando de novo. Rode com `--out .reldor/work/<nome>.json` (ex.: `reldor status --json --out .reldor/work/status.json`) e leia o arquivo. Funciona em qualquer comando.
 - Qualquer outro problema de instalação ou de pasta: rode `reldor doctor --json` e siga o `next`. Se `folder.reldorFolder` for verdadeiro ou `folder.project` estiver vazio, a pessoa abriu a pasta errada: peça para abrir a pasta do projeto (a que tem o `sfdx-project.json`).
 
 ## Primeira vez no projeto
