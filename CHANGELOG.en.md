@@ -2,6 +2,17 @@
 
 # Changelog
 
+## 0.22.0
+
+- `reldor access` (new): "it exists, but is it enabled?". For a field and a picklist value: the value (active? similar
+  ones?), dependent picklist, record types and business processes, FLS in profiles and permission sets, the layout of
+  each record type, pages, path, translations and rules or code that name the other values. Also objects and classes.
+- `reldor refine --file <file>`: long text by file, without breaking the terminal. `--values "Obj.Field=Value"`.
+  With `--objects`/`--fields` (the AI interprets first), loose words don't become objects: they go to "maybe".
+  Each value mentioned points to `access`.
+- task-refine advisor: saves the task to a file, interprets first, runs refine and access, and puts what has to be
+  enabled into the task.
+
 ## 0.21.0
 
 - `profile.md` gains **Design patterns** (triggers, async, tests and mocks, Strategy, Factory, Builder, DTO, Singleton,

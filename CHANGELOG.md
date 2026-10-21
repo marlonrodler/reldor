@@ -2,6 +2,17 @@
 
 # Histórico de versões
 
+## 0.22.0
+
+- `reldor access` (novo): "já existe, mas está liberado?". Para um campo e um valor de picklist: o valor (ativo?
+  parecidos?), picklist dependente, record types e business processes, FLS em profiles e permission sets, layout de
+  cada record type, páginas, path, traduções e regras ou código que citam os outros valores. Também objeto e classe.
+- `reldor refine --file <arquivo>`: texto longo por arquivo, sem quebrar o terminal. `--values "Obj.Campo=Valor"`.
+  Com `--objects`/`--fields` (a IA interpreta primeiro), palavras soltas não viram objeto: ficam em "talvez".
+  Cada valor citado aponta o `access`.
+- Conselheiro task-refine: grava a task em arquivo, interpreta antes, roda o refine e o access, e põe na task o que
+  falta liberar.
+
 ## 0.21.0
 
 - `profile.md` ganha **Padrões de projeto** (triggers, assíncrono, testes e mocks, Strategy, Factory, Builder, DTO,

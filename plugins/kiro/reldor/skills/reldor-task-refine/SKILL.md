@@ -10,14 +10,22 @@ description: Transforma a ideia de uma task numa task Salesforce bem escrita, co
 Objetivo: a task sai escrita **sabendo o que ela toca**, para as perguntas aparecerem agora, e não no meio do desenvolvimento.
 
 ## Passos
-1. Rode `reldor refine "<a ideia, como a pessoa escreveu>" --json`, com o texto da pessoa sem traduzir.
-2. Mostre em uma linha como o pedido foi entendido: para cada objeto, a palavra que levou a ele (`detected.why`).
-   Peça confirmação só quando houver motivo: objeto achado pela última palavra (`detected.loose`) ou citado dentro
-   de outro nome (`detected.related`). Se faltar ou sobrar objeto, rode de novo com `--objects` e `--fields`.
-3. Se `similar` não estiver vazio, diga isso primeiro: já existe uma regra parecida, e talvez a task seja ajustá-la.
+1. **Salve o texto da task num arquivo** com a sua ferramenta de arquivos (não pelo terminal): `.reldor/work/task.md`,
+   do jeito que a pessoa escreveu, sem traduzir. Texto longo na linha de comando quebra o terminal.
+2. **Interprete você primeiro.** Leia a task e decida quais objetos, campos e valores de picklist ela pede. Se não
+   souber o nome de API, rode `reldor usages <palavra> --json` ou procure no `.reldor/profile.md`.
+3. Rode `reldor refine --file .reldor/work/task.md --objects <Obj1,Obj2> --fields <Obj.Campo,...> --values "<Obj.Campo=Valor;...>" --json`.
+   Com `--objects`/`--fields`, palavras soltas do texto não entram como objeto: ficam em `detected.maybe`. Mostre essa
+   lista numa linha só, como "talvez", e pergunte só se algum parecer mesmo parte da task.
+4. **Valores e acesso:** para cada item de `values` (e para campos que a task pede para mostrar ou editar), rode o
+   `check` que ele traz (`reldor access <Obj.Campo> --value "<valor>" --json`, com `--rt <record type da task>` quando a
+   task disser). Mostre `ok` (o que já está) e `gaps` (onde falta liberar: record type, layout, FLS, path, tradução,
+   regras que citam os outros valores). Muitas vezes o valor já existe e a task é só liberar: diga isso claramente.
+5. Se `similar` não estiver vazio, diga isso primeiro: já existe uma regra parecida, e talvez a task seja ajustá-la.
    Rode `reldor explain <Objeto> --json` para entender a regra e as automações antes de sugerir.
-4. Escreva a task com as seções abaixo. Use **só** os fatos do resultado; não invente automações nem campos.
-5. Mostre as perguntas em aberto como uma lista numerada e pergunte se a pessoa quer respondê-las agora.
+6. Escreva a task com as seções abaixo. Use **só** os fatos do resultado; não invente automações nem campos. Os
+   `gaps` do access entram em "O que muda" (o que liberar, com o arquivo).
+7. Mostre as perguntas em aberto como uma lista numerada e pergunte se a pessoa quer respondê-las agora.
 
 ## Formato da task
 ```

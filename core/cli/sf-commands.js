@@ -253,14 +253,24 @@ async function testRadarCommand(root, flags) {
 
 function refineCommand(root, flags, args) {
   if (!requireSfProject(root)) return 1;
-  const text = args.join(' ');
+  // A long task goes in a file (--file), so the terminal never has to carry it.
+  let text = args.join(' ');
+  if (typeof flags.file === 'string') {
+    try {
+      text = `${require('node:fs').readFileSync(require('node:path').resolve(root, flags.file), 'utf8')}\n${text}`.trim();
+    } catch {
+      process.stderr.write(`⚠️ Não consegui ler ${flags.file}.\n`);
+      return 1;
+    }
+  }
   const list = (v) => (typeof v === 'string' ? v.split(',').map((x) => x.trim()).filter(Boolean) : []);
   if (!text && !flags.objects && !flags.fields) {
     process.stderr.write('⚠️ Descreva a ideia da task. Ex.: reldor refine "bloquear o fechamento da oportunidade sem proposta aprovada"\n');
     return 1;
   }
   const { model } = freshModel(root, flags);
-  const brief = refineBrief(model, { text, objects: list(flags.objects), fields: list(flags.fields) });
+  const values = typeof flags.values === 'string' ? flags.values.split(';').map((x) => x.trim()).filter(Boolean) : [];
+  const brief = refineBrief(model, { text, objects: list(flags.objects), fields: list(flags.fields), values });
   logAction(root, 'refine', { summary: `${brief.objects.map((o) => o.name).join(', ') || 'nenhum objeto'} · ${brief.signal.size}` });
   if (flags.json) printJson(brief);
   else print(renderBrief(brief));

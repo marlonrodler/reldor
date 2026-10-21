@@ -293,23 +293,55 @@ function similarRules(model, objectNames, text) {
   return out;
 }
 
-function refineBrief(model, { text = '', objects = [], fields = [] }) {
+/** Picklist values the request asks about: "Obj.Campo=Valor" pairs given by the AI, plus quoted values in the text. */
+function valueFacts(model, fieldRefs, text, values) {
+  const out = [];
+  const quoted = [...String(text).matchAll(/["“”'‘’]([^"“”'‘’\n]{2,60})["“”'‘’]/g)].map((m) => m[1].trim());
+  const asked = values.map((v) => {
+    const i = v.indexOf('=');
+    return i > 0 ? { ref: v.slice(0, i).trim(), value: v.slice(i + 1).trim() } : null;
+  }).filter(Boolean);
+  for (const ref of fieldRefs) {
+    const [o, f] = ref.split('.');
+    const def = model.objects[o]?.fields[f];
+    if (!def || !def.picklist) continue;
+    const wanted = [...asked.filter((a) => a.ref === ref).map((a) => a.value), ...quoted];
+    for (const value of new Set(wanted)) {
+      const hit = def.picklist.find((p) => norm(p) === norm(value));
+      const explicit = asked.some((a) => a.ref === ref && a.value === value);
+      if (hit || explicit) out.push({ field: ref, value: hit || value, exists: Boolean(hit), check: `reldor access ${ref} --value "${hit || value}"` });
+    }
+  }
+  return out;
+}
+
+function refineBrief(model, { text = '', objects = [], fields = [], values = [] }) {
   const detected = detectMentions(model, text);
   const { STANDARD } = require('../checks/fieldresolve');
   const known = (o) => Boolean(model.objects[o]) || STANDARD.has(o);
-  const objectNames = [...new Set([...objects, ...detected.objects, ...fields.map((f) => f.split('.')[0])])].filter(known);
+  // The AI read the task and said which objects and fields it is about: words alone no longer add objects.
+  const explicit = objects.length > 0 || fields.length > 0;
+  const fromText = explicit ? detected.objects.filter((o) => /__/.test(o) && new RegExp(`\\b${o}\\b`).test(text)) : detected.objects;
+  detected.maybe = explicit ? detected.objects.filter((o) => !fromText.includes(o) && !objects.includes(o)) : [];
+  const objectNames = [...new Set([...objects, ...fromText, ...fields.map((f) => f.split('.')[0]), ...values.map((v) => v.split('=')[0].split('.')[0])])].filter(known);
   const unknownObjects = [...new Set(objects)].filter((o) => !known(o));
-  const fieldRefs = [...new Set([...fields, ...detected.fields])];
+  const fieldRefs = [...new Set([...fields, ...values.map((v) => v.split('=')[0].trim()).filter((r) => r.includes('.')), ...(explicit ? detected.fields.filter((f) => objectNames.includes(f.split('.')[0])) : detected.fields)])];
   const objs = objectNames.map((o) => objectFacts(model, o));
   const flds = fieldRefs.map((f) => fieldFacts(model, f));
   const similar = similarRules(model, objectNames, text);
   const qa = questionsFor(objs, flds, text);
+  const vals = valueFacts(model, fieldRefs, text, values);
+  for (const v of vals) {
+    if (v.exists) qa.attention.unshift(`O valor "${v.value}" já existe em ${v.field}: o trabalho pode ser só liberar. Veja onde falta com: ${v.check}`);
+    else qa.attention.unshift(`O valor "${v.value}" não existe em ${v.field}: depois de criar, libere nos record types, layouts e acessos (${v.check}).`);
+  }
   for (const s of similar) qa.attention.unshift(`Já existe algo parecido: a ${s.kind} ${s.object}.${s.name} (fala de ${s.shared.join(', ')})${s.message ? ` — "${s.message}"` : ''}. Confira se a task é ajustar essa regra em vez de criar outra.`);
   return {
     text,
     detected,
     similar,
     unknownObjects,
+    values: vals,
     objects: objs,
     fields: flds,
     ...qa,
@@ -329,6 +361,7 @@ function renderBrief(b) {
     out.push('Entendi assim (confira):');
     for (const o of b.objects) if (why[o.name]) out.push(`   "${why[o.name]}" → ${o.name}${loose.has(o.name) ? ' (pela última palavra do nome; confirme)' : ''}`);
     if (b.detected.related && b.detected.related.length) out.push(`   Citados dentro de outro nome: ${b.detected.related.join(', ')} (entram só se a task mexer neles também)`);
+    if (b.detected.maybe && b.detected.maybe.length) out.push(`   Talvez (só por palavra solta, ficaram de fora): ${b.detected.maybe.join(', ')}`);
     out.push('   Se faltou ou sobrou algum, rode de novo com --objects Objeto1,Objeto2.', '');
   }
   for (const o of b.objects) {
@@ -343,6 +376,7 @@ function renderBrief(b) {
     if (o.lwcs.length) out.push(`   telas: ${o.lwcs.join(', ')}`);
     out.push(`   testes que tocam o objeto: ${o.tests.length}`);
   }
+  for (const v of b.values || []) out.push(`🔹 ${v.field} = "${v.value}": ${v.exists ? 'já existe' : 'não existe ainda'} → ${v.check}`);
   for (const f of b.fields) {
     out.push(`🔤 ${f.ref}: ${f.exists ? `existe (${f.type}${f.required ? ', obrigatório' : ''}), usado em ${f.usedIn} lugar(es)` : 'não existe ainda'}`);
   }

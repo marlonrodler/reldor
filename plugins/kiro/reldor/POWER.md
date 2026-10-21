@@ -85,7 +85,8 @@ Se `reldor status` disser que o Reldor não está configurado:
 - Para "onde os times repetem código?", rode `reldor helpers --similar --json` e sugira juntar cada grupo num método genérico.
 
 ## Comandos disponíveis hoje
-`reldor status`, `reldor doctor`, `reldor tools`, `reldor init`, `reldor env`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor clean`, `reldor rollback`, `reldor deploy`, `reldor profile`, `reldor me`, `reldor helpers`.
+`reldor status`, `reldor doctor`, `reldor tools`, `reldor init`, `reldor env`, `reldor log`, `reldor index`, `reldor explain`, `reldor usages`, `reldor test-radar`, `reldor check`, `reldor refine`, `reldor retrieve`, `reldor snapshot`, `reldor xml`, `reldor commit`, `reldor hook`, `reldor security`, `reldor quality`, `reldor promote`, `reldor merge`, `reldor clean`, `reldor rollback`, `reldor deploy`, `reldor profile`, `reldor me`, `reldor helpers`, `reldor access`.
+Texto longo (uma task, uma descrição) nunca vai na linha de comando: grave num arquivo em `.reldor/work/` com a sua ferramenta de arquivos e passe com `--file`.
 Se a pessoa pedir algo que não está nesta lista (conectores com quadros de tasks, documentação automática),
 diga que o Reldor ainda não faz isso e ajude do jeito tradicional, sem inventar resultados.
 

@@ -6,6 +6,7 @@ const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { profileCommand } = require('./profile');
 const { meCommand } = require('./me');
+const { accessCommand } = require('./access');
 const { helpersCommand } = require('./helpers');
 const { logCommand } = require('./log');
 const { indexCommand, explainCommand, usagesCommand, testRadarCommand, checkCommand, refineCommand, xmlCommand, precommitCommand, retrieveCommand, securityCommand, qualityCommand } = require('./sf-commands');
@@ -25,7 +26,7 @@ const COMMANDS = {
   status: { run: statusCommand, main: true, help: 'E agora? Onde você está, avisos e o próximo passo (--json, --fetch)' },
   explain: { run: explainCommand, main: true, help: 'Entender: o que acontece quando um registro é salvo (reldor explain <Objeto>)' },
   usages: { run: usagesCommand, main: true, help: 'Entender: onde algo é usado, antes de mudar ou apagar' },
-  refine: { run: refineCommand, main: true, help: 'Entender: fatos para escrever uma task (reldor refine "<ideia>")' },
+  refine: { run: refineCommand, main: true, help: 'Entender: fatos para escrever uma task (reldor refine "<ideia>", ou --file task.md; --objects, --fields, --values "Obj.Campo=Valor")' },
   review: { run: reviewCommand, main: true, help: 'Revisar antes do commit: segurança, qualidade, queries, testes e XML de uma vez' },
   clean: { run: cleanCommand, main: true, help: 'Limpar antes do commit: deixa na pasta só o seu (--dry-run, --undo)' },
   merge: { run: mergeCommand, main: true, help: 'Merge assistido na branch de merge: reldor merge <sua-branch> (--check, --continue, --abort)' },
@@ -36,6 +37,7 @@ const COMMANDS = {
   doctor: { run: doctorCommand, help: 'Confere a instalação e a pasta do terminal, e diz o próximo passo (--json)' },
   env: { run: envCommand, help: 'Cadeia de ambientes e org: ver e mudar (set "nome:branch, ...", --org <alias>, --org-for "nome:alias", --base, --production)' },
   init: { run: initCommand, help: 'Configura o Reldor neste projeto, sem perguntas (opcionais: --envs, --org, --design-system, --execute on|off)' },
+  access: { run: accessCommand, main: true, help: 'Já existe, mas está liberado? Onde falta liberar um campo, valor de picklist, objeto ou classe (--value, --rt, --perms)' },
   me: { run: meCommand, help: 'O seu time, só na sua máquina (--team <nome> --prefix <PREFIXO>)' },
   helpers: { run: helpersCommand, help: 'Antes de criar um método: o que já existe (termo), e métodos iguais em times diferentes (--similar)' },
   profile: { run: profileCommand, help: 'Atualiza o profile.md com o que está no projeto hoje (a parte do time fica como está)' },
