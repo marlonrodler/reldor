@@ -21,6 +21,7 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | salvou um metadado ou Apex / "quais testes podem quebrar?" | `reldor test-radar --json` | Mostre os testes e os motivos; com a org, `--run --org <alias> --json` devolve o comando para a pessoa rodar |
 | "tem campo fora da query?" | `reldor check [Classe] --json` | Liste os achados e o erro que evitam |
 | "vou apagar…" / "onde isso é usado?" | `reldor usages <item> --json` | Liste todos os usos antes de apagar |
+| "vou mexer em X" / antes de alterar um arquivo existente | `reldor retrieve --files <arquivos> --json`, a pessoa roda, depois `reldor retrieve --check --json` | Só altere o que veio (`done`); explique o que ficou de fora e por quê |
 | "dá um retrieve" | `reldor retrieve [--metadata X] --org <alias> --json` (pergunte a org) | Mostre os comandos para a pessoa rodar; diga se o que vier conta como seu ou da org |
 | "fiz retrieve por fora" | `reldor snapshot` | Explique que o que está na pasta agora conta como da org |
 | "quero commitar" | `reldor xml` (com o "sim", `--yes`) → `reldor commit --dry-run --json` → `reldor commit -m "..." --json` | O que é seu, o que é misto e o que veio da org; depois os comandos para a pessoa rodar |

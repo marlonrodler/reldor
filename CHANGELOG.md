@@ -2,6 +2,14 @@
 
 # Histórico de versões
 
+## 0.27.0
+
+- **Retrieve antes de mexer:** `reldor retrieve --files <arquivos>` monta o retrieve só dos arquivos que vão ser
+  alterados, da org de referência, e deixa de fora (explicando) o que tem mudança não commitada e profile sozinho.
+  `reldor retrieve --check` confere se o retrieve reescreveu mesmo cada arquivo; a IA só altera depois disso.
+  `--compare` traz a versão da org para `.reldor/work/org-copy` sem tocar nos seus arquivos. O `review` avisa arquivo
+  alterado sem retrieve antes (capacidade `retrieve-first`, que o time pode desligar em `reldor tools`).
+
 ## 0.26.0
 
 - **Respostas guardadas:** toda resposta de comando também fica em `.reldor/work/output/<comando>.json` (ou `.txt`),

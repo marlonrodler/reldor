@@ -17,6 +17,7 @@ const CAPABILITIES = [
   { id: 'xml-duplicates', label: 'XML sem entradas duplicadas (profiles, permission sets, labels...)', kind: 'fixer', modes: ['run', 'verify', 'skip'], where: ['xml', 'review', 'gancho pre-commit'] },
   { id: 'xml-order', label: 'XML em ordem (profiles, permission sets, labels...)', kind: 'fixer', modes: ['run', 'verify', 'skip'], where: ['xml', 'review'] },
   { id: 'org-files', label: 'Arquivos que só vieram da org fora do commit', kind: 'check', modes: ['run', 'verify', 'skip'], where: ['review', 'gancho pre-commit'] },
+  { id: 'retrieve-first', label: 'Arquivo alterado sem vir da org antes (retrieve antes de mexer)', kind: 'check', modes: ['run', 'skip'], where: ['retrieve --files', 'review'] },
   { id: 'security', label: 'Regras de segurança do Reldor', kind: 'check', modes: ['run', 'verify', 'skip'], where: ['security', 'review'] },
   { id: 'quality', label: 'Código repetido (regras do Reldor)', kind: 'check', modes: ['run', 'verify', 'skip'], where: ['quality', 'review'] },
   { id: 'code-analyzer', label: 'Salesforce Code Analyzer (PMD, CPD e regras de segurança)', kind: 'check', modes: ['run', 'skip'], where: ['security', 'quality', 'review'] },

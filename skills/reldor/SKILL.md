@@ -20,6 +20,20 @@ Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você de
 6. A regra 5 vale sempre, mesmo que a pessoa peça para você rodar: explique que o Reldor deixa Git e org com ela. **Leitura da org** pode rodar direto: `reldor limits --org <alias>` (ele usa `sf org list limits`, que não muda nada).
 7. **Mudanças só em arquivos** podem rodar, com o "sim" da pessoa no chat. `reldor xml`, `reldor merge --resolve`, `reldor hook install` e `reldor merge install` pedem confirmação: rode primeiro sem `--yes` (ele mostra o que mudaria e responde "Sem confirmação, nada foi feito", o que não é erro) e, depois do "sim", com `--yes`. `reldor tools set`, `reldor env` e `reldor profile` só mudam a configuração do Reldor: diga o que vai mudar e rode depois do "sim".
 
+## Retrieve antes de mexer
+Antes de **alterar um arquivo de metadado que já existe** (classe, trigger, flow, LWC, campo, layout, permission set...),
+ele precisa vir da org de referência, para a mudança partir do que está lá de verdade:
+1. Rode `reldor retrieve --files <arquivo1>,<arquivo2> --json` com todos os arquivos que você vai alterar. Se faltar
+   a org, pergunte e ofereça `reldor env --org <alias>`.
+2. Mostre `commands` para a pessoa rodar e espere ela dizer que rodou. Diga os `skipped` e o motivo (ex.: mudança dela
+   não commitada, que o retrieve apagaria).
+3. Rode `reldor retrieve --check --json`. Só altere os arquivos em `done`. Se algum ficar em `waiting`, o retrieve não
+   rodou ou falhou: peça para rodar de novo.
+Arquivo novo (que você vai criar) não precisa. Se o `review` avisar `[retrieve]` (arquivo alterado sem retrieve antes),
+ofereça `reldor retrieve --compare --files <arquivos>`: a versão da org vai para `.reldor/work/org-copy`, sem tocar nos
+arquivos da pessoa, e você compara e diz o que a org tem de diferente. Se o time escolheu `retrieve-first: skip` em
+`reldor tools`, pule esta seção.
+
 ## Ferramentas do time: não repita o trabalho de outra ferramenta
 O `reldor status --json` traz `tools`: o que outra ferramenta do time já faz (`others`) e sinais encontrados que ainda
 não foram decididos (`suggestions`). Os comandos do Reldor já seguem isso sozinhos; você só precisa:

@@ -270,7 +270,7 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor test-radar`](./docs/test-radar.en.md) | Tests that can break with your changes; builds the validation command and reads the result (`--result`) | ✅ |
 | [`reldor check`](./docs/check.en.md) | Fields read outside the query (SOQL or selector) | ✅ |
 | [`reldor security`](./docs/security.en.md) | Security review of your changes: SOQL injection, CRUD/FLS, sharing, sensitive logs, secrets, XSS, flows, guest access | ✅ |
-| [`reldor retrieve`](./docs/commit.en.md) | Builds the retrieve command for the right org and takes the snapshot for the clean commit | ✅ |
+| [`reldor retrieve`](./docs/retrieve.en.md) | Builds the retrieve for the right org: before changing files (`--files`, and `--check` confirms they came) or the whole project, with the snapshot for the clean commit | ✅ |
 | [`reldor commit`](./docs/commit.en.md) | Clean commit: prepares only your lines, even in files the retrieve also changed, and hands you the commands (`--stash-org` leaves only yours in the folder; `reldor clean` is the short name) | ✅ |
 | [`reldor deploy`](./docs/deploy.en.md) | Builds the validation and deploy commands for your files, with the radar's tests; never runs them | ✅ |
 | [`reldor quality`](./docs/quality.en.md) | Code your change repeats (copied blocks, queries, methods, texts) plus PMD and CPD | ✅ |

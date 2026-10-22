@@ -426,9 +426,17 @@ function precommitCommand(root) {
   return 1;
 }
 
-async function retrieveCommand(root, flags) {
+async function retrieveCommand(root, flags, args = []) {
   if (!requireSfProject(root)) return 1;
   const { config } = loadConfig(root);
+  const fresh = require('../../modules/sf/org/fresh');
+  // --check: did the retrieve handed over before really rewrite the files? Only reads the folder.
+  if (flags.check) {
+    const r = fresh.checkFresh(root);
+    if (flags.json) printJson({ ...r, ready: !r.waiting.length });
+    else print(['\n🛡️  Retrieve antes de mexer', '', ...(r.done.length ? [`✅ Vieram da org: ${r.done.join(', ')}`] : []), ...(r.waiting.length ? [`⏳ Ainda iguais a antes (o retrieve não rodou ou falhou): ${r.waiting.join(', ')}`] : []), ...(!r.done.length && !r.waiting.length ? ['Nenhum retrieve pendente.'] : []), '', r.waiting.length ? '➡️  Rode o comando do retrieve e confira de novo: reldor retrieve --check' : '➡️  Pode mexer nesses arquivos.']);
+    return 0;
+  }
   const sfModule = require('../../modules/sf');
   const target = resolveOrg(config, flags, flags.org || config.reference_org ? null : sfModule.detect(root).defaultOrg);
   if (target.error) {
@@ -436,6 +444,33 @@ async function retrieveCommand(root, flags) {
     return 1;
   }
   const pending = gitApi.pendingChanges(root);
+  // --files: the files about to be changed, fresh from the org first (and written down to check later).
+  if (typeof flags.files === 'string' || args.length) {
+    const wanted = [...(typeof flags.files === 'string' ? flags.files.split(',') : []), ...args].map((x) => x.trim()).filter(Boolean);
+    // --compare: the org version goes to a folder apart (.reldor/work/org-copy), so nothing of yours is overwritten.
+    const compare = Boolean(flags.compare);
+    const plan = fresh.planFresh(root, wanted, { pending: compare ? [] : [...pending.modified, ...pending.added, ...pending.deleted] });
+    const { handover, cmdLine } = require('../report');
+    const sfCmd = ['sf', 'project', 'retrieve', 'start', '--target-org', target.org, ...plan.metadata.flatMap((m) => ['--metadata', m]), ...(compare ? ['--output-dir', '.reldor/work/org-copy'] : [])];
+    const steps = !plan.metadata.length ? [] : compare
+      ? [{ cmd: cmdLine(sfCmd), why: 'traz a versão da org para .reldor/work/org-copy, sem tocar nos seus arquivos' }]
+      : [{ cmd: cmdLine(sfCmd), why: 'traz da org a versão atual desses arquivos' }, { cmd: 'reldor retrieve --check', why: 'confere se vieram mesmo, antes de mexer' }];
+    if (plan.files.length && !compare) fresh.markRequested(root, plan.files, target.org);
+    logAction(root, 'retrieve-plan', { summary: `${target.org}: ${plan.files.length} arquivo(s) antes de mexer` });
+    if (flags.json) {
+      printJson({ org: target.org, production: target.production, compare, folder: compare ? '.reldor/work/org-copy' : null, files: plan.files, metadata: plan.metadata, skipped: plan.skipped, commands: steps.map((x) => x.cmd) });
+      return 0;
+    }
+    print([
+      compare ? '\n🛡️  Comparar com a org' : '\n🛡️  Retrieve antes de mexer',
+      '',
+      `• Org: ${target.org}${target.environment ? ` (${target.environment})` : ''}${target.production ? ' · produção (só leitura)' : ''}`,
+      ...(plan.files.length ? [`• Arquivos: ${plan.files.join(', ')}`] : []),
+      ...plan.skipped.map((s) => `⚠️ ${s.file}: ${s.why}`),
+      ...(steps.length ? handover(steps) : ['', 'Nada para trazer.']),
+    ]);
+    return 0;
+  }
   const pendingCount = Object.values(pending).reduce((n, l) => n + l.length, 0);
   const specific = Boolean(flags.metadata);
   const out = [

@@ -270,7 +270,7 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor test-radar`](./docs/test-radar.md) | Testes que podem quebrar com as suas mudanças; monta o comando de validação e lê o resultado (`--result`) | ✅ |
 | [`reldor check`](./docs/check.md) | Campos lidos fora da query (SOQL ou selector) | ✅ |
 | [`reldor security`](./docs/security.md) | Revisão de segurança das mudanças: SOQL injection, CRUD/FLS, sharing, logs sensíveis, segredos, XSS, flows, acesso de convidado | ✅ |
-| [`reldor retrieve`](./docs/commit.md) | Monta o comando de retrieve da org certa e tira a foto para o commit limpo | ✅ |
+| [`reldor retrieve`](./docs/retrieve.md) | Monta o retrieve da org certa: antes de mexer em arquivos (`--files`, e `--check` confere se vieram) ou do projeto, com a foto para o commit limpo | ✅ |
 | [`reldor commit`](./docs/commit.md) | Commit limpo: prepara só as suas linhas, até em arquivos que o retrieve também mudou, e entrega os comandos (`--stash-org` deixa na pasta só o seu; `reldor clean` é o nome curto) | ✅ |
 | [`reldor deploy`](./docs/deploy.md) | Monta os comandos de validação e de deploy dos seus arquivos, com os testes do radar; nunca executa | ✅ |
 | [`reldor quality`](./docs/quality.md) | Código que a sua mudança repete (blocos, queries, métodos, textos) mais PMD e CPD | ✅ |
