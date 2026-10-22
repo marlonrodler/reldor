@@ -30,6 +30,10 @@ Rode `reldor doctor --json` e siga o `next`.
 
 Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você descobre a etapa e explica o próximo passo.
 
+## Como rodar o Reldor
+- **Se as ferramentas `reldor_ler` e `reldor_mudar` (MCP) estiverem disponíveis, use sempre elas, nunca o terminal:** `reldor_ler` com `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto aberta. É mais rápido e não se perde. `reldor_mudar` só depois do "sim" da pessoa.
+- Sem elas, use o terminal (`reldor <comando>`). Se o terminal ecoar o comando misturado uma vez, use `--out .reldor/work/<nome>.json` em **todos** os comandos seguintes da conversa e sugira à pessoa rodar uma vez `npx github:marlonrodler/reldor setup`, que liga o MCP.
+
 ## Sempre
 1. Rode `reldor status --json` primeiro para saber a etapa atual. Se `alerts` não estiver vazio, comece por eles: são problemas reais se a branch subir agora (🔴 bloqueia, 🟡 atenção). Quando a pessoa perguntar "e agora?", é isso que você responde.
 2. Leia o steering `reldor-guide.md` para escolher o próximo passo.

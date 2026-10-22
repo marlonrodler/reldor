@@ -59,7 +59,15 @@ Optional: the **Salesforce Code Analyzer** adds the official rules (PMD, CPD, se
 
 ### 2. Install the `reldor` command
 
-Pick **one** of the two ways. If unsure, use A.
+**Using Kiro? One command does it all** (in the Command Prompt, cmd, or any terminal):
+
+```bash
+npx github:marlonrodler/reldor setup
+```
+
+It installs Reldor for your user, connects Reldor to Kiro as an **MCP server** (the AI calls Reldor directly, without a terminal: no repeated commands, no waiting) and, on Windows, puts Reldor in the PATH **of Kiro's terminals only**, without touching Windows variables and without asking IT. It shows what will change and asks for a "yes". See [`setup`](./docs/setup.en.md). Then go on to step 3 (the power).
+
+Without Kiro, or if you prefer doing it by hand, pick **one** of the two ways below. If unsure, use A.
 
 **A. With npm (recommended).** One line, in any folder. npm keeps Reldor with your other global commands, so there is no folder to pick.
 
@@ -242,6 +250,7 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor env`](./docs/env.en.md) | The environment chain and branch names: show and change, nothing fixed in the code | ✅ |
 | [`reldor review`](./docs/review.en.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
 | [`reldor tools`](./docs/tools.en.md) | Team tools: who takes care of each thing, so Reldor only checks or stays out | ✅ |
+| [`reldor setup`](./docs/setup.en.md) | Installs and prepares Kiro with one command: MCP and the PATH of Kiro's terminals, without touching Windows | ✅ |
 | [`reldor doctor`](./docs/doctor.en.md) | Checks the installation and the terminal's folder, and gives the next step | ✅ |
 | [`reldor init`](./docs/init.en.md) | Sets Reldor up in a project without asking anything: saves only what it detected | ✅ |
 | [`reldor profile`](./docs/init.en.md#profilemd) | Refreshes `profile.md` with what is in the project today, without touching the team's part | ✅ |
