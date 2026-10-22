@@ -72,8 +72,13 @@ function review(root, flags) {
   if (plan && (plan.fromOrg.length || plan.mixed.length)) {
     attention.push({ area: 'org', file: null, text: `${plan.fromOrg.length + plan.mixed.length} arquivo(s) têm mudanças que vieram da org e não são suas`, fix: tools.fixHint(config, 'org-files', 'reldor clean deixa na pasta só o seu antes do commit.') });
   }
+  // A file that already existed and was changed without coming fresh from the org first (reldor retrieve --files).
+  if (on('retrieve-first')) {
+    const stale = require('../../modules/sf/org/fresh').staleChanges(root, changes);
+    if (stale.length) attention.push({ area: 'retrieve', file: null, text: `${stale.length} arquivo(s) alterado(s) sem retrieve antes: ${stale.slice(0, 5).map((f) => f.split('/').pop()).join(', ')}${stale.length > 5 ? '…' : ''}`, fix: 'Compare com a org sem perder o seu: reldor retrieve --compare --files <arquivos>. Nos próximos, rode reldor retrieve --files antes de mexer.' });
+  }
   // Nothing is left out silently: every capability another tool takes care of is listed with its owner.
-  const REVIEW_PARTS = ['security', 'quality', 'code-analyzer', 'queries', 'affected-tests', 'xml-duplicates', 'xml-order', 'org-files'];
+  const REVIEW_PARTS = ['retrieve-first', 'security', 'quality', 'code-analyzer', 'queries', 'affected-tests', 'xml-duplicates', 'xml-order', 'org-files'];
   const others = REVIEW_PARTS.map((id) => tools.resolveTool(config, id)).filter((t) => t.mode !== 'run');
   const low = qualityFindings.filter((f) => f.severity === 'baixa').length;
   return {

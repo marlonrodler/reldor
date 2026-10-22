@@ -2,6 +2,14 @@
 
 # Changelog
 
+## 0.27.0
+
+- **Retrieve before changing:** `reldor retrieve --files <files>` builds the retrieve of only the files about to change,
+  from the reference org, and leaves out (saying why) files with uncommitted changes and profiles alone.
+  `reldor retrieve --check` confirms the retrieve really rewrote each file; the AI changes them only after that.
+  `--compare` brings the org version into `.reldor/work/org-copy` without touching your files. `review` warns about a
+  file changed without a retrieve first (capability `retrieve-first`, which a team can turn off in `reldor tools`).
+
 ## 0.26.0
 
 - **Kept answers:** every command answer is also kept in `.reldor/work/output/<command>.json` (or `.txt`), out of Git.

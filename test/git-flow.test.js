@@ -135,3 +135,35 @@ test('retrieve warns about uncommitted work before overwriting it', () => {
   assert.match(r.stdout, /não commitado/);
   assert.match(r.stdout, /conta como SEU/);
 });
+
+test('retrieve before changing: hands over only the files, checks they came, and review warns when skipped', () => {
+  const dir = project();
+  config(dir, 'reference_org: ref-org\n');
+  const cls = `${CLS}/Accounts.cls`;
+  const selector = `${CLS}/AccountsSelector.cls`;
+  // A file with an uncommitted change of yours is left out: the retrieve would erase it.
+  fs.appendFileSync(path.join(dir, selector), '\n// meu trabalho\n');
+  const plan = JSON.parse(reldor(dir, ['retrieve', '--files', `${cls},${selector},README.md`, '--json']).stdout);
+  assert.equal(plan.org, 'ref-org');
+  assert.deepEqual(plan.files, [cls]);
+  assert.deepEqual(plan.metadata, ['ApexClass:Accounts']);
+  assert.deepEqual(plan.skipped.map((s) => s.file), [selector, 'README.md']);
+  assert.match(plan.commands[0], /^sf project retrieve start --target-org ref-org --metadata ApexClass:Accounts$/);
+
+  // Before the person runs it, the file is still waiting; after the retrieve rewrites it, it is fresh.
+  assert.deepEqual(JSON.parse(reldor(dir, ['retrieve', '--check', '--json']).stdout).waiting, [cls]);
+  fs.writeFileSync(path.join(dir, cls), `${read(dir, cls)}\n// da org\n`);
+  const check = JSON.parse(reldor(dir, ['retrieve', '--check', '--json']).stdout);
+  assert.deepEqual(check.done, [cls]);
+  assert.equal(check.ready, true);
+
+  // The review warns about the file changed without a retrieve first (the selector), not about the fresh one.
+  const review = JSON.parse(reldor(dir, ['review', '--json', '--no-analyzer']).stdout);
+  const warn = review.attention.find((a) => a.area === 'retrieve');
+  assert.ok(warn && /AccountsSelector\.cls/.test(warn.text) && !/Accounts\.cls/.test(warn.text));
+
+  // --compare brings the org version apart, without touching your files.
+  const cmp = JSON.parse(reldor(dir, ['retrieve', '--compare', '--files', selector, '--json']).stdout);
+  assert.match(cmp.commands[0], /--output-dir \.reldor\/work\/org-copy$/);
+  assert.equal(cmp.commands.length, 1);
+});

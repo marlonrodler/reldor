@@ -58,7 +58,7 @@ const COMMANDS = {
   quality: { run: qualityCommand, group: 'piece', help: 'Só a parte de qualidade e código repetido da revisão' },
   check: { run: checkCommand, group: 'piece', help: 'Só a checagem de queries (campo lido fora da SOQL/Selector)' },
   xml: { run: xmlCommand, group: 'piece', help: 'Ordena e tira duplicados de profiles, permission sets, labels... (--check, --all)' },
-  retrieve: { run: retrieveCommand, group: 'piece', help: 'Monta o retrieve da org certa e a foto para o commit limpo' },
+  retrieve: { run: retrieveCommand, group: 'piece', help: 'Monta o retrieve da org certa (--files: antes de mexer em arquivos; --check confere se vieram)' },
   snapshot: { run: snapshotCommand, group: 'piece', help: 'Foto depois de um retrieve feito fora do Reldor (--clear, --restore)' },
   index: { run: indexCommand, group: 'piece', help: 'Monta ou atualiza o índice do projeto (--full)' },
   log: { run: logCommand, group: 'piece', help: 'Histórico do que o Reldor fez' },
