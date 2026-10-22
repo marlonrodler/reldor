@@ -8,16 +8,24 @@ author: "Marlon Rodler"
 
 # Onboarding
 
-## Step 1: Validar o comando reldor
-Rode `reldor --version` no terminal do projeto.
+Responda sempre em português (ou no idioma da conversa).
+
+## Step 1: Escolher como rodar o Reldor
+- Se as ferramentas `reldor_read` e `reldor_change` existirem (MCP), use só elas, sem terminal: `reldor_read` com
+  `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto. Pule para o Step 2.
+- Senão, rode `reldor --version` no terminal do projeto, uma vez.
 - Se o comando não for reconhecido, o Reldor não está instalado neste computador (ou a pasta do npm não está no PATH).
   Explique à pessoa e, com a confirmação dela, rode `npm install -g github:marlonrodler/reldor`.
 - Se o PowerShell disser que a execução de scripts está desabilitada, ou estiver em modo de linguagem restrito, use
   `reldor.cmd` no lugar de `reldor` (ou o caminho completo que `npm prefix -g` mostra, mais `\reldor.cmd`).
   Não tente mudar a política do PowerShell: é decisão da TI.
 
+- Se o terminal devolver o comando repetido ou misturado (ex.: `reldorreldor`) ou demorar, o terminal padrão do Kiro
+  não é o Git Bash: peça à pessoa para rodar uma vez `npx github:marlonrodler/reldor setup` e reabrir o Kiro.
+  Até lá, use `--out .reldor/work/<comando>.json` em todos os comandos e leia o arquivo (ele é sobrescrito, não acumula).
+
 ## Step 2: Conferir a pasta
-Rode `reldor doctor --json` e siga o `next`.
+Rode `reldor doctor --json` (ou `reldor_read` com `command: "doctor"`) e siga o `next`.
 
 # Arquivos de steering deste power
 
@@ -31,7 +39,7 @@ Rode `reldor doctor --json` e siga o `next`.
 Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você descobre a etapa e explica o próximo passo.
 
 ## Como rodar o Reldor
-- **Se as ferramentas `reldor_ler` e `reldor_mudar` (MCP) estiverem disponíveis, use sempre elas, nunca o terminal:** `reldor_ler` com `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto aberta. É mais rápido e não se perde. `reldor_mudar` só depois do "sim" da pessoa.
+- **Se as ferramentas `reldor_read` e `reldor_change` (MCP) estiverem disponíveis, use sempre elas, nunca o terminal:** `reldor_read` com `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto aberta. É mais rápido e não se perde. `reldor_change` só depois do "sim" da pessoa.
 - Sem elas, use o terminal (`reldor <comando>`). Se o terminal ecoar o comando misturado uma vez, use `--out .reldor/work/<nome>.json` em **todos** os comandos seguintes da conversa e sugira à pessoa rodar uma vez `npx github:marlonrodler/reldor setup`, que liga o MCP.
 
 ## Sempre

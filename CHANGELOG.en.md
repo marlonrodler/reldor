@@ -2,12 +2,21 @@
 
 # Changelog
 
+## 0.25.0
+
+- `reldor setup` also makes **Git Bash Kiro's default terminal** (on Windows, Kiro runs the AI's commands in the default
+  terminal; in cmd or a restricted PowerShell they came back mixed up and took minutes) and allows `reldor *` in
+  `~/.kiro/settings/permissions.yaml` (no approval on every command).
+- The MCP tools are in English: `reldor_read` and `reldor_change`.
+- Kiro power: onboarding uses MCP when it is there, answers in Portuguese and, if the terminal mixes things up, asks to
+  run `setup`. `reldor doctor` checks Kiro's terminal and permissions.
+
 ## 0.24.0
 
 - `reldor setup` (new): one command (`npx github:marlonrodler/reldor setup`) installs Reldor, registers the MCP server in
   Kiro and, on Windows, puts the npm folder in the PATH of Kiro's terminals only. Shows what changes, asks for a "yes",
   keeps a backup. Safe to run again.
-- MCP server (`core/mcp/server.js`): the AI calls Reldor without a terminal (`reldor_ler` and `reldor_mudar`), no echo,
+- MCP server (`core/mcp/server.js`): the AI calls Reldor without a terminal (`reldor_read` and `reldor_change`), no echo,
   no waiting, no PATH. The skill uses MCP when it is there; the terminal is the fallback.
 - GitHub Actions runs the tests on Linux and Windows (Node 18 and 22) on every push and PR.
 

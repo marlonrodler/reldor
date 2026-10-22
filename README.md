@@ -65,7 +65,7 @@ Opcionais: o **Salesforce Code Analyzer** soma as regras oficiais (PMD, CPD, seg
 npx github:marlonrodler/reldor setup
 ```
 
-Ele instala o Reldor para o seu usuário, liga o Reldor no Kiro como **servidor MCP** (a IA chama o Reldor direto, sem terminal: nada de comando repetido nem espera) e, no Windows, coloca o Reldor no PATH **só dos terminais do Kiro**, sem mexer nas variáveis do Windows e sem pedir à TI. Ele mostra o que vai mudar e pede um "sim". Veja o [`setup`](./docs/setup.md). Depois, siga para o passo 3 (o power).
+Ele instala o Reldor para o seu usuário, liga o Reldor no Kiro como **servidor MCP** (a IA chama o Reldor direto, sem terminal: nada de comando repetido nem espera) e, no Windows, coloca o Reldor no PATH **só dos terminais do Kiro** (sem mexer nas variáveis do Windows e sem pedir à TI), deixa o **Git Bash** como terminal do Kiro (o comando não volta embaralhado nem demora) e libera os comandos do Reldor para o Kiro não pedir aprovação a cada um. Ele mostra o que vai mudar e pede um "sim". Veja o [`setup`](./docs/setup.md). Depois, siga para o passo 3 (o power).
 
 Sem o Kiro, ou se preferir fazer à mão, escolha **um** dos dois jeitos abaixo. Na dúvida, use o A.
 

@@ -34,11 +34,41 @@ function readJsonc(file) {
   }
 }
 
-/** Writes JSON, keeping the previous file as <file>.reldor-backup. */
+const backedUp = new Set();
+/** Writes JSON, keeping the file as it was before this run as <file>.reldor-backup. */
 function writeJson(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.reldor-backup`);
+  if (fs.existsSync(file) && !backedUp.has(file)) fs.copyFileSync(file, `${file}.reldor-backup`);
+  backedUp.add(file);
   fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
+}
+
+/** Git Bash (comes with Git for Windows): the terminal where Kiro reads command output cleanly. */
+function findGitBash(flags) {
+  if (typeof flags['git-bash'] === 'string') return fs.existsSync(flags['git-bash']) ? flags['git-bash'] : null;
+  const candidates = [process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Programs')]
+    .filter(Boolean)
+    .map((dir) => path.join(dir, 'Git', 'bin', 'bash.exe'));
+  const git = IS_WINDOWS ? run('where', ['git']).stdout.split(/\r?\n/)[0] : '';
+  if (git) candidates.unshift(path.join(path.dirname(path.dirname(git)), 'bin', 'bash.exe'));
+  return candidates.find((c) => fs.existsSync(c)) || null;
+}
+
+/** Kiro's permissions file with "reldor *" allowed in the shell (Reldor never changes Git or the org). */
+function permissionsWithReldor(file) {
+  const YAML = require('yaml');
+  let data = {};
+  if (fs.existsSync(file)) {
+    try {
+      data = YAML.parse(fs.readFileSync(file, 'utf8')) || {};
+    } catch {
+      return { error: true };
+    }
+  }
+  const rules = Array.isArray(data.rules) ? data.rules : [];
+  const has = rules.some((r) => r && r.capability === 'shell' && r.effect === 'allow' && (r.match || []).includes('reldor *'));
+  if (has) return { has: true };
+  return { has: false, text: YAML.stringify({ ...data, rules: [...rules, { capability: 'shell', match: ['reldor *', 'reldor.cmd *'], effect: 'allow' }] }) };
 }
 
 /** Where things are: npm's global folders, the Kiro files, and whether this copy is the installed one. */
@@ -57,6 +87,8 @@ function locate(flags) {
     hasInstall: Boolean(installed) && fs.existsSync(path.join(installed, 'core', 'mcp', 'server.js')),
     isInstalledCopy,
     mcpFile: path.join(home, '.kiro', 'settings', 'mcp.json'),
+    permissionsFile: path.join(home, '.kiro', 'settings', 'permissions.yaml'),
+    gitBash: findGitBash(flags),
     kiroSettings: path.join(appdata, 'Kiro', 'User', 'settings.json'),
     windows: IS_WINDOWS || typeof flags.appdata === 'string',
   };
@@ -74,7 +106,7 @@ async function setupCommand(root, flags) {
 
   // 2. Kiro MCP: the AI calls the Reldor without a terminal.
   const mcp = readJsonc(where.mcpFile);
-  const entry = { command: process.execPath, args: [serverPath], disabled: false, autoApprove: ['reldor_ler'] };
+  const entry = { command: process.execPath, args: [serverPath], disabled: false, autoApprove: ['reldor_read'] };
   if (mcp === null) notes.push(`Não consegui ler ${where.mcpFile} (JSON inválido). Acrescente à mão em "mcpServers": "reldor": ${JSON.stringify(entry)}`);
   else if (JSON.stringify((mcp.mcpServers || {}).reldor) !== JSON.stringify(entry)) steps.push({ id: 'mcp', text: `Registrar o Reldor como servidor MCP do Kiro (${where.mcpFile}); as leituras rodam sem pedir aprovação` });
 
@@ -87,6 +119,18 @@ async function setupCommand(root, flags) {
     if (settings === null) notes.push(`Não consegui ler ${where.kiroSettings}. Acrescente à mão: "terminal.integrated.env.windows": { "PATH": "\${env:PATH};${where.npmPrefix}" }`);
     else if (!String(((settings['terminal.integrated.env.windows'] || {}).PATH) || '').includes(where.npmPrefix)) steps.push({ id: 'path', text: `Pôr ${where.npmPrefix} no PATH só dos terminais do Kiro (${where.kiroSettings}), sem mexer nas variáveis do Windows` });
   }
+
+  // 4. Windows: Git Bash as Kiro's default terminal. Kiro runs the AI's commands in the default terminal; in cmd or
+  // a restricted PowerShell it cannot tell when a command ends (echoed commands, minutes of waiting).
+  if (where.windows && where.gitBash) {
+    settings = settings || readJsonc(where.kiroSettings);
+    if (settings && settings['terminal.integrated.defaultProfile.windows'] !== 'Git Bash') steps.push({ id: 'terminal', text: 'Usar o Git Bash como terminal padrão do Kiro: é nele que a IA lê a resposta dos comandos sem embaralhar nem esperar' });
+  } else if (where.windows) notes.push('Não achei o Git Bash (vem com o Git para Windows). Sem ele, o terminal do Kiro pode embaralhar os comandos.');
+
+  // 5. Kiro permissions: "reldor *" runs without asking for approval each time.
+  const perm = permissionsWithReldor(where.permissionsFile);
+  if (perm.error) notes.push(`Não consegui ler ${where.permissionsFile}. Para não pedir aprovação, acrescente uma regra: capability: shell, match: ["reldor *"], effect: allow`);
+  else if (!perm.has) steps.push({ id: 'permissions', text: `Liberar os comandos "reldor ..." no Kiro (${where.permissionsFile}), para ele parar de pedir aprovação a cada comando` });
 
   const out = ['\n🛡️  Reldor · instalação', ''];
   if (!steps.length) {
@@ -117,8 +161,20 @@ async function setupCommand(root, flags) {
     } else if (s.id === 'path') {
       const env = { ...(settings['terminal.integrated.env.windows'] || {}) };
       env.PATH = `${env.PATH || '${env:PATH}'};${where.npmPrefix}`;
-      writeJson(where.kiroSettings, { ...settings, 'terminal.integrated.env.windows': env });
+      settings = { ...settings, 'terminal.integrated.env.windows': env };
+      writeJson(where.kiroSettings, settings);
       done.push('path');
+    } else if (s.id === 'terminal') {
+      const profiles = { ...(settings['terminal.integrated.profiles.windows'] || {}) };
+      if (!profiles['Git Bash']) profiles['Git Bash'] = { path: where.gitBash };
+      settings = { ...settings, 'terminal.integrated.profiles.windows': profiles, 'terminal.integrated.defaultProfile.windows': 'Git Bash' };
+      writeJson(where.kiroSettings, settings);
+      done.push('terminal');
+    } else if (s.id === 'permissions') {
+      fs.mkdirSync(path.dirname(where.permissionsFile), { recursive: true });
+      if (fs.existsSync(where.permissionsFile)) fs.copyFileSync(where.permissionsFile, `${where.permissionsFile}.reldor-backup`);
+      fs.writeFileSync(where.permissionsFile, perm.text);
+      done.push('permissions');
     }
   }
   if (flags.json) {
@@ -130,7 +186,7 @@ async function setupCommand(root, flags) {
     `✅ Pronto (${done.length} passo(s)).`,
     ...notes.map((n) => `⚠️ ${n}`),
     '',
-    '➡️  Feche e abra o Kiro (ou "Developer: Reload Window").',
+    '➡️  Feche e abra o Kiro (ou "Developer: Reload Window"), e feche os terminais antigos dele.',
     '➡️  Se ainda não tem o power do Reldor no Kiro, importe pelo link do README (é o que ensina a IA a usar o Reldor).',
     '➡️  Num chat novo: "quero usar o Reldor".',
   ]);

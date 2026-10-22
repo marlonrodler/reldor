@@ -2,12 +2,21 @@
 
 # Histórico de versões
 
+## 0.25.0
+
+- `reldor setup` também deixa o **Git Bash como terminal padrão do Kiro** (no Windows, o Kiro roda os comandos da IA
+  no terminal padrão; no cmd ou no PowerShell restrito eles voltavam embaralhados e demoravam minutos) e libera
+  `reldor *` em `~/.kiro/settings/permissions.yaml` (sem pedir aprovação a cada comando).
+- As ferramentas do MCP ficam em inglês: `reldor_read` e `reldor_change`.
+- Power do Kiro: o onboarding usa o MCP quando existe, responde em português e, se o terminal embaralhar, manda rodar o
+  `setup`. `reldor doctor` confere o terminal e as permissões do Kiro.
+
 ## 0.24.0
 
 - `reldor setup` (novo): um comando (`npx github:marlonrodler/reldor setup`) instala o Reldor, registra o servidor
   MCP no Kiro e, no Windows, põe a pasta do npm no PATH só dos terminais do Kiro. Mostra o que muda, pede um "sim",
   guarda backup. Pode rodar de novo.
-- Servidor MCP (`core/mcp/server.js`): a IA chama o Reldor sem terminal (`reldor_ler` e `reldor_mudar`), sem eco,
+- Servidor MCP (`core/mcp/server.js`): a IA chama o Reldor sem terminal (`reldor_read` e `reldor_change`), sem eco,
   sem espera e sem depender do PATH. A skill usa o MCP quando existe; o terminal fica de reserva.
 - GitHub Actions roda os testes em Linux e Windows (Node 18 e 22) a cada push e PR.
 
