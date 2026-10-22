@@ -2,6 +2,15 @@
 
 # Histórico de versões
 
+## 0.24.0
+
+- `reldor setup` (novo): um comando (`npx github:marlonrodler/reldor setup`) instala o Reldor, registra o servidor
+  MCP no Kiro e, no Windows, põe a pasta do npm no PATH só dos terminais do Kiro. Mostra o que muda, pede um "sim",
+  guarda backup. Pode rodar de novo.
+- Servidor MCP (`core/mcp/server.js`): a IA chama o Reldor sem terminal (`reldor_ler` e `reldor_mudar`), sem eco,
+  sem espera e sem depender do PATH. A skill usa o MCP quando existe; o terminal fica de reserva.
+- GitHub Actions roda os testes em Linux e Windows (Node 18 e 22) a cada push e PR.
+
 ## 0.23.0
 
 - **Menos comandos à vista:** a ajuda mostra os 14 do dia a dia e os 6 de configuração; as peças ficam em

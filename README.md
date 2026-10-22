@@ -59,7 +59,15 @@ Opcionais: o **Salesforce Code Analyzer** soma as regras oficiais (PMD, CPD, seg
 
 ### 2. Instale o comando `reldor`
 
-Escolha **um** dos dois jeitos. Na dúvida, use o A.
+**Usa o Kiro? Um comando faz tudo** (no Prompt de Comando, o cmd, ou em qualquer terminal):
+
+```bash
+npx github:marlonrodler/reldor setup
+```
+
+Ele instala o Reldor para o seu usuário, liga o Reldor no Kiro como **servidor MCP** (a IA chama o Reldor direto, sem terminal: nada de comando repetido nem espera) e, no Windows, coloca o Reldor no PATH **só dos terminais do Kiro**, sem mexer nas variáveis do Windows e sem pedir à TI. Ele mostra o que vai mudar e pede um "sim". Veja o [`setup`](./docs/setup.md). Depois, siga para o passo 3 (o power).
+
+Sem o Kiro, ou se preferir fazer à mão, escolha **um** dos dois jeitos abaixo. Na dúvida, use o A.
 
 **A. Pelo npm (recomendado).** Uma linha, em qualquer pasta. O npm guarda o Reldor junto com os outros comandos globais e você não precisa escolher pasta.
 
@@ -242,6 +250,7 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor env`](./docs/env.md) | A cadeia de ambientes e os nomes de branch: ver e mudar, nada fixo no código | ✅ |
 | [`reldor review`](./docs/review.md) | Revisão antes do commit: segurança, qualidade, queries, testes e XML de uma vez | ✅ |
 | [`reldor tools`](./docs/tools.md) | Ferramentas do time: quem cuida de cada coisa, para o Reldor só conferir ou ficar de fora | ✅ |
+| [`reldor setup`](./docs/setup.md) | Instala e prepara o Kiro com um comando: MCP e PATH dos terminais do Kiro, sem mexer no Windows | ✅ |
 | [`reldor doctor`](./docs/doctor.md) | Confere a instalação e a pasta do terminal, e diz o próximo passo | ✅ |
 | [`reldor init`](./docs/init.md) | Configura o Reldor no projeto sem perguntar nada: grava só o que detectou | ✅ |
 | [`reldor profile`](./docs/init.md#o-profilemd) | Atualiza o `profile.md` com o que está no projeto hoje, sem mexer na parte do time | ✅ |

@@ -8,6 +8,7 @@ const { profileCommand } = require('./profile');
 const { meCommand } = require('./me');
 const { taskCommand } = require('./task');
 const { limitsCommand } = require('./limits');
+const { setupCommand } = require('./setup');
 const { accessCommand } = require('./access');
 const { helpersCommand } = require('./helpers');
 const { logCommand } = require('./log');
@@ -40,6 +41,7 @@ const COMMANDS = {
   merge: { run: mergeCommand, group: 'main', help: 'Merge assistido na branch de merge (reldor merge <sua-branch>, --resolve, --check, --continue)' },
   promote: { run: promoteCommand, group: 'main', help: 'Ensaio de promoção: ordem dos commits e dependências antes da PR' },
   rollback: { run: rollbackCommand, group: 'main', help: 'Plano de rollback de uma PR (não altera nada)' },
+  setup: { run: setupCommand, group: 'setup', help: 'Instala e prepara o Kiro com um comando: MCP e PATH dos terminais do Kiro, sem mexer no Windows' },
   doctor: { run: doctorCommand, group: 'setup', help: 'Confere a instalação e a pasta do terminal' },
   init: { run: initCommand, group: 'setup', help: 'Configura o Reldor no projeto, sem perguntas' },
   env: { run: envCommand, group: 'setup', help: 'Ambientes e org (set "nome:branch, ...", --org <alias>, --org-for "nome:alias")' },

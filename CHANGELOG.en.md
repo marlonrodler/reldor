@@ -2,6 +2,15 @@
 
 # Changelog
 
+## 0.24.0
+
+- `reldor setup` (new): one command (`npx github:marlonrodler/reldor setup`) installs Reldor, registers the MCP server in
+  Kiro and, on Windows, puts the npm folder in the PATH of Kiro's terminals only. Shows what changes, asks for a "yes",
+  keeps a backup. Safe to run again.
+- MCP server (`core/mcp/server.js`): the AI calls Reldor without a terminal (`reldor_ler` and `reldor_mudar`), no echo,
+  no waiting, no PATH. The skill uses MCP when it is there; the terminal is the fallback.
+- GitHub Actions runs the tests on Linux and Windows (Node 18 and 22) on every push and PR.
+
 ## 0.23.0
 
 - **Fewer commands in sight:** help shows the 14 daily ones and the 6 for setup; the pieces are in `reldor help --all`.
