@@ -8,7 +8,7 @@ description: Guardião do desenvolvimento Salesforce. Use quando a pessoa quiser
 Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você descobre a etapa e explica o próximo passo.
 
 ## Como rodar o Reldor
-- **Se as ferramentas `reldor_ler` e `reldor_mudar` (MCP) estiverem disponíveis, use sempre elas, nunca o terminal:** `reldor_ler` com `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto aberta. É mais rápido e não se perde. `reldor_mudar` só depois do "sim" da pessoa.
+- **Se as ferramentas `reldor_read` e `reldor_change` (MCP) estiverem disponíveis, use sempre elas, nunca o terminal:** `reldor_read` com `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto aberta. É mais rápido e não se perde. `reldor_change` só depois do "sim" da pessoa.
 - Sem elas, use o terminal (`reldor <comando>`). Se o terminal ecoar o comando misturado uma vez, use `--out .reldor/work/<nome>.json` em **todos** os comandos seguintes da conversa e sugira à pessoa rodar uma vez `npx github:marlonrodler/reldor setup`, que liga o MCP.
 
 ## Sempre

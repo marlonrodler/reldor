@@ -47,6 +47,28 @@ function gitCheck() {
     : { id: 'git', label: 'Git', state: 'missing', required: true, detail: 'não encontrado', fix: 'winget install Git.Git (Windows) ou git-scm.com' };
 }
 
+/**
+ * Kiro ready for the AI: on Windows, Git Bash as the default terminal (otherwise commands come back echoed and slow)
+ * and "reldor *" allowed (otherwise every command waits for an approval). Optional: only when Kiro is installed.
+ */
+function kiroCheck(home = os.homedir()) {
+  const appdata = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+  const settingsFile = path.join(appdata, 'Kiro', 'User', 'settings.json');
+  if (process.platform !== 'win32' || !fs.existsSync(path.dirname(settingsFile))) return null;
+  const { readJsonc } = require('../cli/setup');
+  const settings = readJsonc(settingsFile) || {};
+  let perms = '';
+  try {
+    perms = fs.readFileSync(path.join(home, '.kiro', 'settings', 'permissions.yaml'), 'utf8');
+  } catch {
+    /* no permissions file */
+  }
+  const missing = [settings['terminal.integrated.defaultProfile.windows'] !== 'Git Bash' ? 'o terminal padrão não é o Git Bash (os comandos voltam embaralhados e demoram)' : null, !perms.includes('reldor *') ? 'os comandos do Reldor pedem aprovação a cada vez' : null].filter(Boolean);
+  return missing.length
+    ? { id: 'kiro', label: 'Kiro', state: 'missing', required: false, detail: missing.join('; '), fix: 'npx github:marlonrodler/reldor setup' }
+    : { id: 'kiro', label: 'Kiro', state: 'ok', required: false, detail: 'Git Bash como terminal e comandos do Reldor liberados' };
+}
+
 /** GitHub CLI: optional, only for reading open pull requests. */
 function ghCheck() {
   const res = run('gh', ['--version'], { timeout: 15000 });
@@ -115,6 +137,8 @@ function nextStep(checks, folder, plugin) {
   if (folder.reldorFolder) return 'Este terminal está na pasta do próprio Reldor. Abra a pasta do seu projeto no VS Code (File → Open Folder), abra o terminal (Terminal → New Terminal) e rode reldor doctor lá.';
   if (!folder.project.length) return `Esta pasta não é um projeto que o Reldor conhece${folder.markers && folder.markers.length ? ` (${folder.markers.join('; ')})` : ''}. Abra a pasta do projeto no VS Code, abra o terminal ali e rode reldor doctor de novo.`;
   if (plugin.state !== 'ok') return `Ligue o Reldor na sua IA. ${plugin.fix}.`;
+  const kiro = checks.find((c) => c.id === 'kiro' && c.state === 'missing');
+  if (kiro) return `Prepare o Kiro (${kiro.detail}): rode uma vez ${kiro.fix} e feche e abra o Kiro.`;
   if (!folder.configured) return 'Tudo instalado. Abra o chat da sua IA neste projeto e diga: "quero usar o Reldor" (ou rode reldor init).';
   if (folder.toolSuggestions) return `Tudo pronto. Encontrei ${folder.toolSuggestions} sinal(is) de ferramentas do time que já fazem o que o Reldor faz: confira com "reldor tools" para o Reldor não repetir trabalho.`;
   return 'Tudo pronto. Converse com a sua IA (ex.: "e agora?") ou rode reldor status.';
@@ -123,7 +147,7 @@ function nextStep(checks, folder, plugin) {
 /** Builds the whole report. */
 function buildDoctor(root, cwd = process.cwd()) {
   const install = installInfo();
-  const checks = [nodeCheck(), gitCheck(), ghCheck()];
+  const checks = [nodeCheck(), gitCheck(), ghCheck(), kiroCheck()].filter(Boolean);
   const folder = folderFacts(root, cwd);
   for (const name of Object.keys(REGISTRY)) {
     const mod = REGISTRY[name]();

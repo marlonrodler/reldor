@@ -41,17 +41,17 @@ test('MCP: the AI calls the Reldor without a terminal; reading and changing are 
     { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-03-26', capabilities: {} } },
     { jsonrpc: '2.0', method: 'notifications/initialized' },
     { jsonrpc: '2.0', id: 2, method: 'tools/list' },
-    { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'reldor_ler', arguments: { command: 'status', args: ['--json', '--quick'], folder: dir } } },
-    { jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'reldor_ler', arguments: { command: 'xml', args: ['--yes'], folder: dir } } },
-    { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'reldor_ler', arguments: { command: 'status', args: ['--yes'], folder: dir } } },
+    { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'reldor_read', arguments: { command: 'status', args: ['--json', '--quick'], folder: dir } } },
+    { jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'reldor_read', arguments: { command: 'xml', args: ['--yes'], folder: dir } } },
+    { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'reldor_read', arguments: { command: 'status', args: ['--yes'], folder: dir } } },
   ]);
   assert.equal(init.result.serverInfo.name, 'reldor');
   assert.equal(init.result.protocolVersion, '2025-03-26');
-  assert.deepEqual(list.result.tools.map((t) => t.name), ['reldor_ler', 'reldor_mudar']);
+  assert.deepEqual(list.result.tools.map((t) => t.name), ['reldor_read', 'reldor_change']);
   const s = JSON.parse(status.result.content[0].text);
   assert.ok(s.modules.some((m) => m.name === 'sf'), 'the status of that folder came back as JSON');
   assert.equal(blocked.result.isError, true, 'xml is not a reading command');
-  assert.match(wrong.result.content[0].text, /reldor_mudar/);
+  assert.match(wrong.result.content[0].text, /reldor_change/);
 });
 
 test('setup: one command registers the MCP server and the PATH of Kiro terminals; safe to run again', () => {
@@ -61,18 +61,25 @@ test('setup: one command registers the MCP server and the PATH of Kiro terminals
   fs.mkdirSync(path.dirname(settings), { recursive: true });
   fs.writeFileSync(settings, '{\n  // minhas configurações\n  "editor.fontSize": 14,\n}\n');
   const env = { ...process.env, RELDOR_NPM_ROOT: path.join(home, 'npm', 'node_modules'), RELDOR_NPM_PREFIX: path.join(home, 'npm') };
-  const run = (args) => spawnSync(process.execPath, [CLI, 'setup', '--home', home, '--appdata', appdata, '--no-install', ...args], { encoding: 'utf8', env, input: '' });
+  const bash = path.join(home, 'Git', 'bin', 'bash.exe');
+  fs.mkdirSync(path.dirname(bash), { recursive: true });
+  fs.writeFileSync(bash, '');
+  const run = (args) => spawnSync(process.execPath, [CLI, 'setup', '--home', home, '--appdata', appdata, '--git-bash', bash, '--no-install', ...args], { encoding: 'utf8', env, input: '' });
 
   assert.match(run([]).stdout, /Nada foi alterado/, 'without a yes, nothing changes');
   const r = JSON.parse(run(['--yes', '--json']).stdout);
-  assert.deepEqual(r.done, ['mcp', 'path']);
+  assert.deepEqual(r.done, ['mcp', 'path', 'terminal', 'permissions']);
   const mcp = JSON.parse(fs.readFileSync(path.join(home, '.kiro', 'settings', 'mcp.json'), 'utf8'));
   assert.equal(mcp.mcpServers.reldor.command, process.execPath);
   assert.match(mcp.mcpServers.reldor.args[0], /core[\\/]mcp[\\/]server\.js$/);
-  assert.deepEqual(mcp.mcpServers.reldor.autoApprove, ['reldor_ler']);
+  assert.deepEqual(mcp.mcpServers.reldor.autoApprove, ['reldor_read']);
   const kiro = JSON.parse(fs.readFileSync(settings, 'utf8'));
   assert.equal(kiro['editor.fontSize'], 14, 'the person settings stay');
   assert.ok(kiro['terminal.integrated.env.windows'].PATH.endsWith(path.join(home, 'npm')));
-  assert.ok(fs.existsSync(`${settings}.reldor-backup`));
+  assert.equal(kiro['terminal.integrated.defaultProfile.windows'], 'Git Bash');
+  assert.equal(kiro['terminal.integrated.profiles.windows']['Git Bash'].path, bash);
+  assert.match(fs.readFileSync(`${settings}.reldor-backup`, 'utf8'), /minhas configurações/, 'the backup is the file as it was');
+  const perm = require('yaml').parse(fs.readFileSync(path.join(home, '.kiro', 'settings', 'permissions.yaml'), 'utf8'));
+  assert.ok(perm.rules.some((x) => x.capability === 'shell' && x.effect === 'allow' && x.match.includes('reldor *')));
   assert.match(run(['--yes']).stdout, /Já está tudo pronto/);
 });
