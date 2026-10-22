@@ -1,53 +1,120 @@
 'use strict';
 
 /**
- * Who owns what, by name: the prefixes the project uses on classes, objects and fields (VND_PedidoService,
- * VND_Pedido__c, VND_Valor__c) become "teams"; what has no team prefix is shared. Also the catalog of shared public
- * methods (`reldor helpers`) and the methods that look the same across teams (candidates for one generic method).
+ * Teams, only when confirmed. Each company marks a team in its own way (at the start, middle or end of a name, with or
+ * without a separator, by folder...), so the Reldor never decides an owner by guessing: it suggests words that repeat
+ * in many names, and only the teams saved in the config (`teams:`, `reldor teams add`) say who owns what.
+ * Also the catalog of public methods (`reldor helpers`) and the methods that look the same in different classes.
  * Everything comes from the project index: no AI, no org.
  */
 
-const FRAMEWORK_PREFIXES = new Set(['fflib', 'test', 'tst', 'mock', 'util', 'utils']);
 const SHARED_NAME = /(Util|Utils|Helper|Helpers|Utility|Utilities|Common|Commons|Shared|Core|Base|Generic|Factory)$/i;
 
-/** The team prefix of a name: "VND" in VND_PedidoService or VND_Pedido__c. A namespace (ns__Field__c) is not a prefix. */
-function prefixOf(name) {
-  if (!name || /^[A-Za-z0-9]+__\w+__[a-z]+$/i.test(name)) return null;
-  const m = String(name).match(/^([A-Za-z][A-Za-z0-9]{1,7})_(?!_)[A-Za-z0-9]/);
-  if (!m || FRAMEWORK_PREFIXES.has(m[1].toLowerCase())) return null;
-  return m[1];
+/** The words of a name: VND_PedidoService, OpportunityVendasService, vnd-tela, VNDPedido__c → lower-case words. */
+function nameTokens(name) {
+  return String(name || '')
+    .replace(/^[A-Za-z0-9]+__(?=\w+__)/, '') // namespace
+    .replace(/__(c|mdt|e|r|x|b)$/i, '')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((w) => w.toLowerCase());
 }
 
-/** Prefixes used by at least `min` items (classes, objects and custom fields together), biggest first. */
-function teamPrefixes(model, { min = 3, known = [] } = {}) {
-  const items = new Map();
-  const add = (prefix, kind, name) => {
-    if (!prefix) return;
-    const key = prefix.toUpperCase();
-    const t = items.get(key) || items.set(key, { prefix: key, spelling: prefix, classes: [], objects: [], fields: [] }).get(key);
-    t[kind].push(name);
-  };
-  for (const c of Object.values(model.classes || {})) if (!c.isTest) add(prefixOf(c.name), 'classes', c.name);
-  for (const o of Object.values(model.objects || {})) {
-    if (/__c$/i.test(o.name)) add(prefixOf(o.name), 'objects', o.name);
-    for (const f of Object.keys(o.fields || {})) if (/__c$/i.test(f)) add(prefixOf(f), 'fields', `${o.name}.${f}`);
-  }
-  const knownSet = new Set(known.map((k) => String(k).toUpperCase()));
-  // A team prefix is written in capitals somewhere (VND_, RD2_); "Payment_Method__c" is just a word of the name.
-  const upper = new Set();
-  for (const c of Object.values(model.classes || {})) {
-    const p = prefixOf(c.name);
-    if (p && p === p.toUpperCase()) upper.add(p);
-  }
-  for (const o of Object.values(model.objects || {})) {
-    for (const n of [o.name, ...Object.keys(o.fields || {})]) {
-      const p = prefixOf(n);
-      if (p && p === p.toUpperCase() && p.length <= 6) upper.add(p);
+/**
+ * Compiles the confirmed teams: { name, match, where: start|end|anywhere } (a word of the name), { name, regex }
+ * or { name, folder } (a part of the file path). Bad entries are skipped.
+ */
+function compileTeams(list = []) {
+  return (Array.isArray(list) ? list : []).map((t) => {
+    if (!t || !t.name) return null;
+    if (t.regex) {
+      try {
+        const re = new RegExp(t.regex, 'i');
+        return { name: String(t.name), test: (n) => re.test(n) };
+      } catch {
+        return null;
+      }
     }
+    if (t.folder) {
+      const f = String(t.folder).replace(/\\/g, '/').toLowerCase();
+      return { name: String(t.name), test: (n, file) => Boolean(file) && String(file).replace(/\\/g, '/').toLowerCase().includes(f) };
+    }
+    if (!t.match) return null;
+    const word = String(t.match).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const where = t.where || 'anywhere';
+    return {
+      name: String(t.name),
+      test: (n) => {
+        const w = nameTokens(n);
+        if (!w.length) return false;
+        if (where === 'start') return w[0] === word;
+        if (where === 'end') return w[w.length - 1] === word;
+        return w.includes(word);
+      },
+    };
+  }).filter(Boolean);
+}
+
+/** The confirmed team of a name (and its file), or null: shared or not known. */
+function ownerOf(name, teams = [], file = null) {
+  const t = teams.find((x) => x.test(name, file));
+  return t ? t.name : null;
+}
+
+/** Classes, objects and custom fields of each confirmed team. */
+function teamsReport(model, teams = []) {
+  const out = teams.map((t) => ({ name: t.name, classes: [], objects: [], fields: [] }));
+  const add = (owner, kind, name) => {
+    const t = owner && out.find((x) => x.name === owner);
+    if (t) t[kind].push(name);
+  };
+  for (const c of Object.values(model.classes || {})) if (!c.isTest) add(ownerOf(c.name, teams, c.file), 'classes', c.name);
+  for (const o of Object.values(model.objects || {})) {
+    if (/__c$/i.test(o.name)) add(ownerOf(o.name, teams), 'objects', o.name);
+    for (const f of Object.keys(o.fields || {})) if (/__c$/i.test(f)) add(ownerOf(f, teams), 'fields', `${o.name}.${f}`);
   }
-  return [...items.values()]
-    .filter((t) => knownSet.has(t.prefix) || (upper.has(t.prefix) && t.classes.length + t.objects.length + t.fields.length >= min))
-    .sort((a, b) => b.classes.length + b.objects.length + b.fields.length - (a.classes.length + a.objects.length + a.fields.length));
+  return out;
+}
+
+// Words that are roles, Salesforce words or common words, never a team.
+const NOT_TEAMS = new Set(('service services serviceimpl impl selector selectors domain domains controller ctrl handler handlers trigger triggers batch batches job jobs '
+  + 'queueable schedulable scheduler helper helpers util utils utility test tests mock mocks factory builder wrapper dto request response model vo exception '
+  + 'interface base abstract generic common shared core api rest soap callout integration invocable action actions lwc aura page component flow '
+  + 'record records type types field fields list map set data date datetime status name id ids value values new old get set update insert delete '
+  + 'account contact opportunity opp lead case task event user product order quote contract campaign asset pricebook entry line item '
+  + 'conta contato oportunidade caso tarefa usuario produto pedido cotacao contrato campanha ativo linha item de da do das dos e o a para com por '
+  + 'the of and to for in on by with c r mdt fflib sobject sobjects').split(/\s+/));
+
+/**
+ * Words that repeat in many names (any position, any separator): candidates the person confirms or not. A word in at
+ * least `min` names, not a role or common word, not already a confirmed team.
+ */
+function suggestTeams(model, teams = [], { min = 5, limit = 8 } = {}) {
+  const confirmed = new Set(teams.map((t) => t.name.toLowerCase()));
+  const counts = new Map();
+  const add = (name, kind) => {
+    for (const w of new Set(nameTokens(name))) {
+      if (w.length < 2 || /^\d+$/.test(w) || NOT_TEAMS.has(w) || confirmed.has(w)) continue;
+      const c = counts.get(w) || counts.set(w, { word: w, classes: 0, objects: 0, fields: 0, examples: [], start: 0, end: 0 }).get(w);
+      c[kind] += 1;
+      const toks = nameTokens(name);
+      if (toks[0] === w) c.start += 1;
+      if (toks[toks.length - 1] === w) c.end += 1;
+      if (c.examples.length < 3) c.examples.push(name);
+    }
+  };
+  for (const c of Object.values(model.classes || {})) if (!c.isTest && !/^fflib_/i.test(c.name)) add(c.name, 'classes');
+  for (const o of Object.values(model.objects || {})) {
+    if (/__c$/i.test(o.name)) add(o.name, 'objects');
+    for (const f of Object.keys(o.fields || {})) if (/__c$/i.test(f)) add(f, 'fields');
+  }
+  return [...counts.values()]
+    .map((c) => ({ ...c, total: c.classes + c.objects + c.fields, where: c.start >= (c.classes + c.objects + c.fields) * 0.8 ? 'start' : c.end >= (c.classes + c.objects + c.fields) * 0.8 ? 'end' : 'anywhere' }))
+    .filter((c) => c.total >= min && c.classes >= 2)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
 }
 
 /** Words of a method name, for matching: buscarContasAtivas -> buscar, contas, ativas. */
@@ -62,30 +129,23 @@ function words(name) {
     .filter(Boolean);
 }
 
-/** Which team a class belongs to (its prefix, if it is a team prefix), or null for shared code. */
-function ownerOf(className, teams) {
-  const p = prefixOf(className);
-  return p && teams.some((t) => t.prefix === p.toUpperCase()) ? p.toUpperCase() : null;
-}
-
-/** Public methods of non-test classes, with owner (team or shared). */
-function catalog(model, teams) {
+/** Public methods of non-test classes, with the confirmed owner (null = shared or not known). */
+function catalog(model, teams = []) {
   const out = [];
   for (const c of Object.values(model.classes || {})) {
     if (c.isTest || /^fflib_/i.test(c.name) || (c.kinds || []).includes('interface')) continue;
-    const owner = ownerOf(c.name, teams);
-    const shared = !owner;
+    const owner = ownerOf(c.name, teams, c.file);
     for (const s of c.signatures || []) {
       if (/^(execute|start|finish|getSObjectType|getSObjectFieldList|construct|on[A-Z]\w*|before\w+|after\w+|handle\w*)$/.test(s.name)) continue;
-      out.push({ className: c.name, method: s.name, params: s.params, returns: s.returns, static: s.static, owner, shared, helperClass: SHARED_NAME.test(c.name.replace(/^[A-Za-z0-9]+_/, '')), file: c.file, line: s.line });
+      out.push({ className: c.name, method: s.name, params: s.params, returns: s.returns, static: s.static, owner, shared: !owner, helperClass: SHARED_NAME.test(c.name), file: c.file, line: s.line });
     }
   }
   return out;
 }
 
 /** Search the catalog: every word of the term must appear in the method name, the class name or a parameter. */
-function searchHelpers(model, term, { teams } = {}) {
-  const list = catalog(model, teams || teamPrefixes(model));
+function searchHelpers(model, term, { teams = [] } = {}) {
+  const list = catalog(model, teams);
   const want = words(term || '');
   const hits = list.filter((h) => {
     if (!want.length) return h.shared;
@@ -97,11 +157,11 @@ function searchHelpers(model, term, { teams } = {}) {
 }
 
 /**
- * Methods with the same name words (ignoring the team prefix) in classes of different owners: two teams wrote the same
- * thing. Each group is a candidate for one generic method in shared code.
+ * Methods with the same name words in different classes: with confirmed teams, only across different teams; without
+ * them, across different classes. Each group is a candidate for one generic method in shared code.
  */
-function similarAcrossTeams(model, { teams } = {}) {
-  const list = catalog(model, teams || teamPrefixes(model));
+function similarAcrossTeams(model, { teams = [] } = {}) {
+  const list = catalog(model, teams);
   const classes = model.classes || {};
   // Classes that share a contract (same base class or interface) repeat method names on purpose: not duplication.
   const contracts = (name) => {
@@ -115,6 +175,7 @@ function similarAcrossTeams(model, { teams } = {}) {
     const key = [...w].sort().join(' ');
     (groups.get(key) || groups.set(key, []).get(key)).push(h);
   }
+  const label = (h) => h.owner || (teams.length ? 'compartilhado' : 'sem time configurado');
   return [...groups.values()]
     .map((g) => {
       // Drop members that inherit the method from a class in the group, and members sharing a contract with another.
@@ -125,9 +186,9 @@ function similarAcrossTeams(model, { teams } = {}) {
         return !g.some((o) => o.className !== h.className && [...contracts(o.className)].some((b) => mine.has(b)));
       });
     })
-    .filter((g) => new Set(g.map((h) => h.owner || 'compartilhado')).size >= 2 && new Set(g.map((h) => h.className)).size >= 2)
-    .map((g) => ({ method: g[0].method, owners: [...new Set(g.map((h) => h.owner || 'compartilhado'))], where: [...new Set(g.map((h) => `${h.className}.${h.method}(${h.params.join(', ')})`))] }))
+    .filter((g) => new Set(g.map((h) => h.className)).size >= 2 && (!teams.length || new Set(g.map(label)).size >= 2))
+    .map((g) => ({ method: g[0].method, owners: [...new Set(g.map(label))], where: [...new Set(g.map((h) => `${h.className}.${h.method}(${h.params.join(', ')})`))] }))
     .slice(0, 30);
 }
 
-module.exports = { prefixOf, teamPrefixes, ownerOf, catalog, searchHelpers, similarAcrossTeams, words };
+module.exports = { nameTokens, compileTeams, ownerOf, teamsReport, suggestTeams, catalog, searchHelpers, similarAcrossTeams, words };

@@ -65,7 +65,7 @@ Optional: the **Salesforce Code Analyzer** adds the official rules (PMD, CPD, se
 npx github:marlonrodler/reldor setup
 ```
 
-It installs Reldor for your user, connects Reldor to Kiro as an **MCP server** (the AI calls Reldor directly, without a terminal: no repeated commands, no waiting) and, on Windows, puts Reldor in the PATH **of Kiro's terminals only** (without touching Windows variables and without asking IT), makes **Git Bash** Kiro's terminal (commands no longer come back mixed up or slow) and allows Reldor's commands so Kiro does not ask for approval on each one. It shows what will change and asks for a "yes". See [`setup`](./docs/setup.en.md). Then go on to step 3 (the power).
+It asks before each change: installs Reldor for your user, connects Reldor to Kiro (and Claude Code, if you have it) as an **MCP server** (the AI calls Reldor directly, without a terminal) and, on Windows, puts Reldor in the PATH **of Kiro's terminals only** (without touching Windows variables). It does not change your terminal or permissions: the AI keeps asking for approval. To undo: `reldor setup --undo`. See [`setup`](./docs/setup.en.md). Then go on to step 3 (the power).
 
 Without Kiro, or if you prefer doing it by hand, pick **one** of the two ways below. If unsure, use A.
 
@@ -250,7 +250,7 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor env`](./docs/env.en.md) | The environment chain and branch names: show and change, nothing fixed in the code | ✅ |
 | [`reldor review`](./docs/review.en.md) | Review before the commit: security, quality, queries, tests and XML at once | ✅ |
 | [`reldor tools`](./docs/tools.en.md) | Team tools: who takes care of each thing, so Reldor only checks or stays out | ✅ |
-| [`reldor setup`](./docs/setup.en.md) | Installs and prepares Kiro with one command: MCP and the PATH of Kiro's terminals, without touching Windows | ✅ |
+| [`reldor setup`](./docs/setup.en.md) | Installs Reldor and connects it to the AI tools on this machine (MCP in Kiro and Claude Code, PATH of Kiro's terminals), asking each change; `--undo` reverts | ✅ |
 | [`reldor doctor`](./docs/doctor.en.md) | Checks the installation and the terminal's folder, and gives the next step | ✅ |
 | [`reldor init`](./docs/init.en.md) | Sets Reldor up in a project without asking anything: saves only what it detected | ✅ |
 | [`reldor profile`](./docs/init.en.md#profilemd) | Refreshes `profile.md` with what is in the project today, without touching the team's part | ✅ |
@@ -260,7 +260,9 @@ The pieces behind the moments. The AI picks; you can run any of them in the term
 | [`reldor index`](./docs/index-command.en.md) | Builds the project index; reads again only what changed | ✅ |
 | [`reldor explain`](./docs/explain.en.md) | Reverse engineering: automations in the order of execution | ✅ |
 | [`reldor helpers`](./docs/helpers.en.md) | Before creating a method: what already exists (shared first) and the same method in different teams | ✅ |
-| [`reldor me`](./docs/helpers.en.md) | Your team and its prefix, only on your machine | ✅ |
+| [`reldor me`](./docs/helpers.en.md) | Your team, only on your machine | ✅ |
+| [`reldor teams`](./docs/teams.en.md) | The project's teams: suggests words that repeat in names, and only what you confirm counts | ✅ |
+| [`reldor output`](./docs/output.en.md) | The answers kept in `.reldor/work/output/`, which go away when the task or phase changes | ✅ |
 | [`reldor usages`](./docs/usages.en.md) | Where something is used, before you change or delete it | ✅ |
 | `reldor log` | Everything Reldor did, newest first | ✅ |
 | [`reldor refine`](./docs/refine.en.md) | The facts of a task: with the task in the standard, searches only its targets, what to reuse, what to enable and the limits (`--file`) | ✅ |

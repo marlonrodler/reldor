@@ -13,8 +13,8 @@ const { spawnSync } = require('node:child_process');
 const pkg = require('../../package.json');
 
 const CLI = path.join(__dirname, '..', 'cli', 'index.js');
-const READ = ['status', 'task', 'refine', 'explain', 'usages', 'access', 'helpers', 'limits', 'review', 'commit', 'deploy', 'merge', 'promote', 'rollback', 'doctor', 'env', 'me', 'tools', 'test-radar', 'security', 'quality', 'check', 'retrieve', 'index', 'log', 'collisions', 'help'];
-const CHANGE = ['init', 'profile', 'xml', 'hook', 'merge', 'tools', 'env', 'me', 'task', 'snapshot'];
+const READ = ['status', 'task', 'refine', 'explain', 'usages', 'access', 'helpers', 'limits', 'review', 'commit', 'deploy', 'merge', 'promote', 'rollback', 'doctor', 'env', 'me', 'tools', 'test-radar', 'security', 'quality', 'check', 'retrieve', 'index', 'log', 'collisions', 'teams', 'output', 'help'];
+const CHANGE = ['init', 'profile', 'xml', 'hook', 'merge', 'tools', 'env', 'me', 'task', 'snapshot', 'teams', 'output'];
 
 const schema = (list) => ({
   type: 'object',
@@ -28,7 +28,7 @@ const schema = (list) => ({
 
 const TOOLS = [
   { name: 'reldor_read', description: 'Roda um comando do Reldor que só lê o projeto ou monta comandos (status, task, refine, explain, usages, access, helpers, limits, review, commit, deploy, merge --check, promote, rollback, test-radar, doctor...). Não muda nada. Use --json.', inputSchema: schema(READ) },
-  { name: 'reldor_change', description: 'Roda um comando do Reldor que muda arquivos do projeto ou a configuração do Reldor (init, profile, xml --yes, hook install --yes, merge --resolve --yes, merge install --yes, tools set, env, me, task set/use/output, snapshot). Só depois de um "sim" da pessoa no chat.', inputSchema: schema(CHANGE) },
+  { name: 'reldor_change', description: 'Roda um comando do Reldor que muda arquivos do projeto ou a configuração do Reldor (init, profile, xml --yes, hook install --yes, merge --resolve --yes, merge install --yes, tools set, env, me, task set/use/output, snapshot, teams add/remove, output --clear). Só depois de um "sim" da pessoa no chat.', inputSchema: schema(CHANGE) },
 ];
 
 /** Runs one Reldor command in its own process, the same way the terminal would, and returns its output. */
@@ -37,7 +37,7 @@ function runReldor(tool, { command, args = [], folder }) {
   if (!allowed.includes(command)) return { text: `⚠️ ${command} não é um comando de ${tool}. Use ${tool === 'reldor_read' ? 'reldor_change' : 'reldor_read'}.`, error: true };
   const list = Array.isArray(args) ? args.map(String) : [];
   // In reldor_read, a command never confirms a change: --yes is only for reldor_change.
-  if (tool === 'reldor_read' && list.includes('--yes')) return { text: '⚠️ --yes muda arquivos: use reldor_change, depois do "sim" da pessoa.', error: true };
+  if (tool === 'reldor_read' && (list.includes('--yes') || list.includes('--clear') || (command === 'teams' && /^(add|remove)$/.test(list[0] || '')))) return { text: '⚠️ Isso muda arquivos: use reldor_change, depois do "sim" da pessoa.', error: true };
   const cwd = folder || process.env.RELDOR_PROJECT || process.cwd();
   const r = spawnSync(process.execPath, [CLI, command, ...list], { cwd, encoding: 'utf8', input: '', timeout: 10 * 60 * 1000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, RELDOR_VIA_MCP: '1' } });
   if (r.error) return { text: `⚠️ Não consegui rodar o Reldor: ${r.error.message}`, error: true };

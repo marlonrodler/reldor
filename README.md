@@ -65,7 +65,7 @@ Opcionais: o **Salesforce Code Analyzer** soma as regras oficiais (PMD, CPD, seg
 npx github:marlonrodler/reldor setup
 ```
 
-Ele instala o Reldor para o seu usuário, liga o Reldor no Kiro como **servidor MCP** (a IA chama o Reldor direto, sem terminal: nada de comando repetido nem espera) e, no Windows, coloca o Reldor no PATH **só dos terminais do Kiro** (sem mexer nas variáveis do Windows e sem pedir à TI), deixa o **Git Bash** como terminal do Kiro (o comando não volta embaralhado nem demora) e libera os comandos do Reldor para o Kiro não pedir aprovação a cada um. Ele mostra o que vai mudar e pede um "sim". Veja o [`setup`](./docs/setup.md). Depois, siga para o passo 3 (o power).
+Ele pergunta antes de cada mudança: instala o Reldor para o seu usuário, liga o Reldor no Kiro (e no Claude Code, se tiver) como **servidor MCP** (a IA chama o Reldor direto, sem terminal) e, no Windows, coloca o Reldor no PATH **só dos terminais do Kiro** (sem mexer nas variáveis do Windows). Não troca o seu terminal nem as permissões: a IA continua pedindo aprovação. Para desfazer: `reldor setup --undo`. Veja o [`setup`](./docs/setup.md). Depois, siga para o passo 3 (o power).
 
 Sem o Kiro, ou se preferir fazer à mão, escolha **um** dos dois jeitos abaixo. Na dúvida, use o A.
 
@@ -250,7 +250,7 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor env`](./docs/env.md) | A cadeia de ambientes e os nomes de branch: ver e mudar, nada fixo no código | ✅ |
 | [`reldor review`](./docs/review.md) | Revisão antes do commit: segurança, qualidade, queries, testes e XML de uma vez | ✅ |
 | [`reldor tools`](./docs/tools.md) | Ferramentas do time: quem cuida de cada coisa, para o Reldor só conferir ou ficar de fora | ✅ |
-| [`reldor setup`](./docs/setup.md) | Instala e prepara o Kiro com um comando: MCP e PATH dos terminais do Kiro, sem mexer no Windows | ✅ |
+| [`reldor setup`](./docs/setup.md) | Instala e liga o Reldor nas IAs desta máquina (MCP no Kiro e no Claude Code, PATH dos terminais do Kiro), perguntando cada mudança; `--undo` desfaz | ✅ |
 | [`reldor doctor`](./docs/doctor.md) | Confere a instalação e a pasta do terminal, e diz o próximo passo | ✅ |
 | [`reldor init`](./docs/init.md) | Configura o Reldor no projeto sem perguntar nada: grava só o que detectou | ✅ |
 | [`reldor profile`](./docs/init.md#o-profilemd) | Atualiza o `profile.md` com o que está no projeto hoje, sem mexer na parte do time | ✅ |
@@ -261,7 +261,9 @@ As peças por trás dos momentos. A IA escolhe; você pode rodar qualquer um no 
 | [`reldor explain`](./docs/explain.md) | Engenharia reversa: automações na ordem de execução | ✅ |
 | [`reldor usages`](./docs/usages.md) | Onde algo é usado, antes de alterar ou apagar | ✅ |
 | [`reldor helpers`](./docs/helpers.md) | Antes de criar um método: o que já existe (compartilhado primeiro) e métodos iguais em times diferentes | ✅ |
-| [`reldor me`](./docs/helpers.md) | O seu time e o prefixo dele, só na sua máquina | ✅ |
+| [`reldor me`](./docs/helpers.md) | O seu time, só na sua máquina | ✅ |
+| [`reldor teams`](./docs/teams.md) | Os times do projeto: sugere palavras que se repetem nos nomes e só vale o que você confirma | ✅ |
+| [`reldor output`](./docs/output.md) | As respostas guardadas em `.reldor/work/output/`, que somem quando a tarefa ou a fase muda | ✅ |
 | `reldor log` | Tudo o que o Reldor fez, do mais recente ao mais antigo | ✅ |
 | [`reldor refine`](./docs/refine.md) | Os fatos de uma task: com a task no padrão, busca só os alvos, o que reusar, o que liberar e os limites (`--file`) | ✅ |
 | [`reldor access`](./docs/access.md) | Já existe, mas está liberado? Onde falta liberar um valor de picklist, campo, objeto ou classe: record type, layout, FLS, path, tradução, regras | ✅ |

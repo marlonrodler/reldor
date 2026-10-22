@@ -10,7 +10,7 @@ Use esta tabela para escolher o comando a partir do que a pessoa pede.
 | "me ajude a preencher o profile" | `reldor profile --json` | O que foi encontrado; pergunte um tópico por vez e escreva só em "Padrões da equipe" |
 | "instalei o Reldor, e agora?" / "não está funcionando" | `reldor doctor --json` | O que falta, com o comando que resolve, e o `next` |
 | "já existe um método para…?" / antes de criar um método | `reldor helpers <palavras> --json` | Compartilhado primeiro; se não existir, proponha um método genérico |
-| "meu time é…" | `reldor me --team <nome> --prefix <PREFIXO>` (com o "sim") | O que é do time, exemplos do padrão, o que é compartilhado |
+| "meu time é…" | `reldor me --team <nome>` (com o "sim"); se o time não estiver em `reldor teams`, confirme a marca dele com `reldor teams add` | O que é do time, exemplos do padrão, o que é compartilhado |
 | "onde os times repetem código?" | `reldor helpers --similar --json` | Cada grupo vira candidato a um método genérico |
 | "quero criar uma task para…" / "refina essa task" | grave o texto em `.reldor/work/task.md` → `reldor refine --file .reldor/work/task.md --objects ... --fields ... --values "Obj.Campo=Valor" --json` | Siga o conselheiro reldor-task-refine |
 | "esse valor já existe?" / "onde falta liberar?" / "o campo não aparece" | `reldor access <Obj.Campo> [--value "<valor>"] [--rt <RT>] [--perms <P>] --json` | O que já está e onde falta liberar (record type, layout, FLS, path, tradução, regras) |

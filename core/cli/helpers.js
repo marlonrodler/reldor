@@ -5,7 +5,7 @@
  * Before writing a method: the public methods that already exist, shared code first. With --similar: methods with the
  * same name in different teams, candidates for one generic method in shared code.
  */
-const { readLocal } = require('../config');
+const { readLocal, loadConfig } = require('../config');
 const { print, printJson } = require('../report');
 
 async function helpersCommand(root, flags, args) {
@@ -18,7 +18,7 @@ async function helpersCommand(root, flags, args) {
   const t = require('../../modules/sf/teams');
   const { model } = buildIndex(root, {});
   const me = readLocal(root);
-  const teams = t.teamPrefixes(model, { known: me.prefix ? [me.prefix] : [] });
+  const teams = t.compileTeams(loadConfig(root).config.teams);
   const term = args.join(' ').trim();
   const sig = (h) => `${h.className}.${h.method}(${h.params.join(', ')})${h.returns && h.returns !== 'void' ? ` → ${h.returns}` : ''}`;
 
@@ -28,8 +28,9 @@ async function helpersCommand(root, flags, args) {
       printJson({ similar: groups });
       return 0;
     }
-    const out = ['\n🛡️  Métodos com o mesmo nome em times diferentes', ''];
-    if (!groups.length) out.push('Nenhum. Cada time está usando métodos diferentes (ou já usa o compartilhado).');
+    const out = [`\n🛡️  Métodos com o mesmo nome ${teams.length ? 'em times diferentes' : 'em classes diferentes'}`, ''];
+    if (!teams.length) out.push('ℹ️  Nenhum time confirmado (reldor teams): comparo classes, sem dizer de quem é cada uma.', '');
+    if (!groups.length) out.push('Nenhum método repetido em classes diferentes.');
     for (const g of groups) out.push(`• ${g.method} (${g.owners.join(', ')}):`, ...g.where.map((w) => `   ${w}`));
     if (groups.length) out.push('', '💡 Cada grupo pode virar um método só, genérico (recebendo por parâmetro o que muda), numa classe compartilhada.');
     print(out);
@@ -38,7 +39,7 @@ async function helpersCommand(root, flags, args) {
 
   const hits = t.searchHelpers(model, term, { teams });
   if (flags.json) {
-    printJson({ term: term || null, team: me.prefix || null, results: hits.map((h) => ({ ...h, signature: sig(h) })) });
+    printJson({ term: term || null, team: me.team || null, results: hits.map((h) => ({ ...h, signature: sig(h) })) });
     return 0;
   }
   const out = [`\n🛡️  ${term ? `Métodos que já existem para "${term}"` : 'Métodos públicos do código compartilhado'}`, ''];

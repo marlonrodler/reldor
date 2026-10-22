@@ -2,6 +2,21 @@
 
 # Histórico de versões
 
+## 0.26.0
+
+- **Respostas guardadas:** toda resposta de comando também fica em `.reldor/work/output/<comando>.json` (ou `.txt`),
+  fora do Git. Se o terminal da IDE embaralhar, a IA lê dali em vez de rodar de novo. Somem sozinhas quando a tarefa ou a
+  fase muda (e depois de 7 dias); `reldor output --clear` apaga na hora.
+- No fim de cada comando, num terminal de IDE, o Reldor manda o sinal de "comando terminou" (experimental;
+  `RELDOR_NO_TERMINAL_SIGNAL=1` desliga).
+- `reldor setup` neutro: pergunta cada mudança, não troca o terminal nem mexe nas permissões (a IA continua pedindo
+  aprovação), não auto-aprova mais as leituras do MCP e também registra o MCP no Claude Code quando ele existe.
+  `reldor setup --undo` tira tudo o que o setup colocou, inclusive o Git Bash e a regra `reldor *` da 0.25.
+- **Times só confirmados:** o Reldor não adivinha mais o time pelo prefixo `XXX_`. `reldor teams` sugere palavras que se
+  repetem nos nomes (em qualquer posição, com ou sem separador) e `reldor teams add <nome> --match <palavra>` (ou
+  `--regex`, `--folder`) confirma. Sem time confirmado, nada é atribuído a time. `reldor me --prefix` saiu.
+- `reldor doctor` só informa se o MCP está registrado no Kiro; não cobra terminal nem permissões.
+
 ## 0.25.0
 
 - `reldor setup` também deixa o **Git Bash como terminal padrão do Kiro** (no Windows, o Kiro roda os comandos da IA

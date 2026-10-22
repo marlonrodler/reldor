@@ -20,7 +20,7 @@ It is what the AI and the team read about the project. It has two parts:
 
 - **the automatic part**, between the `reldor:auto` markers, read from the project index (every file): package folders, API version, how many classes (and test classes), triggers, flows, LWCs and objects, whether it uses fflib (how many services, selectors and domains), trigger handlers and the most used base, how test classes end and how many classes declare sharing. Two more sections:
   - **Design patterns**: triggers (one per object? logic inside?), async (Queueable, Batch, Schedulable, `@future`), tests (data factories, `@TestSetup`, mocks), classic patterns (Strategy, Factory, Builder, DTO/Wrapper, Singleton, custom exceptions, Unit of Work, logging), config (Custom Metadata, Custom Settings, Custom Labels), integration and how many custom fields, with example classes;
-  - **Teams and shared code**: the team prefixes in class, object and field names (`VND_`, `CMP_`), what has no prefix (shared), the helpers and how many methods repeat across teams (see [`helpers`](./helpers.en.md));
+  - **Teams and shared code**: the confirmed teams (see [`teams`](./teams.en.md)) with what belongs to each, or the words that repeat in names while no team is confirmed, the helpers and how many methods repeat across teams (see [`helpers`](./helpers.en.md));
 - **"Padrões da equipe"** (team standards), with topics for the team to fill in (prefixes per team, shared classes, when to use Flow or Apex, naming rules). Reldor never changes this part.
 
 `reldor profile` rereads the project and rewrites only the automatic part. To fill in the team's part, ask the AI: "help me fill in the Reldor profile". It shows what Reldor found and asks for the rest.

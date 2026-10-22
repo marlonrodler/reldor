@@ -23,17 +23,17 @@ function usageFacts(model, ref) {
     uses = [];
   }
   const auto = uses.filter((u) => /apex|trigger|flow|validation|fórmula|formula|workflow|process/i.test(u.where));
-  const owners = [...new Set(auto.map((u) => teams.prefixOf(u.name)).filter(Boolean).map((p) => p.toUpperCase()))];
+  const owners = [...new Set(auto.map((u) => teams.ownerOf(u.name, usageFacts.teams || [])).filter(Boolean))];
   return { uses: uses.length, automations: auto.length, automationOwners: owners, examples: auto.slice(0, 4).map((u) => `${u.where} ${u.name}`) };
 }
 
 /** The suggestion from the facts: reuse, generic or create. */
-function suggestion(c, myPrefix, known) {
-  const mine = myPrefix ? myPrefix.toUpperCase() : null;
-  const owner = c.owner && known.has(c.owner) ? c.owner : null;
-  const othersDepend = c.usage.automationOwners.filter((o) => known.has(o) && o !== mine);
+function suggestion(c, myTeam) {
+  const mine = myTeam ? String(myTeam).toLowerCase() : null;
+  const owner = c.owner;
+  const othersDepend = c.usage.automationOwners.filter((o) => o.toLowerCase() !== mine);
   // Owned by another team: do not touch theirs; a generic shared one is offered to them.
-  if (owner && owner !== mine) return { pick: 'generico', why: `é do time ${owner}${c.usage.automations ? ` e tem ${c.usage.automations} automação(ões) usando` : ''}: não mexer no deles; criar um genérico compartilhado e oferecer para eles` };
+  if (owner && owner.toLowerCase() !== mine) return { pick: 'generico', why: `é do time ${owner}${c.usage.automations ? ` e tem ${c.usage.automations} automação(ões) usando` : ''}: não mexer no deles; criar um genérico compartilhado e oferecer para eles` };
   // Shared (or yours): reuse it. Other teams' automations are a caution, not a reason to duplicate it.
   if (othersDepend.length) return { pick: 'reusar', why: `já é compartilhado: reusar, sem mudar o comportamento, porque automações de ${othersDepend.join(', ')} dependem dele` };
   return { pick: 'reusar', why: owner ? 'é do seu time' : c.usage.automations ? `compartilhado; ${c.usage.automations} automação(ões) usam: confira se o seu uso não muda o comportamento delas` : 'compartilhado e sem automação dependendo: reusar é o mais seguro' };
@@ -43,11 +43,8 @@ function suggestion(c, myPrefix, known) {
 const meaningsOf = (item) => [item.nome || item.name, item.sentido || item.meaning || item.descricao].filter(Boolean);
 /** Best likeness between any description of the item and a name. */
 const best = (item, text) => Math.max(0, ...meaningsOf(item).map((m) => likeness(m, text || '')));
-/** The owner team of a name, only when its prefix is a team the project really has. */
-const ownerOf = (name, known) => {
-  const p = (teams.prefixOf(name) || '').toUpperCase();
-  return p && known.has(p) ? p : null;
-};
+/** The confirmed owner team of a name (null when shared or no team is configured). */
+const ownerOf = (name, known, file) => teams.ownerOf(name, known, file);
 
 /** Candidates for a new field: same object first, then the others; the type counts. */
 function fieldMatches(model, item, known) {
@@ -72,7 +69,7 @@ function codeMatches(model, item, known) {
   for (const c of Object.values(model.classes || {})) {
     if (c.isTest || /^fflib_/i.test(c.name)) continue;
     const byClass = best(item, c.name);
-    if (byClass >= 0.55) out.push({ ref: c.name, label: c.name, type: 'classe', owner: ownerOf(c.name, known), score: byClass });
+    if (byClass >= 0.55) out.push({ ref: c.name, label: c.name, type: 'classe', owner: ownerOf(c.name, known, c.file), score: byClass });
     for (const s of c.signatures || []) {
       const score = Math.max(best(item, s.name), best(item, `${c.name} ${s.name}`) * 0.9);
       if (score >= 0.6) out.push({ ref: `${c.name}.${s.name}`, label: `${c.name}.${s.name}(${s.params.join(', ')})`, type: 'método', owner: ownerOf(c.name, known), score });
@@ -89,8 +86,9 @@ function namedMatches(entries, item, type, known) {
 }
 
 /** Reuse options for each item the task wants to create. */
-function reuseOptions(model, items = [], { myPrefix = null } = {}) {
-  const known = new Set(teams.teamPrefixes(model, { known: myPrefix ? [myPrefix] : [] }).map((t) => t.prefix));
+function reuseOptions(model, items = [], { myTeam = null, teams: confirmed = [] } = {}) {
+  const known = confirmed;
+  usageFacts.teams = confirmed;
   return items.map((item) => {
     const kind = String(item.tipo || item.type || '').toLowerCase();
     let found = [];
@@ -102,7 +100,7 @@ function reuseOptions(model, items = [], { myPrefix = null } = {}) {
     const candidates = found.sort((a, b) => b.score - a.score).slice(0, 3).map((c) => {
       const usage = usageFacts(model, c.ref);
       const full = { ...c, score: Math.min(1, Math.round(c.score * 100) / 100), usage };
-      return { ...full, ...suggestion(full, myPrefix, known) };
+      return { ...full, ...suggestion(full, myTeam) };
     });
     return {
       item: { tipo: item.tipo || item.type, nome: item.nome || item.name, objeto: item.objeto || null },
