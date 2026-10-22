@@ -2,6 +2,21 @@
 
 # Changelog
 
+## 0.26.0
+
+- **Kept answers:** every command answer is also kept in `.reldor/work/output/<command>.json` (or `.txt`), out of Git.
+  If the IDE terminal garbles it, the AI reads it there instead of running again. They go away on their own when the
+  task or its phase changes (and after 7 days); `reldor output --clear` deletes them now.
+- At the end of each command, in an IDE terminal, Reldor sends the "command finished" signal (experimental;
+  `RELDOR_NO_TERMINAL_SIGNAL=1` turns it off).
+- Neutral `reldor setup`: asks each change, does not change the terminal or permissions (the AI keeps asking for
+  approval), no longer auto-approves MCP reads, and also registers the MCP server in Claude Code when present.
+  `reldor setup --undo` removes everything setup added, including 0.25's Git Bash and `reldor *` rule.
+- **Confirmed teams only:** Reldor no longer guesses the team from an `XXX_` prefix. `reldor teams` suggests words that
+  repeat in names (any position, with or without a separator) and `reldor teams add <name> --match <word>` (or
+  `--regex`, `--folder`) confirms. Without a confirmed team, nothing is attributed to a team. `reldor me --prefix` is gone.
+- `reldor doctor` only informs whether the MCP server is registered in Kiro; it no longer demands terminal or permissions.
+
 ## 0.25.0
 
 - `reldor setup` also makes **Git Bash Kiro's default terminal** (on Windows, Kiro runs the AI's commands in the default

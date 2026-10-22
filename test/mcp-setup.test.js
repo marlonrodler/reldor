@@ -54,32 +54,41 @@ test('MCP: the AI calls the Reldor without a terminal; reading and changing are 
   assert.match(wrong.result.content[0].text, /reldor_change/);
 });
 
-test('setup: one command registers the MCP server and the PATH of Kiro terminals; safe to run again', () => {
+test('setup: neutral (MCP and PATH only, the IDE keeps asking), safe to run again, and --undo removes it all', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'reldor-home-'));
   const appdata = path.join(home, 'AppData');
   const settings = path.join(appdata, 'Kiro', 'User', 'settings.json');
   fs.mkdirSync(path.dirname(settings), { recursive: true });
   fs.writeFileSync(settings, '{\n  // minhas configurações\n  "editor.fontSize": 14,\n}\n');
-  const env = { ...process.env, RELDOR_NPM_ROOT: path.join(home, 'npm', 'node_modules'), RELDOR_NPM_PREFIX: path.join(home, 'npm') };
-  const bash = path.join(home, 'Git', 'bin', 'bash.exe');
-  fs.mkdirSync(path.dirname(bash), { recursive: true });
-  fs.writeFileSync(bash, '');
-  const run = (args) => spawnSync(process.execPath, [CLI, 'setup', '--home', home, '--appdata', appdata, '--git-bash', bash, '--no-install', ...args], { encoding: 'utf8', env, input: '' });
+  const env = { ...process.env, RELDOR_NPM_ROOT: path.join(home, 'npm', 'node_modules'), RELDOR_NPM_PREFIX: path.join(home, 'npm'), RELDOR_CLAUDE_BIN: path.join(home, 'no-claude') };
+  const run = (args) => spawnSync(process.execPath, [CLI, 'setup', '--home', home, '--appdata', appdata, '--no-install', ...args], { encoding: 'utf8', env, input: '' });
 
   assert.match(run([]).stdout, /Nada foi alterado/, 'without a yes, nothing changes');
   const r = JSON.parse(run(['--yes', '--json']).stdout);
-  assert.deepEqual(r.done, ['mcp', 'path', 'terminal', 'permissions']);
+  assert.deepEqual(r.done, ['kiro-mcp', 'kiro-path']);
   const mcp = JSON.parse(fs.readFileSync(path.join(home, '.kiro', 'settings', 'mcp.json'), 'utf8'));
   assert.equal(mcp.mcpServers.reldor.command, process.execPath);
   assert.match(mcp.mcpServers.reldor.args[0], /core[\\/]mcp[\\/]server\.js$/);
-  assert.deepEqual(mcp.mcpServers.reldor.autoApprove, ['reldor_read']);
-  const kiro = JSON.parse(fs.readFileSync(settings, 'utf8'));
+  assert.equal(mcp.mcpServers.reldor.autoApprove, undefined, 'the IDE keeps asking');
+  let kiro = JSON.parse(fs.readFileSync(settings, 'utf8'));
   assert.equal(kiro['editor.fontSize'], 14, 'the person settings stay');
   assert.ok(kiro['terminal.integrated.env.windows'].PATH.endsWith(path.join(home, 'npm')));
-  assert.equal(kiro['terminal.integrated.defaultProfile.windows'], 'Git Bash');
-  assert.equal(kiro['terminal.integrated.profiles.windows']['Git Bash'].path, bash);
+  assert.equal(kiro['terminal.integrated.defaultProfile.windows'], undefined, 'the terminal is not changed');
+  assert.ok(!fs.existsSync(path.join(home, '.kiro', 'settings', 'permissions.yaml')), 'permissions are not changed');
   assert.match(fs.readFileSync(`${settings}.reldor-backup`, 'utf8'), /minhas configurações/, 'the backup is the file as it was');
-  const perm = require('yaml').parse(fs.readFileSync(path.join(home, '.kiro', 'settings', 'permissions.yaml'), 'utf8'));
-  assert.ok(perm.rules.some((x) => x.capability === 'shell' && x.effect === 'allow' && x.match.includes('reldor *')));
   assert.match(run(['--yes']).stdout, /Já está tudo pronto/);
+
+  // What 0.25 left behind: Git Bash as default and the "reldor *" rule. --undo takes everything out.
+  kiro = { ...kiro, 'terminal.integrated.defaultProfile.windows': 'Git Bash', 'terminal.integrated.profiles.windows': { 'Git Bash': { path: 'C:/Git/bin/bash.exe' } } };
+  fs.writeFileSync(settings, JSON.stringify(kiro));
+  const permFile = path.join(home, '.kiro', 'settings', 'permissions.yaml');
+  fs.writeFileSync(permFile, 'rules:\n  - capability: shell\n    match: ["git status"]\n    effect: allow\n  - capability: shell\n    match: ["reldor *", "reldor.cmd *"]\n    effect: allow\n');
+  const u = JSON.parse(run(['--undo', '--yes', '--json']).stdout);
+  assert.deepEqual(u.done, ['kiro-mcp', 'kiro-path', 'kiro-terminal', 'kiro-permissions']);
+  kiro = JSON.parse(fs.readFileSync(settings, 'utf8'));
+  assert.deepEqual(Object.keys(kiro), ['editor.fontSize'], 'back to how it was');
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, '.kiro', 'settings', 'mcp.json'), 'utf8')).mcpServers, {});
+  const perm = require('yaml').parse(fs.readFileSync(permFile, 'utf8'));
+  assert.deepEqual(perm.rules.map((x) => x.match[0]), ['git status'], 'only the Reldor rule goes');
+  assert.match(run(['--undo', '--yes']).stdout, /nada do Reldor para tirar/);
 });

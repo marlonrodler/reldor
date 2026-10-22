@@ -9,7 +9,7 @@ Você conduz a pessoa pelo Reldor. Ela **não precisa saber comandos**: você de
 
 ## Como rodar o Reldor
 - **Se as ferramentas `reldor_read` e `reldor_change` (MCP) estiverem disponíveis, use sempre elas, nunca o terminal:** `reldor_read` com `command: "status"`, `args: ["--json"]` e `folder` = a pasta do projeto aberta. É mais rápido e não se perde. `reldor_change` só depois do "sim" da pessoa.
-- Sem elas, use o terminal (`reldor <comando>`). Se o terminal ecoar o comando misturado uma vez, use `--out .reldor/work/<nome>.json` em **todos** os comandos seguintes da conversa e sugira à pessoa rodar uma vez `npx github:marlonrodler/reldor setup`, que liga o MCP.
+- Sem elas, use o terminal (`reldor <comando>`). Toda resposta também fica em `.reldor/work/output/<comando>.json` (com `--json`) ou `.txt`: se o terminal ecoar o comando misturado ou não mostrar a resposta, **leia esse arquivo, não rode de novo**. Eles somem sozinhos quando a tarefa ou a fase muda (`reldor output --clear` apaga na hora).
 
 ## Sempre
 1. Rode `reldor status --json` primeiro para saber a etapa atual. Se `alerts` não estiver vazio, comece por eles: são problemas reais se a branch subir agora (🔴 bloqueia, 🟡 atenção). Quando a pessoa perguntar "e agora?", é isso que você responde.
@@ -74,7 +74,9 @@ Se `reldor status` disser que o Reldor não está configurado:
 
 ## Comandos disponíveis hoje
 Dia a dia: `reldor status`, `reldor task`, `reldor refine`, `reldor explain`, `reldor usages`, `reldor access`, `reldor helpers`, `reldor limits`, `reldor review`, `reldor commit`, `reldor deploy`, `reldor merge`, `reldor promote`, `reldor rollback`.
-Configurar: `reldor doctor`, `reldor init`, `reldor env`, `reldor me`, `reldor tools`, `reldor hook`.
+Configurar: `reldor doctor`, `reldor init`, `reldor env`, `reldor me`, `reldor teams`, `reldor tools`, `reldor hook`, `reldor output`, `reldor setup` (e `setup --undo`).
+
+Times: o Reldor nunca adivinha o dono de um nome. `reldor teams --json` mostra os times confirmados e as palavras que se repetem (`suggestions`); pergunte à pessoa qual palavra marca qual time e, com o "sim", rode `reldor teams add <nome> --match <palavra> [--where start|end]` (ou `--regex`, `--folder`).
 Peças (use quando precisar de uma parte só): `reldor profile`, `reldor test-radar`, `reldor security`, `reldor quality`, `reldor check`, `reldor xml`, `reldor retrieve`, `reldor snapshot`, `reldor index`, `reldor log`, `reldor collisions`.
 Texto longo (uma task, uma descrição) nunca vai na linha de comando: grave num arquivo em `.reldor/work/` com a sua ferramenta de arquivos e passe com `--file`.
 Se a pessoa pedir algo que não está nesta lista (conectores com quadros de tasks, documentação automática),

@@ -14,7 +14,7 @@ function top(values, min = 1, limit = 5) {
 }
 
 /** Facts about the project, computed from the index model and sfdx-project.json. */
-function profileFacts(model, project) {
+function profileFacts(model, project, teamsConfig = []) {
   const classes = Object.values(model.classes || {});
   const tests = classes.filter((c) => c.isTest && !/^fflib_/i.test(c.name));
   const code = classes.filter((c) => !c.isTest && !/^fflib_/i.test(c.name));
@@ -45,7 +45,7 @@ function profileFacts(model, project) {
     sharing: { declared: code.filter((c) => c.sharing && c.sharing !== 'none').length, total: code.length },
     parseErrors: (model.errors || []).length,
     patterns: patternSummary(model, code, tests),
-    teams: teamSummary(model),
+    teams: teamSummary(model, teamsConfig),
   };
 }
 
@@ -77,15 +77,17 @@ function patternSummary(model, code, tests) {
   };
 }
 
-/** Teams by name prefix, the shared code and the methods that look the same across teams. */
-function teamSummary(model) {
+/** Confirmed teams (config `teams:`), the shared code, word candidates and methods that look the same. */
+function teamSummary(model, teamsConfig = []) {
   const t = require('./teams');
-  const teams = t.teamPrefixes(model);
-  const owned = new Set(teams.flatMap((x) => x.classes));
+  const teams = t.compileTeams(teamsConfig);
+  const report = t.teamsReport(model, teams);
+  const owned = new Set(report.flatMap((x) => x.classes));
   const shared = Object.values(model.classes || {}).filter((c) => !c.isTest && !/^fflib_/i.test(c.name) && !owned.has(c.name)).map((c) => c.name);
   const helpers = shared.filter((n) => /(Util|Utils|Helper|Helpers|Utility|Common|Shared|Core|Base|Generic)$/i.test(n));
   return {
-    teams: teams.map((x) => ({ prefix: x.spelling, classes: x.classes.length, objects: x.objects.length, fields: x.fields.length, examples: [...x.classes.slice(0, 2), ...x.objects.slice(0, 1)] })),
+    teams: report.map((x) => ({ name: x.name, classes: x.classes.length, objects: x.objects.length, fields: x.fields.length, examples: [...x.classes.slice(0, 2), ...x.objects.slice(0, 1)] })),
+    candidates: teams.length ? [] : t.suggestTeams(model, teams, { limit: 5 }).map((c) => `${c.word} (${c.total})`),
     shared: shared.length,
     helpers,
     similar: t.similarAcrossTeams(model, { teams }).length,
@@ -141,13 +143,17 @@ function patternLines(p) {
 /** "Times e código compartilhado" lines. */
 function teamLines(t) {
   if (!t) return [];
-  const out = ['', '## Times e código compartilhado (pelo prefixo dos nomes)', ''];
+  const out = ['', '## Times e código compartilhado', ''];
   if (t.teams.length) {
-    for (const x of t.teams.slice(0, 8)) out.push(`- ${x.prefix}_: ${x.classes} classes, ${x.objects} objetos, ${x.fields} campos${x.examples.length ? ` (ex.: ${x.examples.join(', ')})` : ''}`);
-  } else out.push('- Nenhum prefixo de time encontrado nos nomes');
-  out.push(`- Compartilhado (sem prefixo de time): ${t.shared} classes${t.helpers.length ? `; helpers: ${t.helpers.slice(0, 5).join(', ')}` : ''}`);
-  if (t.similar) out.push(`- ⚠️ ${t.similar} método(s) com o mesmo nome em times diferentes: candidatos a um método genérico (reldor helpers --similar)`);
-  out.push('- Seu time fica só na sua máquina: reldor me --team <nome> --prefix <PREFIXO>');
+    for (const x of t.teams.slice(0, 8)) out.push(`- ${x.name}: ${x.classes} classes, ${x.objects} objetos, ${x.fields} campos${x.examples.length ? ` (ex.: ${x.examples.join(', ')})` : ''}`);
+    out.push(`- Compartilhado (de nenhum time): ${t.shared} classes${t.helpers.length ? `; helpers: ${t.helpers.slice(0, 5).join(', ')}` : ''}`);
+  } else {
+    out.push('- Times ainda não confirmados: o Reldor não diz de quem é cada classe (reldor teams)');
+    if (t.candidates && t.candidates.length) out.push(`- Palavras que se repetem nos nomes (podem ser times): ${t.candidates.join(', ')}`);
+    if (t.helpers.length) out.push(`- Helpers: ${t.helpers.slice(0, 5).join(', ')}`);
+  }
+  if (t.similar) out.push(`- ⚠️ ${t.similar} método(s) com o mesmo nome em ${t.teams.length ? 'times' : 'classes'} diferentes: candidatos a um método genérico (reldor helpers --similar)`);
+  out.push('- O seu time fica só na sua máquina: reldor me --team <nome>');
   return out;
 }
 
@@ -156,7 +162,8 @@ function profileAuto(root) {
   const { buildIndex } = require('./indexer');
   const { readProject } = require('./index');
   const { model } = buildIndex(root, {});
-  const facts = profileFacts(model, readProject(root));
+  const { loadConfig } = require('../../core/config');
+  const facts = profileFacts(model, readProject(root), loadConfig(root).config.teams || []);
   return { facts, lines: profileFactLines(facts) };
 }
 

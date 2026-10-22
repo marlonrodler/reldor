@@ -6,6 +6,8 @@ const { statusCommand } = require('./status');
 const { initCommand } = require('./init');
 const { profileCommand } = require('./profile');
 const { meCommand } = require('./me');
+const { teamsCommand } = require('./teams');
+const { outputCommand } = require('./output');
 const { taskCommand } = require('./task');
 const { limitsCommand } = require('./limits');
 const { setupCommand } = require('./setup');
@@ -45,7 +47,9 @@ const COMMANDS = {
   doctor: { run: doctorCommand, group: 'setup', help: 'Confere a instalação e a pasta do terminal' },
   init: { run: initCommand, group: 'setup', help: 'Configura o Reldor no projeto, sem perguntas' },
   env: { run: envCommand, group: 'setup', help: 'Ambientes e org (set "nome:branch, ...", --org <alias>, --org-for "nome:alias")' },
-  me: { run: meCommand, group: 'setup', help: 'O seu time, só na sua máquina (--team <nome> --prefix <PREFIXO>)' },
+  me: { run: meCommand, group: 'setup', help: 'O seu time, só na sua máquina (--team <nome>)' },
+  output: { run: outputCommand, group: 'setup', help: 'As respostas guardadas em .reldor/work/output (--clear apaga agora)' },
+  teams: { run: teamsCommand, group: 'setup', help: 'Times do projeto: sugestões e confirmação (add <nome> --match <palavra>, --regex, --folder)' },
   tools: { run: toolsCommand, group: 'setup', help: 'Ferramentas do time: o que o Reldor só confere ou deixa com elas' },
   hook: { run: hookCommand, group: 'setup', help: 'Gancho pre-commit do Reldor (install | uninstall)' },
   profile: { run: profileCommand, group: 'piece', help: 'Atualiza o profile.md com o que está no projeto hoje' },
@@ -89,6 +93,20 @@ function parseArgs(argv) {
   return { command, flags, args };
 }
 
+/**
+ * The "command started / finished" marks that IDE terminals use (VS Code shell integration, OSC 633). A terminal
+ * without that integration (cmd, a restricted PowerShell) never says a command ended, so the IDE's AI waits; the
+ * Reldor says it itself. Invisible on screen; only in an IDE terminal; RELDOR_NO_TERMINAL_SIGNAL=1 turns it off.
+ */
+function terminalSignal(mark) {
+  if (!process.stdout.isTTY || process.env.RELDOR_NO_TERMINAL_SIGNAL || !/vscode|kiro/i.test(`${process.env.TERM_PROGRAM || ''}`)) return;
+  try {
+    process.stdout.write(`\x1b]633;${mark}\x07`);
+  } catch {
+    /* never fail a command for this */
+  }
+}
+
 function help(all = false) {
   const group = (g) => Object.entries(COMMANDS).filter(([, c]) => c.group === g).map(([name, c]) => `  reldor ${name.padEnd(10)} ${c.help}`);
   const lines = [
@@ -129,10 +147,28 @@ async function main(argv = process.argv.slice(2)) {
     fs.rmSync(require('node:path').resolve(flags.out), { force: true });
     require('../report').setOut(flags.out);
   }
+  // Everything the command writes is also kept, to be saved in .reldor/work/output/ (see core/output).
+  const captured = [];
+  const writes = [process.stdout.write, process.stderr.write];
+  if (typeof flags.out !== 'string') {
+    for (const stream of [process.stdout, process.stderr]) {
+      const original = stream.write;
+      stream.write = function tee(chunk, ...rest) {
+        captured.push(String(chunk));
+        return original.call(stream, chunk, ...rest);
+      };
+    }
+  }
+  terminalSignal('C');
+  let code = 1;
   try {
-    return await entry.run(root, flags, args);
+    code = await entry.run(root, flags, args);
+    return code;
   } finally {
+    [process.stdout.write, process.stderr.write] = writes;
     require('../report').finishOut();
+    if (captured.length) require('../output').saveOutput(root, command, captured.join(''), { json: Boolean(flags.json) });
+    terminalSignal(`D;${code || 0}`);
   }
 }
 

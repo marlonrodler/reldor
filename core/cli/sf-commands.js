@@ -288,8 +288,9 @@ function refineCommand(root, flags, args) {
     const targets = resolveTargets(model, format.alvos);
     brief = refineBrief(model, { text: format.body, objects: [...targets.search.objects, ...list(flags.objects)], fields: [...targets.search.fields, ...list(flags.fields)], values: [...targets.search.values, ...values] });
     brief.targets = targets;
-    const myPrefix = require('../config').readLocal(root).prefix || null;
-    brief.reuse = require('../../modules/sf/reuse').reuseOptions(model, targets.create, { myPrefix });
+    const myTeam = require('../config').readLocal(root).team || null;
+    const confirmed = require('../../modules/sf/teams').compileTeams(loadConfig(root).config.teams);
+    brief.reuse = require('../../modules/sf/reuse').reuseOptions(model, targets.create, { myTeam, teams: confirmed });
     brief.limits = require('../../modules/sf/limits').limitsForTask(model, targets.create, loadConfig(root).config);
   } else {
     brief = refineBrief(model, { text, objects: list(flags.objects), fields: list(flags.fields), values });

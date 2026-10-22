@@ -54,19 +54,13 @@ function gitCheck() {
 function kiroCheck(home = os.homedir()) {
   const appdata = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
   const settingsFile = path.join(appdata, 'Kiro', 'User', 'settings.json');
-  if (process.platform !== 'win32' || !fs.existsSync(path.dirname(settingsFile))) return null;
+  if (!fs.existsSync(path.join(home, '.kiro')) && !fs.existsSync(path.dirname(settingsFile))) return null;
   const { readJsonc } = require('../cli/setup');
-  const settings = readJsonc(settingsFile) || {};
-  let perms = '';
-  try {
-    perms = fs.readFileSync(path.join(home, '.kiro', 'settings', 'permissions.yaml'), 'utf8');
-  } catch {
-    /* no permissions file */
-  }
-  const missing = [settings['terminal.integrated.defaultProfile.windows'] !== 'Git Bash' ? 'o terminal padrão não é o Git Bash (os comandos voltam embaralhados e demoram)' : null, !perms.includes('reldor *') ? 'os comandos do Reldor pedem aprovação a cada vez' : null].filter(Boolean);
-  return missing.length
-    ? { id: 'kiro', label: 'Kiro', state: 'missing', required: false, detail: missing.join('; '), fix: 'npx github:marlonrodler/reldor setup' }
-    : { id: 'kiro', label: 'Kiro', state: 'ok', required: false, detail: 'Git Bash como terminal e comandos do Reldor liberados' };
+  const mcp = readJsonc(path.join(home, '.kiro', 'settings', 'mcp.json')) || {};
+  // Only informs: the terminal and the permissions are the person's choice.
+  return (mcp.mcpServers || {}).reldor
+    ? { id: 'kiro', label: 'Kiro', state: 'ok', required: false, detail: 'o Reldor está registrado como servidor MCP (se a empresa bloquear servidores MCP, a IA usa o terminal)' }
+    : { id: 'kiro', label: 'Kiro (opcional)', state: 'optional', required: false, detail: 'o Reldor não está registrado como servidor MCP: a IA usa o terminal', fix: 'npx github:marlonrodler/reldor setup' };
 }
 
 /** GitHub CLI: optional, only for reading open pull requests. */

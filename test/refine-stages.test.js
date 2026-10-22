@@ -27,6 +27,9 @@ function project() {
   field('Account', 'Data_Revisao__c', 'Data de revisão');
   field('Account', 'CMP_Data_Aprovacao_Compra__c', 'Data de aprovação da compra');
   for (const c of ['VND_PedidoService', 'VND_PedidoSelector', 'CMP_CompraSelector']) fs.writeFileSync(path.join(dir, `force-app/main/default/classes/${c}.cls`), `public with sharing class ${c} {}\n`);
+  // The teams, confirmed for the project: one by its word at the start, one by a regular expression.
+  fs.mkdirSync(path.join(dir, '.reldor'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.reldor', 'reldor.config.yaml'), 'teams:\n  - name: VND\n    match: vnd\n    where: start\n  - name: CMP\n    regex: "^CMP_"\n');
   fs.writeFileSync(path.join(dir, 'force-app/main/default/classes/CMP_AprovacaoService.cls'), 'public with sharing class CMP_AprovacaoService {\n  public static void marcar(Account a) { a.CMP_Data_Aprovacao_Compra__c = Date.today(); }\n}\n');
   return dir;
 }
@@ -84,7 +87,7 @@ test('refine in stages: a task in the standard searches only its targets, and sa
   assert.ok(!JSON.stringify(r.reuse).match(/renomear|trocar o nome/i), 'renaming is never suggested');
 
   // The same, for someone of team VND: reuse their own field.
-  fs.writeFileSync(path.join(dir, '.reldor', 'local.yaml'), 'team: vendas\nprefix: VND\n');
+  fs.writeFileSync(path.join(dir, '.reldor', 'local.yaml'), 'team: VND\n');
   const mine = JSON.parse(reldor(dir, ['refine', '--file', '.reldor/work/task.md', '--json']).stdout);
   assert.equal(mine.reuse[0].candidates.find((c) => c.ref === 'Account.VND_Data_Aprovacao__c').pick, 'reusar');
 
@@ -122,7 +125,7 @@ test('targets: standard fields by their label; reuse: a shared field others depe
   fs.writeFileSync(path.join(dir, 'force-app/main/default/classes/VND_RevisaoService.cls'), 'public with sharing class VND_RevisaoService {\n  public static void marcar(Account a) { a.Data_Revisao__c = Date.today(); }\n}\n');
   fs.mkdirSync(path.join(dir, '.reldor', 'work'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.reldor', 'work', 't.md'), '---\nalvos:\n  objetos: [Account]\n  criar:\n    - tipo: campo\n      nome: "Data de revisão"\n      objeto: Account\n      tipo_campo: Date\n---\n# X\n');
-  fs.writeFileSync(path.join(dir, '.reldor', 'local.yaml'), 'team: compras\nprefix: CMP\n');
+  fs.writeFileSync(path.join(dir, '.reldor', 'local.yaml'), 'team: CMP\n');
   const r = JSON.parse(reldor(dir, ['refine', '--file', '.reldor/work/t.md', '--json']).stdout);
   const c = r.reuse[0].candidates.find((x) => x.ref === 'Account.Data_Revisao__c');
   assert.equal(c.owner, null);
